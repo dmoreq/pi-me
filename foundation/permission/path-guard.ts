@@ -34,6 +34,7 @@ export const DEFAULT_PROTECTED_PATHS: ProtectedGlob[] = [
 	{ glob: "**/.github/workflows/*.yaml", reason: "CI workflow — should not be modified by agent" },
 ];
 
+// Bounded: callers use only the fixed DEFAULT_PROTECTED_PATHS globs (35 entries).
 const _globCache = new Map<string, RegExp>();
 
 export function matchesGlob(relativePath: string, glob: string): boolean {
