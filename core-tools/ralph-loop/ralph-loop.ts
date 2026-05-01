@@ -624,6 +624,14 @@ const AgentScopeSchema = StringEnum(["user", "project", "both"] as const, {
 
 const DEFAULT_LOOP_MAX_ITERATIONS = Number.MAX_SAFE_INTEGER;
 const DEFAULT_LOOP_SLEEP_MS = 1000;
+const LOOP_STATE_DIR = ".pi/loops";
+
+const LoopMode = StringEnum(["single", "chain", "self", "parallel"] as const, {
+	description:
+		'Loop execution mode: "single" (one subagent), "chain" (sequential agents), ' +
+		'"self" (in-session repeat without subagent), "parallel" (concurrent subagents)',
+	default: "single",
+});
 
 const LoopParams = Type.Object({
 	conditionCommand: Type.Optional(
@@ -634,9 +642,21 @@ const LoopParams = Type.Object({
 	),
 	maxIterations: Type.Optional(Type.Number({ description: "Max iterations (optional)." })),
 	sleepMs: Type.Optional(Type.Number({ description: `Sleep between iterations in ms (default ${DEFAULT_LOOP_SLEEP_MS}).` })),
-	agent: Type.Optional(Type.String({ description: "Name of the agent to invoke (for single mode)" })),
-	task: Type.Optional(Type.String({ description: "Task to delegate (for single mode)" })),
+	mode: Type.Optional(LoopMode),
+	agent: Type.Optional(Type.String({ description: "Name of the agent to invoke (for single/self mode)" })),
+	task: Type.Optional(Type.String({ description: "Task to delegate (for single/self mode)" })),
 	chain: Type.Optional(Type.Array(ChainItem, { description: "Array of {agent, task} for sequential execution" })),
+	tasks: Type.Optional(Type.Array(Type.String(), { description: "Array of task descriptions for parallel mode" })),
+	maxParallelTasks: Type.Optional(
+		Type.Integer({ description: "Max concurrent subagents in parallel mode (default: 3)", default: 3 }),
+	),
+	itemsPerIteration: Type.Optional(
+		Type.Integer({ description: "Suggest N items per iteration (0 = unlimited, default: 0)", default: 0 }),
+	),
+	reflectEvery: Type.Optional(
+		Type.Integer({ description: "Reflect/ask for feedback every N iterations (0 = never, default: 0)", default: 0 }),
+	),
+	taskFile: Type.Optional(Type.String({ description: "Path to task file for persistence (.ralph/ style)" })),
 	agentScope: Type.Optional(AgentScopeSchema),
 	confirmProjectAgents: Type.Optional(
 		Type.Boolean({ description: "Prompt before running project-local agents. Default: true.", default: true }),
@@ -1014,6 +1034,141 @@ export default function (pi: ExtensionAPI) {
 		abortController: null,
 		lastDetails: null,
 	};
+
+	// Self-loop state: in-session repeat without subagent dispatch
+	let selfLoopState: {
+		active: boolean;
+		prompt: string;
+		conditionCommand?: string;
+		maxIterations: number;
+		iteration: number;
+	} | null = null;
+
+	// Persistence: restore self-loop state on session start
+	pi.on("session_start", async (_event: any, ctx: any) => {
+		try {
+			const { existsSync, readFileSync } = await import("node:fs");
+			const statePath = path.join(ctx.cwd, LOOP_STATE_DIR, "loop-state.json");
+			if (existsSync(statePath)) {
+				const saved = JSON.parse(readFileSync(statePath, "utf-8"));
+				if (saved.mode === "self") {
+					selfLoopState = {
+						active: saved.active ?? false,
+						prompt: saved.prompt,
+						conditionCommand: saved.conditionCommand,
+						maxIterations: saved.maxIterations ?? Number.MAX_SAFE_INTEGER,
+						iteration: saved.iteration ?? 0,
+					};
+				}
+			}
+		} catch {}
+	});
+
+	// Self-mode: on agent_end, re-queue prompt if condition is met
+	pi.on("agent_end", async (_event: any, ctx: any) => {
+		if (!selfLoopState?.active) return;
+
+		selfLoopState.iteration++;
+		if (selfLoopState.iteration >= selfLoopState.maxIterations) {
+			selfLoopState.active = false;
+			if (ctx.hasUI) ctx.ui.notify("Self-loop: max iterations reached", "info");
+			return;
+		}
+
+		if (selfLoopState.conditionCommand) {
+			try {
+				const { execSync } = await import("node:child_process");
+				const out = execSync(selfLoopState.conditionCommand, { cwd: ctx.cwd }).toString().trim().toLowerCase();
+				if (out !== "true") {
+					selfLoopState.active = false;
+					if (ctx.hasUI) ctx.ui.notify("Self-loop: condition not met, stopping", "info");
+					return;
+				}
+			} catch {
+				selfLoopState.active = false;
+				if (ctx.hasUI) ctx.ui.notify("Self-loop: condition check failed, stopping", "warning");
+				return;
+			}
+		}
+
+		if (ctx.hasUI) ctx.ui.notify(`Self-loop: iteration ${selfLoopState.iteration}`, "info");
+		ctx.session?.compact?.();
+		pi.sendUserMessage(selfLoopState.prompt, { deliverAs: "followUp" });
+	});
+
+	// Register self-mode command: /ralph-self <prompt> [--condition <cmd>] [--max N]
+	pi.registerCommand("ralph-self", {
+		description: "Start an in-session loop (self mode). Usage: /ralph-self <prompt> [--condition <cmd>] [--max N]",
+		handler: async (args: string, ctx: any) => {
+			if (!ctx.hasUI) { ctx.ui.notify("Self-loop requires UI", "error"); return; }
+			if (selfLoopState?.active) { ctx.ui.notify("Self-loop already active", "warning"); return; }
+
+			const condIdx = args.indexOf("--condition");
+			const maxIdx = args.indexOf("--max");
+			let prompt = args;
+			let conditionCommand: string | undefined;
+			let maxIterations = Number.MAX_SAFE_INTEGER;
+
+			if (condIdx !== -1) {
+				prompt = args.slice(0, condIdx).trim();
+				const rest = args.slice(condIdx + "--condition".length).trim();
+				if (maxIdx !== -1) {
+					conditionCommand = rest.slice(0, maxIdx - condIdx - "--condition".length).trim();
+					const maxStr = rest.slice(rest.indexOf("--max") + "--max".length).trim();
+					maxIterations = parseInt(maxStr) || Number.MAX_SAFE_INTEGER;
+				} else {
+					conditionCommand = rest;
+				}
+			} else if (maxIdx !== -1) {
+				prompt = args.slice(0, maxIdx).trim();
+				const maxStr = args.slice(maxIdx + "--max".length).trim();
+				maxIterations = parseInt(maxStr) || Number.MAX_SAFE_INTEGER;
+			}
+
+			if (!prompt) { ctx.ui.notify("Usage: /ralph-self <prompt> [--condition <cmd>] [--max N]", "error"); return; }
+
+			selfLoopState = { active: true, prompt, conditionCommand, maxIterations, iteration: 0 };
+			ctx.ui.notify(`Self-loop started (max ${maxIterations} iterations)`, "success");
+			pi.sendUserMessage(prompt, { deliverAs: "followUp" });
+
+			try {
+				const { mkdirSync, writeFileSync } = await import("node:fs");
+				mkdirSync(path.join(ctx.cwd, LOOP_STATE_DIR), { recursive: true });
+				writeFileSync(
+					path.join(ctx.cwd, LOOP_STATE_DIR, "loop-state.json"),
+					JSON.stringify({ mode: "self", ...selfLoopState }),
+					"utf-8",
+				);
+			} catch {}
+		},
+	});
+
+	pi.registerCommand("ralph-self-stop", {
+		description: "Stop the active self-loop",
+		handler: async (_args: string, ctx: any) => {
+			if (!selfLoopState?.active) {
+				if (ctx.hasUI) ctx.ui.notify("No active self-loop", "warning");
+				return;
+			}
+			selfLoopState.active = false;
+			if (ctx.hasUI) ctx.ui.notify("Self-loop stopped", "info");
+		},
+	});
+
+	// Tool for self-mode: agent signals breakout condition met
+	pi.registerTool({
+		name: "signal_loop_success",
+		description: "Stop the active self-loop when breakout condition is satisfied. Only call when explicitly instructed.",
+		parameters: Type.Object({}),
+		async execute(_toolCallId: string, _params: any, _signal: any, _onUpdate: any, ctx: any) {
+			if (!selfLoopState?.active) {
+				return { content: [{ type: "text", text: "No active self-loop." }], details: { active: false } };
+			}
+			selfLoopState.active = false;
+			if (ctx.hasUI) ctx.ui.notify("Self-loop ended by agent", "info");
+			return { content: [{ type: "text", text: "Self-loop ended." }], details: { active: false } };
+		},
+	});
 
 	const activeRuns = new Set<ActiveRun>();
 	const registerActiveRun: ActiveRunRegistration = (run) => {
@@ -1510,6 +1665,8 @@ export default function (pi: ExtensionAPI) {
 				});
 			};
 
+			const loopMode = baseLoopParams.mode ?? "single";
+
 			for (let i = 0; i < maxIterations; i++) {
 				if (mergedSignal?.aborted) {
 					stopReason = "aborted";
@@ -1526,6 +1683,14 @@ export default function (pi: ExtensionAPI) {
 				if (!condition.shouldContinue) {
 					stopReason = "condition-false";
 					break;
+				}
+
+				// Reflection checkpoint: pause every N iterations
+				if (runResult && baseLoopParams.reflectEvery && i > 0 && i % baseLoopParams.reflectEvery === 0) {
+					if (ctx.hasUI) {
+						ctx.ui.notify(`Reflection checkpoint after ${i} iterations. Type /ralph-steer to adjust.`, "info");
+					}
+					// Wait for steering or continue
 				}
 
 				const iterationIndex = i + 1;
@@ -1564,19 +1729,53 @@ export default function (pi: ExtensionAPI) {
 					loopControl.followUps = [];
 					loopControl.followUpsSent.push(...queuedFollowUps);
 				}
-				try {
-					runResult = await executeSubagentOnce(
-						iterationParams,
-						ctx,
-						mergedSignal,
-						iterationUpdate,
-						registerActiveRun,
-						queuedFollowUps,
-					);
-				} catch (error: any) {
-					stopReason = mergedSignal?.aborted ? "aborted" : "error";
-					errorMessage = error?.message || String(error);
-					break;
+
+				if (loopMode === "parallel" && baseLoopParams.tasks?.length > 0) {
+					// Parallel mode: dispatch multiple subagents concurrently
+					try {
+						const maxParallel = baseLoopParams.maxParallelTasks ?? 3;
+						const batch = baseLoopParams.tasks.slice(0, maxParallel);
+						const results = await Promise.all(
+							batch.map((taskText: string) =>
+								executeSubagentOnce(
+									{ ...iterationParams, task: taskText, chain: undefined },
+									ctx,
+									mergedSignal,
+									undefined,
+									registerActiveRun,
+									queuedFollowUps,
+								),
+							),
+						);
+						runResult = {
+							output: results.map((r) => r.output).join("\n---\n"),
+							details: {
+								mode: "chain",
+								agentScope: iterationParams.agentScope ?? "user",
+								projectAgentsDir: undefined,
+								results: results.flatMap((r) => r.details.results),
+							},
+						};
+					} catch (error: any) {
+						stopReason = mergedSignal?.aborted ? "aborted" : "error";
+						errorMessage = error?.message || String(error);
+						break;
+					}
+				} else {
+					try {
+						runResult = await executeSubagentOnce(
+							iterationParams,
+							ctx,
+							mergedSignal,
+							iterationUpdate,
+							registerActiveRun,
+							queuedFollowUps,
+						);
+					} catch (error: any) {
+						stopReason = mergedSignal?.aborted ? "aborted" : "error";
+						errorMessage = error?.message || String(error);
+						break;
+					}
 				}
 				loopControl.steeringOnce = loopControl.steeringOnce.slice(steeringOnceCount);
 				loopControl.steeringSent = [];
