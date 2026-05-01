@@ -4,6 +4,37 @@ Essential extension suite for the [pi coding agent](https://github.com/mariozech
 
 > Inspired by [pi-extensions](https://github.com/richardgill/pi-extensions) and [rhubarb-pi](https://github.com/qualisero/rhubarb-pi).
 
+## Quick Start
+
+```bash
+# 1. Install
+npm install pi-me
+
+# 2. Register in ~/.pi/agent/settings.json
+#    Add "pi-me" to the packages array
+
+# 3. Restart pi
+#    All 59 extensions and 25 skills load automatically.
+#    No further setup needed — everything just works.
+```
+
+**What you get out of the box:**
+
+| You want to... | How it works |
+|----------------|-------------|
+| Stay safe | 🔄 Permission guards block dangerous commands, secrets get obfuscated automatically |
+| Track progress | 🤖 Agent calls `plan_tracker()` to show task progress — you see a widget in the footer |
+| Search the web | 🤖 Agent uses `web_search()` — set `BRAVE_API_KEY` or `SERPAPI_API_KEY` |
+| Run a dev loop | 🤖 Agent uses `ralph_loop()` to dispatch subagents, or type `/loop` for simple iteration |
+| Switch models | Type `/oracle` for a second opinion, or `/preset` to switch provider/model presets |
+| Get work done | Load a skill — pi detects your intent from the `description` field in each SKILL.md |
+| See what's new | Type `/usage` for cost dashboard, `/recap` for session recap, `/color` to tint your session |
+| Have fun | Type `/speedread` for RSVP reading, or play `spice-invaders` while tests run |
+
+**Detailed docs:** [Features](docs/intro.md) · [Skills](docs/skills.md)
+
+---
+
 ## Prerequisites
 
 - [pi coding agent](https://github.com/mariozechner/pi-coding-agent) installed
