@@ -216,6 +216,26 @@ export function routeKey(data: string, state: QuestionnaireState, runtime: Quest
 	const q = runtime.questions[state.currentTab];
 	if (!q) return { kind: "ignore" };
 
+	if (!q.multiSelect && !state.chatFocused) {
+		const digit = parseInt(data, 10);
+		if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
+			const targetIndex = digit - 1;
+			const item = runtime.items[targetIndex];
+			if (item?.kind === "option") {
+				return {
+					kind: "confirm",
+					answer: {
+						questionIndex: state.currentTab,
+						question: q.question,
+						kind: "option",
+						answer: item.label,
+					},
+					autoAdvanceTab: computeAutoAdvanceTab(state, runtime),
+				};
+			}
+		}
+	}
+
 	if (data === NOTES_ACTIVATE_KEY && !q.multiSelect && state.focusedOptionHasPreview) {
 		return { kind: "notes_enter" };
 	}
