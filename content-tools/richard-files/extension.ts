@@ -216,8 +216,8 @@ export const DEFAULT_OPTIONS: RevealOptions = {
   actionOrder: ["open", "addToPrompt"],
   commandName: "files",
   shortcuts: {
-    browse: "ctrl+f",
-    revealLatest: "ctrl+r",
+    browse: "ctrl+shift+f",
+    revealLatest: "ctrl+alt+r",
     quickLookLatest: "ctrl+shift+r",
   },
   openCommand: (target: FileReference): CommandSpec => {
