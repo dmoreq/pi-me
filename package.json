@@ -19,6 +19,7 @@
       "./foundation/extra-context-files.ts",
       "./session-lifecycle/git-checkpoint-new/checkpoint.ts",
       "./session-lifecycle/auto-compact/auto-compact.ts",
+      "./session-lifecycle/dcp/index.ts",
       "./session-lifecycle/session-name/session-name.ts",
       "./session-lifecycle/token-rate/token-rate.ts",
       "./session-lifecycle/agent-guidance/agent-guidance.ts",
@@ -33,6 +34,7 @@
       "./session-lifecycle/compact-config.ts",
       "./session-lifecycle/startup-header.ts",
       "./session-lifecycle/preset/index.ts",
+      "./session-lifecycle/model-filter/index.ts",
       "./core-tools/web-search.ts",
       "./core-tools/todo/index.ts",
       "./core-tools/calc.ts",
@@ -70,6 +72,7 @@
     ]
   },
   "dependencies": {
+    "bunfig": "^0.15.9",
     "jsonc-parser": "^3.3.1",
     "shell-quote": "^1.8.3",
     "zod": "^4.4.1"
