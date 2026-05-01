@@ -31,7 +31,7 @@
       "./session-lifecycle/compact-config.ts",
       "./session-lifecycle/preset/index.ts",
       "./core-tools/web-search.ts",
-      "./core-tools/todo.ts",
+      "./core-tools/todo/index.ts",
       "./core-tools/calc.ts",
       "./core-tools/ask.ts",
       "./core-tools/ralph-loop/ralph-loop.ts",
