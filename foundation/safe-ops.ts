@@ -32,6 +32,7 @@ import {
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
+import { confirmDialog } from "./dialog/index.js";
 
 // ============================================================================
 // Types
@@ -323,28 +324,31 @@ export default function (pi: ExtensionAPI) {
       } catch {}
 
       const icon = SEVERITY_ICONS[severity];
-      const choice = await ctx.ui.select(`${icon} Allow git ${action}?`, [
-        `✅ Approve this once     — ${command.slice(0, 50)}`,
-        `✅✅ Approve all "${action}" this session`,
-        severity === "high" ? `🚫 Block this once` : `🚫 Block all "${action}" this session`,
-      ]);
+      const blockLabel = severity === "high" ? "Block" : "Block this session";
+      const choice = await confirmDialog(
+        ctx,
+        `${icon} Allow git ${action}?\n  ${command.slice(0, 80)}`,
+        [
+          { label: "Allow once",         description: "Run this command, ask again next time" },
+          { label: "Allow this session",  description: `Approve all "${action}" commands until session ends` },
+          { label: blockLabel,            description: "Skip this command" },
+        ],
+        "Safe Git",
+      );
 
-      if (!choice) {
-        ctx.ui.notify(`Git ${action} canceled`, "info");
-        return { block: true, reason: `Git ${action} canceled by user` };
-      }
-
-      if (choice.startsWith("🚫")) {
-        if (choice.includes("all")) {
+      if (!choice || choice === "Block" || choice === "Block this session") {
+        if (choice === "Block this session") {
           gitBlocked.add(action);
-          ctx.ui.notify(`🚫 All git ${action} auto-blocked this session`, "warning");
+          ctx.ui.notify(`Git ${action} blocked for this session`, "warning");
+        } else {
+          ctx.ui.notify(`Git ${action} canceled`, "info");
         }
         return { block: true, reason: `Git ${action} blocked by user` };
       }
 
-      if (choice.startsWith("✅✅")) {
+      if (choice === "Allow this session") {
         gitApproved.add(action);
-        ctx.ui.notify(`✅ All git ${action} auto-approved this session`, "info");
+        ctx.ui.notify(`Git ${action} approved for this session`, "info");
       } else {
         ctx.ui.notify(`Git ${action} approved once`, "info");
       }
