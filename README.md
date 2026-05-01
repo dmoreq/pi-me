@@ -11,7 +11,7 @@ Essential extension suite for the [pi coding agent](https://github.com/mariozech
 pi install https://github.com/dmoreq/pi-me
 
 # 2. Restart pi
-#    All 51 extensions and 22 skills load automatically.
+#    All 54 extensions and 23 skills load automatically.
 #    No further setup needed — everything just works.
 ```
 
@@ -51,7 +51,7 @@ Or add the source to `~/.pi/agent/settings.json`:
 }
 ```
 
-Restart pi — all 51 extensions and 22 skills load automatically.
+Restart pi — all 54 extensions and 23 skills load automatically.
 
 ---
 
@@ -275,6 +275,7 @@ pi-me is inspired by and incorporates work from these excellent pi packages:
 | [richardgill/pi-extensions](https://github.com/richardgill/pi-extensions) | [Richard Gill](https://github.com/richardgill) | Config and tools: extra-context-files, file-collector, files, preset, sub-pi, sub-pi-skill, pi-config |
 | [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Session enhancements: background-notify, session-emoji, session-color; safety: safe-git, safe-rm; compaction: compact-config |
 | [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Tools and widgets: clipboard, cost-tracker, flicker-corp, funny-working-message, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar; skill: a-nach-b |
+| [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo list with live overlay + branch replay, `/btw` side-question, skill `$1/$ARGUMENTS` parameterization, structured ask-user-question tool, Warp OSC 777 notifications |
 
 ---
 
