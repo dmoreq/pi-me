@@ -1,5 +1,6 @@
 /**
- * LSP Server Configs - Language server spawning utilities and per-language configurations
+ * LSP server spawn configurations — one per supported language.
+ * No dependency on LSPManager.
  */
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import * as path from "node:path";
