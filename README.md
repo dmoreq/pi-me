@@ -1,49 +1,69 @@
 # pi-me
 
-Essential extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent): foundation guards, session lifecycle, developer tools, content tools, and authoring helpers.
+A comprehensive extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). Provides
+safety guards, session lifecycle management, developer tools, content manipulation utilities, and AI-assisted
+authoring helpers — all loaded automatically as a single package.
 
-> Inspired by [pi-extensions](https://github.com/richardgill/pi-extensions) and [rhubarb-pi](https://github.com/qualisero/rhubarb-pi).
+**54 extensions, 23 skills, 202 tests. MIT licensed.**
+
+---
 
 ## Quick Start
 
 ```bash
-# 1. Install
 pi install https://github.com/dmoreq/pi-me
-
-# 2. Restart pi
-#    All 54 extensions and 23 skills load automatically.
-#    No further setup needed — everything just works.
 ```
 
-**What you get out of the box:**
-
-| You want to... | How it works |
-|----------------|-------------|
-| Stay safe | 🔄 Permission guards block dangerous commands, secrets get obfuscated automatically |
-| Track progress | 🤖 Agent calls `plan_tracker()` to show task progress — you see a widget in the footer |
-| Search the web | 🤖 Agent uses `web_search()` — set `BRAVE_API_KEY` or `SERPAPI_API_KEY` |
-| Run a dev loop | 🤖 Agent uses `ralph_loop()` to dispatch subagents, or type `/loop` for simple iteration |
-| Switch models | Type `/oracle` for a second opinion, or `/preset` to switch provider/model presets |
-| Get work done | Load a skill — pi detects your intent from the `description` field in each SKILL.md |
-| See what's new | Type `/usage` for cost dashboard, `/recap` for session recap, `/color` to tint your session |
-| Have fun | Type `/speedread` for RSVP reading, or play `spice-invaders` while tests run |
-
-**Detailed docs:** [Features](docs/intro.md) · [Skills](docs/skills.md)
+Restart pi. All extensions and skills load automatically — no additional configuration required.
 
 ---
 
-## Prerequisites
+## What You Get
 
-- [pi coding agent](https://github.com/mariozechner/pi-coding-agent) installed
-- Node.js ≥ 18
+| Capability | Mechanism |
+|-----------|-----------|
+| Command safety | Permission system blocks dangerous operations; secrets are obfuscated automatically |
+| Task tracking | Agent calls `todo` to manage a live overlay task list; `plan_tracker` shows progress |
+| Web access | Agent uses `web_search` via Brave, SerpAPI, or Kagi |
+| Subagent dispatch | Agent uses `ralph_loop` for iterative subagent execution with steering controls |
+| Model switching | `/oracle` for second opinions; `/preset` to switch provider/model configurations |
+| Skill system | 23 skills auto-load when their description matches the agent's task |
+| Cost visibility | `/usage` for token/cost dashboard; `/cost` for spending reports |
+| Session branding | `/emoji*` and `/color*` for visual session identifiers |
+| Side questions | `/btw` for one-off questions without polluting conversation context |
+| Structured input | `ask_user_question` tool for multi-question user prompts with previews |
+
+---
+
+## Architecture
+
+```
+pi-me/
+├── foundation/          Always-on guards and diagnostics
+├── session-lifecycle/   Session boundaries, state, branding
+├── core-tools/          General-purpose agent tools
+├── content-tools/       File and resource utilities
+├── authoring/           AI-assisted content creation
+├── skills/              SKILL.md files guiding agent behavior
+├── shared/              Cross-layer library code
+└── docs/                Documentation
+```
+
+**Detailed reference:** [Architecture Overview](docs/intro.md) · [Extensions](docs/foundation.md) · [Skills](docs/skills.md)
+
+---
 
 ## Installation
+
+### Via pi CLI
 
 ```bash
 pi install https://github.com/dmoreq/pi-me
 ```
 
-Or add the source to `~/.pi/agent/settings.json`:
+### Via settings.json
+
+Add to `~/.pi/agent/settings.json`:
 
 ```json
 {
@@ -51,73 +71,91 @@ Or add the source to `~/.pi/agent/settings.json`:
 }
 ```
 
-Restart pi — all 54 extensions and 23 skills load automatically.
+Restart pi. All 54 extensions and 23 skills load automatically.
+
+### Prerequisites
+
+- [pi coding agent](https://github.com/mariozechner/pi-coding-agent) installed
+- Node.js ≥ 18
 
 ---
 
-## Extensions
+## Extension Reference
 
-Extensions are registered automatically. Each one hooks into the pi session lifecycle.
+### Foundation — Safety & Diagnostics
 
-### Foundation
+| Extension | Source | Purpose |
+|-----------|--------|---------|
+| Secrets | `foundation/secrets/` | Scans tool output and context for credentials, obfuscates automatically. Configured via `secrets.yml`. |
+| Permission | `foundation/permission/` | Tiered command safety: minimal → bypassed. Blocks dangerous patterns, prompts for high-risk operations. |
+| Context Window | `foundation/context-window/` | Footer widget showing context usage percentage. Warns at 70%, alerts at 90%. |
+| Safe Operations | `foundation/safe-ops.ts` | Intercepts dangerous git/gh commands for approval. Replaces `rm` with `trash` on macOS. |
+| Status Widget | `foundation/status-widget.ts` | Live provider status indicators (Anthropic, OpenAI, GitHub) in the footer. |
+| Extra Context Files | `foundation/extra-context-files.ts` | Injects `AGENTS.local.md` and provider-specific guidance files into context automatically. |
 
-| Extension | File | What it does |
-|-----------|------|--------------|
-| **Secrets** | `foundation/secrets/secrets.ts` | Scans tool results and context for secrets (tokens, keys, passwords) and obfuscates them. Loads from `~/.pi/agent/secrets.yml` and `.pi/secrets.yml`. |
-| **Permission** | `foundation/permission/permission.ts` | Three-layer safety system: hard safety nets (always active), dangerous-command detection, and tiered permission levels (minimal → bypassed). |
-| **Context Window** | `foundation/context-window/context-window.ts` | Status bar widget showing context usage %. Warns at 70%, alerts at 90%, auto-suggests `/compact`. |
+### Session Lifecycle — State & Branding
 
-### Session Lifecycle
+| Extension | Source | Purpose |
+|-----------|--------|---------|
+| Git Checkpoint | `session-lifecycle/git-checkpoint-new/` | Auto-saves working tree as git refs at each turn start. Enables recovery on session fork. |
+| Auto Compact | `session-lifecycle/auto-compact/` | Triggers context compaction when usage exceeds the configured threshold. |
+| Session Name | `session-lifecycle/session-name/` | Names sessions from the first user message. |
+| Token Rate | `session-lifecycle/token-rate/` | Displays tokens-per-second output rate in the footer. |
+| Agent Guidance | `session-lifecycle/agent-guidance/` | Injects model-specific guidance files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) based on active provider. |
+| Session Recap | `session-lifecycle/session-recap/` | Shows a one-line session summary on terminal refocus. `/recap` for full recap. |
+| Tab Status | `session-lifecycle/tab-status/` | Terminal tab title with status icons (done, stuck, timed out). |
+| Usage Extension | `session-lifecycle/usage-extension/` | `/usage` for token/cost dashboard; `/cost` for spending reports from session logs. |
+| Notifications | `session-lifecycle/notifications.ts` | Background task completion alerts (beep, focus, speech). Humorous spinner messages via `/fun-working`. |
+| Handoff | `session-lifecycle/handoff.ts` | `/handoff <prompt>` generates a focused context summary for a new session. |
+| Session Style | `session-lifecycle/session-style.ts` | AI-picked session emoji + rotating 40-color footer band. `/emoji*` and `/color*` commands. |
+| Compact Config | `session-lifecycle/compact-config.ts` | Per-model compaction thresholds configured via interactive TUI. |
+| Preset | `session-lifecycle/preset/` | Save and switch provider/model/tool presets. `/preset` to cycle. |
+| Skill Args | `session-lifecycle/skill-args/` | `$1`, `$2`, `$ARGUMENTS` substitution in skill bodies for parameterized skills. |
+| Warp Notify | `session-lifecycle/warp-notify/` | Warp terminal OSC 777 structured notifications on lifecycle events. |
 
-| Extension | File | What it does |
-|-----------|------|--------------|
-| **Git Checkpoint** | `session-lifecycle/git-checkpoint-new/checkpoint.ts` | Auto-saves code state as git refs (`refs/pi-checkpoints/`) at the start of each turn. Offers restore on session fork/tree. |
-| **Auto Compact** | `session-lifecycle/auto-compact/auto-compact.ts` | Automatically compacts context when usage exceeds 80% (configurable). |
-| **Session Name** | `session-lifecycle/session-name/session-name.ts` | Names sessions from the first user message (truncated to 60 chars). |
-| **Token Rate** | `session-lifecycle/token-rate/token-rate.ts` | Shows tokens-per-second output rate in the status bar. |
+### Core Tools — Agent Tools
 
-### Core Tools
+| Extension | Source | Purpose |
+|-----------|--------|---------|
+| Web Search | `core-tools/web-search.ts` | Brave, SerpAPI, or Kagi web search. Set `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY`. |
+| Todo | `core-tools/todo/` | Live overlay task list with 4-state machine, dependency tracking, and branch replay survival. `/todos` to view. |
+| Calc | `core-tools/calc.ts` | Safe arithmetic expression evaluator with Math function whitelist. |
+| Ask User Question | `core-tools/ask-user-question/` | Structured multi-question UI with side-by-side markdown previews and multi-select. |
+| Ralph Loop | `core-tools/ralph-loop/` | Subagent loop executor with condition polling, pause/resume, and steering. |
+| Plan Tracker | `core-tools/plan-tracker/` | Inline plan progress widget. `plan_tracker` tool for task status management. |
+| Plan Mode | `core-tools/plan-mode.ts` | File-based plans in `.pi/plans/` with JSON frontmatter, locking, and planning mode toggle. |
+| Sub-Pi | `core-tools/sub-pi/` | Subprocess subagent dispatch in single, chain, or parallel modes. Auto-detects `/skill:` references. |
+| BTW | `core-tools/btw/` | `/btw <question>` asks the primary model a side question with cloned context. Answer in overlay. |
+| Oracle | `core-tools/oracle.ts` | `/oracle <prompt>` gets a second opinion from another model. |
+| Code Actions | `core-tools/code-actions/` | `/code` picks code snippets from assistant messages to copy, insert, or run. |
+| Speed Reading | `core-tools/speedreading.ts` | `/speedread` RSVP reader with adjustable WPM using the Spritz technique. |
+| Ultrathink | `core-tools/ultrathink.ts` | Rainbow animation triggered by "ultrathink" keyword detection. |
+| Memory Mode | `core-tools/memory-mode.ts` | `/mem` saves instructions to `AGENTS.md` project files. |
+| File Collector | `core-tools/file-collector/` | Collects file paths and content from tool results based on configurable regex patterns. |
+| Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
+| Arcade | `core-tools/arcade/` | Five terminal minigames: Spice Invaders, Picman, Ping, Tetris, Mario-Not. |
+| Flicker Corp | `core-tools/flicker-corp.ts` | Terminal display animation effect. |
+| Resistance | `core-tools/resistance.ts` | Battlestar Galactica footer quote with typewriter reveal. |
 
-| Extension | File | What it does |
-|-----------|------|--------------|
-| **Web Search** | `core-tools/web-search.ts` | Web search via Brave, SerpAPI, or Kagi backends. Set `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY`. |
-| **Todo** | `core-tools/todo.ts` | Stateful todo list for the current session. Actions: `list`, `add`, `toggle`, `clear`. |
-| **Calc** | `core-tools/calc.ts` | Safe math expression evaluator. Whitelists Math functions; blocks `eval`, `require`, etc. |
-| **Ask** | `core-tools/ask.ts` | Interactive prompting: `text`, `confirm`, `choice` modes. Falls back gracefully in non-interactive mode. |
-| **Ralph Loop** | `core-tools/ralph-loop/ralph-loop.ts` | Runs subagents in a loop with condition polling, pause/resume, steering, and usage tracking. |
+### Content Tools — File & Resource Utilities
 
-### Content Tools
+| Extension | Source | Purpose |
+|-----------|--------|---------|
+| Notebook | `content-tools/notebook.ts` | Cell-level editor for Jupyter `.ipynb` files: read, edit, insert, delete. |
+| Mermaid | `content-tools/mermaid.ts` | Renders Mermaid diagrams to SVG/PNG via `mmdc` CLI. |
+| GitHub | `content-tools/github.ts` | GitHub API: search code, create issues/PRs, read files. Requires `GITHUB_TOKEN`. |
+| Repeat | `content-tools/repeat/` | `/repeat` replays previous bash/edit/write commands with optional modifications. |
+| Files Widget | `content-tools/files-widget/` | `/readfiles` TUI file browser with directory tree, diff viewer, and commenting. |
+| Raw Paste | `content-tools/raw-paste/` | `/paste` inserts editable text inline for review before sending. |
+| Richard Files | `content-tools/richard-files/` | `/files` TUI file selector with reveal, quicklook, and editor actions. |
 
-| Extension | File | What it does |
-|-----------|------|--------------|
-| **Notebook** | `content-tools/notebook.ts` | Cell-level editor for Jupyter `.ipynb` files: `read`, `edit`, `insert`, `delete`. |
-| **Mermaid** | `content-tools/mermaid.ts` | Renders Mermaid diagrams to SVG/PNG via `mmdc` CLI. |
-| **GitHub** | `content-tools/github.ts` | GitHub API client: search/create issues and PRs, read files, search code. Set `GITHUB_TOKEN` or `GH_TOKEN`. |
-| **Repeat** | `content-tools/repeat/repeat.ts` | Re-runs a previous bash/edit/write command, optionally with modifications. |
+### Authoring — AI-Assisted Creation
 
-### Authoring
-
-| Extension | File | What it does |
-|-----------|------|--------------|
-| **Output Artifacts** | `authoring/output-artifacts/output-artifacts.ts` | Saves truncated tool outputs (>8000 chars) to `.pi/artifacts/` and provides `artifact://` URLs to retrieve the full content. |
-| **Commit Helper** | `authoring/commit-helper/commit-helper.ts` | Generates conventional commit messages from staged/unstaged git diffs via LLM analysis. |
-| **Skill Bootstrap** | `authoring/skill-bootstrap/skill-bootstrap.ts` | Auto-detects project type (language, framework, test runner) and generates a `SKILL.md` documentation file. |
-
----
-
-## Skills
-
-Skills are markdown files that guide the agent's behavior. They are available automatically after installation.
-
-| Skill | Trigger | Purpose |
-|-------|---------|---------|
-| `commit-helper` | When committing code | Generate conventional commit messages |
-| `skill-bootstrap` | When documenting a project | Auto-generate SKILL.md |
-| `secrets` | When handling credentials | Secret obfuscation rules and config |
-| `output-artifacts` | When tool output is truncated | Retrieve full output via artifact:// URLs |
-| `permission` | When adjusting safety levels | Permission levels and safety commands |
-| `ralph-loop` | When running subagent loops | Loop controls: steer, pause, resume, stop |
-| `adopt-plugin` | When adopting a new plugin | Full plugin adoption workflow |
+| Extension | Source | Purpose |
+|-----------|--------|---------|
+| Output Artifacts | `authoring/output-artifacts/` | Saves truncated tool outputs (>8KB) to `.pi/artifacts/` with `artifact://` retrieval URLs. |
+| Commit Helper | `authoring/commit-helper/` | Generates conventional commit messages from git diffs via LLM analysis. `/commit` command. |
+| Skill Bootstrap | `authoring/skill-bootstrap/` | `/bootstrap-skill` auto-detects project type and generates `SKILL.md`. |
 
 ---
 
@@ -125,26 +163,24 @@ Skills are markdown files that guide the agent's behavior. They are available au
 
 ### Environment Variables
 
-| Variable | Extension | Purpose |
-|----------|-----------|---------|
-| `GITHUB_TOKEN` or `GH_TOKEN` | GitHub tool | GitHub API authentication |
-| `BRAVE_API_KEY` | Web Search | Brave Search API key |
-| `SERPAPI_API_KEY` | Web Search | SerpAPI key (Google backend) |
-| `KAGI_API_KEY` | Web Search | Kagi Search API key |
+| Variable | Used By | Purpose |
+|----------|---------|---------|
+| `GITHUB_TOKEN` / `GH_TOKEN` | GitHub tool | GitHub API authentication |
+| `BRAVE_API_KEY` | Web Search | Brave Search API |
+| `SERPAPI_API_KEY` | Web Search | SerpAPI (Google backend) |
+| `KAGI_API_KEY` | Web Search | Kagi Search API |
 
 ### Permission Levels
 
-The permission extension uses five levels:
-
-| Level | Allowed |
-|-------|---------|
-| `minimal` | Read-only (cat, ls, grep, git status/diff/log) |
-| `low` | Read-only + file write/edit |
-| `medium` | Dev ops (install, build, test, git commit/pull) |
+| Level | Allowed Operations |
+|-------|-------------------|
+| `minimal` | Read-only: cat, ls, grep, git status/diff/log |
+| `low` | Read + file write/edit |
+| `medium` | Dev operations: install, build, test, git commit/pull |
 | `high` | Full operations except dangerous commands |
-| `bypassed` | All operations (no checks) |
+| `bypassed` | All operations, no checks |
 
-Use `/permission` to change the level. Use `/permission-mode ask` or `/permission-mode block` to control how violations are handled.
+Use `/permission` to change the level. Use `/permission-mode ask` or `/permission-mode block` to control violation handling.
 
 ### Secrets
 
@@ -163,73 +199,7 @@ Create `~/.pi/agent/secrets.yml` (global) or `.pi/secrets.yml` (project-local):
 
 ---
 
-## Contributing
-
-### Architecture
-
-```
-pi-me/
-├── foundation/          # Always-on safety and diagnostics
-│   ├── secrets/         # Secret detection + obfuscation
-│   ├── permission/      # Command permission classification
-│   └── context-window/  # Context usage display
-├── session-lifecycle/   # Hooks that run at session boundaries
-│   ├── git-checkpoint-new/  # Code state snapshots
-│   ├── auto-compact/    # Automatic context compaction
-│   ├── session-name/    # Session naming
-│   └── token-rate/      # Token rate display
-├── core-tools/          # General-purpose tools
-│   ├── ralph-loop/      # Subagent loop executor
-│   ├── web-search.ts
-│   ├── todo.ts
-│   ├── calc.ts
-│   └── ask.ts
-├── content-tools/       # File and resource tools
-│   ├── notebook.ts      # Jupyter notebook editor
-│   ├── mermaid.ts       # Diagram renderer
-│   ├── github.ts        # GitHub API client
-│   └── repeat/          # Command replay
-├── authoring/           # AI-assisted authoring helpers
-│   ├── output-artifacts/
-│   ├── commit-helper/
-│   └── skill-bootstrap/
-└── skills/              # SKILL.md files for agent guidance
-```
-
-Each extension exports a default `registerX(pi: ExtensionAPI)` function. The pi runtime calls this with the extension API handle at startup.
-
-### Extension API Primer
-
-Extensions register with the pi runtime via event hooks:
-
-```typescript
-export default function registerMyExtension(pi: ExtensionAPI) {
-  // Hook into tool results
-  pi.on("tool_result", (event) => {
-    // event.content, event.toolName, event.sessionId
-  });
-
-  // Hook into session end
-  pi.on("agent_end", (event) => {
-    // Runs after each agent turn
-  });
-
-  // Register a slash command
-  pi.registerCommand("/my-command", async (args, ctx) => {
-    // ctx.print(), ctx.prompt(), etc.
-  });
-
-  // Register a tool the agent can call
-  pi.registerTool({
-    name: "my_tool",
-    description: "...",
-    parameters: { /* JSON Schema */ },
-    execute: async (params, ctx) => { /* return string */ },
-  });
-}
-```
-
-Then add the file path to the `pi.extensions` array in `package.json`.
+## Development
 
 ### Running Tests
 
@@ -237,45 +207,45 @@ Then add the file path to the `pi.extensions` array in `package.json`.
 npm test
 ```
 
-The test suite covers: permission classification, secret obfuscation, calculator safety, ralph-loop agent loading, notebook editing, token rate tracking, git checkpoint creation/restore.
+202 tests across all layers. Coverage: permission classification, secret obfuscation, calculator safety, ralph-loop agent loading, notebook editing, token rate tracking, git checkpoint creation/restore.
+
+### Adding an Extension
+
+1. Create a TypeScript file in the appropriate layer directory
+2. Export a default function accepting `ExtensionAPI`
+3. Add the file path to `pi.extensions` in `package.json`
 
 ### Adding a Skill
 
-1. Create `skills/my-skill/SKILL.md` with YAML frontmatter:
+1. Create `skills/<name>/SKILL.md` with YAML frontmatter:
 
 ```markdown
 ---
 name: my-skill
-description: One-line description of when to use this skill
+description: When to use this skill
 ---
 
-# Skill content here
+# Skill content
 ```
 
-2. The `skills/` directory is already listed in `package.json` under `pi.skills` — no additional registration needed.
-
-### Adding an Extension
-
-1. Create your TypeScript file in the appropriate layer directory.
-2. Export a default `register` function accepting `ExtensionAPI`.
-3. Add the file path to the `pi.extensions` array in `package.json`.
+2. The `skills/` directory is registered automatically — no additional manifest changes needed.
 
 ---
 
 ## Credits
 
-pi-me is inspired by and incorporates work from these excellent pi packages:
+pi-me incorporates work from the following open-source pi packages:
 
-| Package | Author | What we adopted |
-|---------|--------|-----------------|
-| [superpowers](https://github.com/obra/superpowers) | [Jesse Vincent](https://github.com/obra) | Workflow skills: brainstorming, writing-plans, executing-plans, subagent-driven-development, test-driven-development, systematic-debugging, verification-before-completion, requesting-code-review, receiving-code-review, dispatching-parallel-agents, using-git-worktrees, finishing-a-development-branch, writing-skills, and plan-tracker |
-| [pi-hooks](https://github.com/prateekmedia/pi-hooks) | [Prateek](https://github.com/prateekmedia) | Foundation architecture: permission system, git-checkpoint, token-rate, ralph-loop, repeat, and LSP (later removed) |
-| [pi-extensions](https://github.com/tmustier/pi-extensions) | [Thomas Mustier](https://github.com/tmustier) | Session tools: agent-guidance, session-recap, tab-status, usage-extension, pi-ralph-wiggum, code-actions, arcade, files-widget, raw-paste; skills: extending-pi, skill-creator |
-| [oh-my-pi](https://github.com/can1357/oh-my-pi) | [Can](https://github.com/can1357) | Early inspiration for the pi extension ecosystem |
-| [richardgill/pi-extensions](https://github.com/richardgill/pi-extensions) | [Richard Gill](https://github.com/richardgill) | Config and tools: extra-context-files, file-collector, files, preset, sub-pi, sub-pi-skill, pi-config |
-| [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Session enhancements: background-notify, session-emoji, session-color; safety: safe-git, safe-rm; compaction: compact-config |
-| [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Tools and widgets: clipboard, cost-tracker, flicker-corp, funny-working-message, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar; skill: a-nach-b |
-| [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo list with live overlay + branch replay, `/btw` side-question, skill `$1/$ARGUMENTS` parameterization, structured ask-user-question tool, Warp OSC 777 notifications |
+| Package | Author | Contributions |
+|---------|--------|---------------|
+| [superpowers](https://github.com/obra/superpowers) | [Jesse Vincent](https://github.com/obra) | Workflow skills (brainstorming, writing-plans, executing-plans, TDD, debugging, code review, git-worktrees) and plan-tracker |
+| [pi-hooks](https://github.com/prateekmedia/pi-hooks) | [Prateek](https://github.com/prateekmedia) | Permission system, git-checkpoint, token-rate, ralph-loop, repeat |
+| [pi-extensions](https://github.com/tmustier/pi-extensions) | [Thomas Mustier](https://github.com/tmustier) | Agent-guidance, session-recap, tab-status, usage-extension, code-actions, arcade, files-widget, raw-paste |
+| [richardgill/pi-extensions](https://github.com/richardgill/pi-extensions) | [Richard Gill](https://github.com/richardgill) | Extra-context-files, file-collector, files, preset, sub-pi, pi-config |
+| [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Background-notify, session-emoji, session-color, safe-git, safe-rm, compact-config |
+| [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, cost-tracker, flicker-corp, funny-working-message, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar |
+| [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo overlay with branch replay, `/btw` side-question, skill argument substitution, ask-user-question, Warp notifications |
+| [oh-my-pi](https://github.com/can1357/oh-my-pi) | [Can](https://github.com/can1357) | Early ecosystem inspiration |
 
 ---
 

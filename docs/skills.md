@@ -1,93 +1,127 @@
-## Skills
+# Skills
 
-Skills are markdown files (`SKILL.md` with YAML frontmatter) that guide the agent's behavior. Pi loads a skill when the agent's task matches the `description` field in the frontmatter.
-
-| Skill | Trigger | Purpose |
-|-------|---------|---------|
-| **a-nach-b** | User asks about Austrian public transport | Query real-time departures, plan routes, check disruptions via HAFAS API |
-| **adopt-plugin** | Adopting an external pi package into pi-me | Full workflow: assess, compare, merge, optimize, verify |
-| **brainstorming** | Before creative work or implementation | Socratic design refinement: questions, alternatives, validation |
-| **commit-helper** | When committing code | Generate conventional commit messages from diffs |
-| **dispatching-parallel-agents** | Running parallel independent tasks | Concurrent subagent workflows with coordination |
-| **executing-plans** | When a written implementation plan exists | Batch execution with architect review checkpoints |
-| **extending-pi** | When extending pi itself | Guide: skill vs extension vs theme vs package, scaffold files |
-| **finishing-a-development-branch** | When development work is complete | Merge/PR decision workflow with verification |
-| **output-artifacts** | When tool output is truncated | Retrieve full output via artifact:// URLs |
-| **permission** | When adjusting safety levels | Permission levels, modes, and safety commands |
-| **pi-ralph-wiggum** | When using long-running task loops | Loop controls: task file, reflection, iteration pacing |
-| **ralph-loop** | When running subagent loops | Loop controls: steer, pause, resume, stop, chain mode |
-| **receiving-code-review** | When receiving code review feedback | Technical evaluation: organize feedback, assess severity, apply changes |
-| **requesting-code-review** | Before merging code | Pre-merge review: severity categories, subagent dispatch option |
-| **secrets** | When handling credentials | Secret obfuscation rules and config file format |
-| **skill-bootstrap** | When documenting a project | Auto-generate SKILL.md with project-specific guidance |
-| **subagent-driven-development** | When executing plans with independent tasks | Fresh subagent per task + two-stage review (spec then quality) |
-| **systematic-debugging** | When debugging a bug | 4-phase root cause investigation with defense-in-depth |
-| **test-driven-development** | When implementing features or fixing bugs | RED-GREEN-REFACTOR cycle with anti-patterns reference |
-| **using-git-worktrees** | When isolating work | Create/manage git worktrees for parallel branches |
-| **verification-before-completion** | Before claiming work is done | Evidence-based verification: tests pass, output matches spec |
-| **writing-plans** | Before implementation | Create detailed implementation plans with bite-sized TDD tasks |
-| **writing-skills** | When creating or updating SKILL.md | TDD applied to process documentation: create, test, bulletproof |
+Skills are `SKILL.md` files with YAML frontmatter that guide the agent's behavior. Pi automatically loads a
+skill when the agent's task matches the `description` field in the frontmatter. Twenty-three skills cover
+the full development lifecycle.
 
 ---
 
-## Quick Reference: What's Hook, Tool, or Command
+## Skill Reference
 
-| Extension | Hook | Tool | Command | Configuration Needed |
-|-----------|------|------|---------|-------------------|
-| secrets | ✅ | — | — | — |
-| permission | ✅ | — | `/permission`, `/permission-mode` | — |
-| context-window | ✅ | — | — | — |
+### Workflow Skills
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `brainstorming` | Before creative work or implementation | Socratic design refinement: questions, alternatives, validation |
+| `writing-plans` | Before implementing multi-step tasks | Create detailed implementation plans with bite-sized TDD tasks |
+| `executing-plans` | When an implementation plan exists | Batch execution with architect review checkpoints |
+| `subagent-driven-development` | When executing plans with independent tasks | Fresh subagent per task with two-stage review (spec, then quality) |
+| `dispatching-parallel-agents` | 2+ independent tasks without shared state | Concurrent subagent workflows with coordination |
+| `test-driven-development` | When implementing features or fixing bugs | RED-GREEN-REFACTOR cycle with anti-patterns reference |
+| `systematic-debugging` | When encountering bugs or test failures | 4-phase root cause investigation with defense-in-depth |
+| `verification-before-completion` | Before claiming work is complete | Evidence-based verification: tests pass, output matches spec |
+| `requesting-code-review` | Before merging code | Pre-merge review: severity categories, subagent dispatch option |
+| `receiving-code-review` | When receiving code review feedback | Technical evaluation: organize feedback, assess severity, apply changes |
+| `finishing-a-development-branch` | When development work is complete | Merge/PR decision workflow with verification |
+| `using-git-worktrees` | When isolating work to separate branches | Create and manage git worktrees for parallel development |
+
+### pi-me Internal Skills
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `adopt-plugin` | When adopting external pi packages | Full workflow: assess, compare, merge, optimize, verify |
+| `commit-helper` | When committing code | Generate conventional commit messages from git diffs |
+| `output-artifacts` | When tool output is truncated | Retrieve full output via `artifact://` URLs |
+| `permission` | When adjusting safety levels | Permission levels, enforcement modes, and safety commands |
+| `secrets` | When handling credentials | Secret obfuscation rules and config file format |
+| `skill-bootstrap` | When documenting a project | Auto-generate `SKILL.md` with project-specific guidance |
+| `ralph-loop` | When running subagent loops | Loop controls: steer, pause, resume, stop, chain mode |
+| `todo` | When tracking multi-step progress | Task list management: pending→in_progress→completed lifecycle |
+| `writing-skills` | When creating or updating `SKILL.md` | TDD applied to process documentation |
+| `extending-pi` | When extending pi itself | Guide: skill vs extension vs theme vs package, scaffold files |
+
+### External Integrations
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `a-nach-b` | Austrian public transport queries | Real-time departures, route planning, disruption checks via HAFAS API |
+
+---
+
+## Extension Activation Reference
+
+| Extension | Hook | Tool | Command | Configuration |
+|-----------|------|------|---------|---------------|
+| secrets | ✓ | — | — | `secrets.yml` |
+| permission | ✓ | — | `/permission`, `/permission-mode` | Settings |
+| context-window | ✓ | — | — | — |
 | memory-mode | — | — | `/mem`, `/remember` | — |
-| status-widget | ✅ | — | `/status`, `/status-refresh` | — |
-| safe-ops | ✅ | — | `/safegit*`, `/saferm*` | — |
-| extra-context-files | ✅ | — | — | AGENTS.local.md files |
-| git-checkpoint | ✅ | — | — | — |
-| auto-compact | ✅ | — | — | — |
-| session-name | ✅ | — | — | — |
-| token-rate | ✅ | — | — | — |
-| agent-guidance | ✅ | — | — | CLAUDE.md / CODEX.md / GEMINI.md files |
-| session-recap | ✅ | — | `/recap` | — |
-| tab-status | ✅ | — | — | — |
+| status-widget | ✓ | — | `/status`, `/status-refresh` | — |
+| safe-ops | ✓ | — | `/safegit*`, `/saferm*` | Settings |
+| extra-context-files | ✓ | — | — | `AGENTS.local.md` |
+| git-checkpoint | ✓ | — | — | — |
+| auto-compact | ✓ | — | — | Settings |
+| session-name | ✓ | — | — | — |
+| token-rate | ✓ | — | — | — |
+| agent-guidance | ✓ | — | — | `CLAUDE.md`/`CODEX.md`/`GEMINI.md` |
+| session-recap | ✓ | — | `/recap` | — |
+| tab-status | ✓ | — | — | — |
 | usage-extension | — | — | `/usage`, `/cost` | — |
-| notifications | ✅ | — | `/notify-*`, `/fun-working` | — |
+| notifications | ✓ | — | `/notify-*`, `/fun-working` | Settings |
 | handoff | — | — | `/handoff` | — |
-| session-style | ✅ | — | `/emoji*`, `/color*` | — |
-| compact-config | ✅ | — | `/compact-config` | — |
-| preset | ✅ | — | `/preset` | — |
-| web-search | — | ✅ | — | `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY` |
-| todo | ✅ | ✅ | `/todos` | — |
-| calc | — | ✅ | — | — |
-| ask | — | ✅ | — | — |
-| ralph-loop | — | ✅ | multiple `/ralph-*` | — |
-| plan-tracker | — | ✅ | — | — |
-| pi-ralph-wiggum | — | ✅ | multiple | — |
-| code-actions | — | — | `/code` | — |
-| clipboard | — | ✅ | — | — |
-| flicker-corp | ✅ | — | — | — |
-| loop | — | ✅ | `/loop` | — |
+| session-style | ✓ | — | `/emoji*`, `/color*` | Settings |
+| compact-config | ✓ | — | `/compact-config` | Settings |
+| preset | ✓ | — | `/preset` | `preset.jsonc` |
+| skill-args | ✓ | — | — | — |
+| warp-notify | ✓ | — | — | Warp terminal |
+| web-search | — | ✓ | — | `BRAVE_API_KEY` etc. |
+| todo | ✓ | ✓ | `/todos` | — |
+| calc | — | ✓ | — | — |
+| ask-user-question | — | ✓ | — | — |
+| ralph-loop | — | ✓ | `/ralph-*` | — |
+| plan-tracker | — | ✓ | — | — |
+| plan-mode | ✓ | ✓ | `/plan` | — |
+| sub-pi | ✓ | ✓ | — | `sub-pi.jsonc` |
+| btw | — | — | `/btw` | — |
 | oracle | — | — | `/oracle` | — |
-| plan-mode | ✅ | ✅ | `/plan` | — |
-| resistance | ✅ | — | `/resistance` | — |
+| code-actions | — | — | `/code` | — |
 | speedreading | — | — | `/speedread` | — |
-| ultrathink | ✅ | — | `/ultrathink` | — |
-| arcade | — | ✅ | — | — |
-| file-collector | ✅ | — | — | — |
-| sub-pi | ✅ | ✅ | — | — |
-| notebook | — | ✅ | — | — |
-| mermaid | — | ✅ | — | `mmdc` CLI (`npm i -g @mermaid-js/mermaid-cli`) |
-| github | — | ✅ | — | `GITHUB_TOKEN` or `GH_TOKEN` |
+| ultrathink | ✓ | — | `/ultrathink` | — |
+| file-collector | ✓ | — | — | JSONC config |
+| clipboard | — | ✓ | — | — |
+| arcade | — | ✓ | — | — |
+| flicker-corp | ✓ | — | — | — |
+| resistance | ✓ | — | — | — |
+| notebook | — | ✓ | — | — |
+| mermaid | — | ✓ | — | `mmdc` CLI |
+| github | — | ✓ | — | `GITHUB_TOKEN` |
 | repeat | — | — | `/repeat` | — |
-| files-widget | ✅ | — | `/readfiles` | — |
-| raw-paste | ✅ | — | `/paste` | — |
+| files-widget | ✓ | — | `/readfiles` | — |
+| raw-paste | ✓ | — | `/paste` | — |
 | richard-files | — | — | `/files` | — |
-| output-artifacts | ✅ | — | — | — |
-| commit-helper | — | ✅ | `/commit` | — |
+| output-artifacts | ✓ | — | — | — |
+| commit-helper | — | ✓ | `/commit` | — |
 | skill-bootstrap | — | — | `/bootstrap-skill` | — |
 
 ---
 
-**See also:** [Features Reference](features.md) — detailed extension descriptions and trigger modes.
+## Skill File Format
+
+```markdown
+---
+name: my-skill
+description: One-line description of when pi should load this skill
+---
+
+# Skill Title
+
+Guidance content for the agent. May include rules, workflows, examples,
+and references to tools or commands the agent should use.
+```
+
+The `skills/` directory is registered automatically in `package.json` — adding a new `SKILL.md` requires no
+manifest changes.
 
 ---
 
-**See also:** [Intro](intro.md) · [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Core Tools](core-tools.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md)
+**See also:** [Architecture Overview](intro.md) · [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Core Tools](core-tools.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md)
