@@ -162,6 +162,23 @@ const H = "─";
 const V = "│";
 const B_SPLIT = "┴";
 
+// ── ANSI-aware string padding ────────────────────────────────────────────
+
+/**
+ * Strip ANSI escape sequences to get the visible width of a string.
+ */
+function visibleWidth(s: string): number {
+  return s.replace(/\x1b\[[0-9;]*m/g, "").length;
+}
+
+/**
+ * Pad a string (possibly containing ANSI codes) to a given visible width.
+ */
+function ansiPadEnd(s: string, width: number): string {
+  const padLen = Math.max(0, width - visibleWidth(s));
+  return s + " ".repeat(padLen);
+}
+
 // ── Extension ──────────────────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {
@@ -262,8 +279,8 @@ export default function (pi: ExtensionAPI) {
           for (let i = 0; i < leftContent.length; i++) {
             const left = leftContent[i] ?? `                          `;
             const right = rightLines[i] ?? ` `;
-            const leftPadded = left.padEnd(leftWidth);
-            const rightPadded = right.padEnd(usableRightWidth);
+            const leftPadded = ansiPadEnd(left, leftWidth);
+            const rightPadded = ansiPadEnd(right, usableRightWidth);
             lines.push(`${V}${leftPadded}${V}${rightPadded}${V}`);
           }
 
