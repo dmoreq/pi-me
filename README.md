@@ -43,18 +43,20 @@ npm install pi-me
 ## Installation
 
 ```bash
-npm install pi-me
+pi install git:github.com/dmoreq/pi-me
 ```
 
-Then register the package in your pi config (typically `~/.pi/agent/settings.json`):
+Or add the source to `~/.pi/agent/settings.json`:
 
 ```json
 {
-  "packages": ["pi-me"]
+  "packages": ["git:github.com/dmoreq/pi-me"]
 }
 ```
 
-Pi will automatically load all extensions and skills listed in the package.
+Restart pi — all 59 extensions and 25 skills load automatically.
+
+> **Note:** If published to npm, use `npm install pi-me` instead.
 
 ---
 
