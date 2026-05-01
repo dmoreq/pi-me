@@ -93,3 +93,7 @@ Skills are markdown files (`SKILL.md` with YAML frontmatter) that guide the agen
 ---
 
 **See also:** [Features Reference](features.md) — detailed extension descriptions and trigger modes.
+
+---
+
+**See also:** [Intro](intro.md) · [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Core Tools](core-tools.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md)
