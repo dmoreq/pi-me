@@ -2,6 +2,8 @@
 
 Essential extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent): foundation guards, session lifecycle, developer tools, content tools, and authoring helpers.
 
+> Inspired by [pi-extensions](https://github.com/richardgill/pi-extensions) and [rhubarb-pi](https://github.com/qualisero/rhubarb-pi).
+
 ## Prerequisites
 
 - [pi coding agent](https://github.com/mariozechner/pi-coding-agent) installed
