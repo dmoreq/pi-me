@@ -32,7 +32,7 @@ export type LoopViewerEntry =
 			result: { content: (TextContent | ImageContent)[]; details?: any; isError: boolean; isPartial?: boolean };
 		};
 
-export function buildEntryComponent(entry: LoopViewerEntry, theme: any, ui: any, cwd: string, expanded: boolean) {
+function buildEntryComponent(entry: LoopViewerEntry, theme: any, ui: any, cwd: string, expanded: boolean) {
 	switch (entry.type) {
 		case "section":
 			return new Text(theme.fg("accent", entry.text), 1, 0);
@@ -73,7 +73,7 @@ export function renderLoopEntries(entries: LoopViewerEntry[], theme: any, tui: a
 	return container;
 }
 
-function extractTextFromContent(content: any): string {
+export function extractTextFromContent(content: any): string {
 	if (!content) return "";
 	if (typeof content === "string") return content;
 	if (Array.isArray(content)) {

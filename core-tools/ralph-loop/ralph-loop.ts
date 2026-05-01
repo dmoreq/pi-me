@@ -24,9 +24,12 @@ import {
 import { Box, Container, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { type AgentConfig, type AgentScope, discoverAgents } from "./agents.js";
-import type { UsageStats, SingleResult, SubagentDetails, LoopIterationResult, LoopPromptItem, LoopPromptInfo, LoopRunStatus, RalphLoopDetails, LoopControlState, ActiveRun, ActiveRunRegistration } from "./ralph-types.js";
-import { getFinalOutput, buildLoopEntries, renderLoopEntries, formatSteeringText, formatLoopPromptItem } from "./ralph-render.js";
-import type { LoopViewerEntry } from "./ralph-render.js";
+import type {
+	UsageStats, SingleResult, SubagentDetails, LoopIterationResult,
+	LoopPromptItem, LoopPromptInfo, LoopRunStatus, RalphLoopDetails,
+	LoopControlState, ActiveRun, ActiveRunRegistration,
+} from "./ralph-types.js";
+import { getFinalOutput, buildLoopEntries, renderLoopEntries, formatSteeringText, formatLoopPromptItem, extractTextFromContent, type LoopViewerEntry } from "./ralph-render.js";
 
 /**
  * Look up the provider for a model using `pi --list-models`.
@@ -887,18 +890,6 @@ async function confirmProjectAgentsOnce(params: any, ctx: any): Promise<boolean>
 		"Run project-local agents?",
 		`Agents: ${names}\nSource: ${dir}\n\nProject agents are repo-controlled. Only continue for trusted repositories.`,
 	);
-}
-
-function extractTextFromContent(content: any): string {
-	if (!content) return "";
-	if (typeof content === "string") return content;
-	if (Array.isArray(content)) {
-		return content
-			.filter((part) => part && typeof part.text === "string")
-			.map((part) => part.text)
-			.join("\n");
-	}
-	return "";
 }
 
 function writeLargeOutputToTempFile(prefix: string, output: string): string | null {

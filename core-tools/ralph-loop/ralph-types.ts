@@ -1,3 +1,5 @@
+/** Shared types for ralph-loop — no runtime dependencies. */
+
 import type { Message } from "@mariozechner/pi-ai";
 import type { AgentScope } from "./agents.js";
 
