@@ -1820,7 +1820,7 @@ Execute each step in order. Use the plan tool with action "complete-step" and st
 	});
 
 	// Register Ctrl+X shortcut for planning mode toggle
-	pi.registerShortcut("ctrl+x", {
+	pi.registerShortcut("ctrl+shift+x", {
 		description: "Toggle planning mode",
 		handler: async (ctx) => {
 			togglePlanningMode(ctx);

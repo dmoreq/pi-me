@@ -17,7 +17,6 @@
       "./foundation/status-widget.ts",
       "./foundation/safe-git.ts",
       "./foundation/safe-rm.ts",
-      "./foundation/pi-config.ts",
       "./foundation/extra-context-files.ts",
       "./session-lifecycle/git-checkpoint-new/checkpoint.ts",
       "./session-lifecycle/auto-compact/auto-compact.ts",
