@@ -8,12 +8,9 @@ Essential extension suite for the [pi coding agent](https://github.com/mariozech
 
 ```bash
 # 1. Install
-npm install pi-me
+pi install https://github.com/dmoreq/pi-me
 
-# 2. Register in ~/.pi/agent/settings.json
-#    Add "pi-me" to the packages array
-
-# 3. Restart pi
+# 2. Restart pi
 #    All 59 extensions and 25 skills load automatically.
 #    No further setup needed — everything just works.
 ```
@@ -43,20 +40,18 @@ npm install pi-me
 ## Installation
 
 ```bash
-pi install git:github.com/dmoreq/pi-me
+pi install https://github.com/dmoreq/pi-me
 ```
 
 Or add the source to `~/.pi/agent/settings.json`:
 
 ```json
 {
-  "packages": ["git:github.com/dmoreq/pi-me"]
+  "packages": ["https://github.com/dmoreq/pi-me"]
 }
 ```
 
 Restart pi — all 59 extensions and 25 skills load automatically.
-
-> **Note:** If published to npm, use `npm install pi-me` instead.
 
 ---
 

@@ -200,7 +200,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   // Keyboard shortcut
-  pi.registerShortcut("ctrl+shift+u", {
+  pi.registerShortcut("ctrl+shift+t", {
     description: "Toggle ultrathink mode",
     handler: async (ctx) => {
       if (isShowingRainbow && manualMode) {
