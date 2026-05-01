@@ -37,7 +37,7 @@ interface ProviderCost {
 // Session Log Scanner
 // ============================================================================
 
-async function scanSessionLogs(daysBack: number = 30): Promise<ProviderCost[]> {
+export async function scanSessionLogs(daysBack: number = 30): Promise<ProviderCost[]> {
 	const sessionsDir = path.join(os.homedir(), ".pi", "agent", "sessions");
 	const providerCosts = new Map<string, ProviderCost>();
 	const cutoffDate = new Date();
@@ -162,7 +162,7 @@ function formatProviderName(provider: string): string {
 // UI Component
 // ============================================================================
 
-class CostComponent {
+export class CostComponent {
 	private costs: ProviderCost[] = [];
 	private loading = true;
 	private tui: { requestRender: () => void };

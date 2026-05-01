@@ -1,11 +1,12 @@
 /**
  * Usage Extension - Extension Glue
- * Core data processing in usage-extension-core.ts
+ * Registers /usage (stats dashboard) and /cost (spending report)
  */
 import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
 import { DynamicBorder } from "@mariozechner/pi-coding-agent";
 import { CancellableLoader, Container, Spacer } from "@mariozechner/pi-tui";
 import { UsageComponent, collectUsageData, clampLines, type UsageData } from "./usage-extension-core.js";
+import { scanSessionLogs, CostComponent } from "./cost-tracker.js";
 
 export default function (pi: ExtensionAPI) {
 	pi.registerCommand("usage", {
@@ -64,6 +65,20 @@ export default function (pi: ExtensionAPI) {
 					handleInput: (input: string) => usage.handleInput(input),
 					dispose: () => {},
 				};
+			});
+		},
+	});
+
+	pi.registerCommand("cost", {
+		description: "Show cost report from session logs",
+		handler: async (args: string, ctx: ExtensionCommandContext) => {
+			if (!ctx.hasUI) {
+				ctx.ui.notify("Cost report requires interactive mode", "error");
+				return;
+			}
+			const daysBack = parseInt(args || "30") || 30;
+			await ctx.ui.custom((tui, theme, _kb, done) => {
+				return new CostComponent(tui, theme, () => done(undefined), daysBack);
 			});
 		},
 	});
