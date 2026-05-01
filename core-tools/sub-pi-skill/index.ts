@@ -1,4 +1,4 @@
-import { loadConfigOrDefault } from "../../foundation/pi-config.js";
+import { loadConfigOrDefault } from "../../shared/pi-config.js";
 import { DEFAULT_OPTIONS, subPiSkill } from "./extension.js";
 import { z } from "zod";
 

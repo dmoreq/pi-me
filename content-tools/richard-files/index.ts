@@ -6,7 +6,7 @@ import {
   resolveEditorCommand,
   type RevealOptionsInput,
 } from "./extension.js";
-import { loadConfigOrDefault } from "../../foundation/pi-config.js";
+import { loadConfigOrDefault } from "../../shared/pi-config.js";
 import { z } from "zod";
 
 const CommandSchema = z.array(z.string());

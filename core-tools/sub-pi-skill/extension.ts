@@ -10,7 +10,7 @@ import type {
   TurnEndEvent,
 } from "@mariozechner/pi-coding-agent";
 import { getAgentDir, parseFrontmatter } from "@mariozechner/pi-coding-agent";
-import { resolveOptions as resolveConfigOptions } from "../../foundation/pi-config.js";
+import { resolveOptions as resolveConfigOptions } from "../../shared/pi-config.js";
 
 type SkillInvocation = {
   name: string;

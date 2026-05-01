@@ -38,7 +38,7 @@ import {
   SAY_MESSAGES,
   getCurrentDirName,
   replaceMessageTemplates,
-} from "./rhubarb-shared/index.js";
+} from "../shared/index.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & Constants
