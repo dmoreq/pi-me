@@ -14,8 +14,10 @@ async function loadConfig(): Promise<Config> {
   try {
     const content = await readFile(CONFIG_FILE, "utf-8");
     return JSON.parse(content);
-  } catch (error) {
-    console.error(`[compact-config] Failed to load config from "${CONFIG_FILE}":`, error);
+  } catch (error: any) {
+    if (error?.code !== "ENOENT") {
+      console.error(`[compact-config] Failed to load config from "${CONFIG_FILE}":`, error);
+    }
     return { thresholds: {} };
   }
 }
