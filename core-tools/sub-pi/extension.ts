@@ -14,7 +14,7 @@ import {
   type ThemeColor,
 } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
-import { resolveOptions as resolveConfigOptions } from "../../foundation/pi-config.js";
+import { resolveOptions as resolveConfigOptions } from "../../shared/pi-config.js";
 import { Type } from "@sinclair/typebox";
 import {
   type BuiltInToolName,

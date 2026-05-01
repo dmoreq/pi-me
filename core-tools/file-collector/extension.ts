@@ -11,7 +11,7 @@ import {
   type ExtensionAPI,
   type ExtensionContext,
 } from "@mariozechner/pi-coding-agent";
-import { resolveOptions as resolveConfigOptions } from "../../foundation/pi-config.js";
+import { resolveOptions as resolveConfigOptions } from "../../shared/pi-config.js";
 
 export type RegexPatternConfig = {
   regex: string;

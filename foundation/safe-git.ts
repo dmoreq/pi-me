@@ -49,7 +49,7 @@ import {
   playBeep,
   displayOSXNotification,
   speakMessage,
-} from "../session-lifecycle/rhubarb-shared/index.js";
+} from "../shared/index.js";
 
 type PromptLevel = "high" | "medium" | "none";
 type Severity = "high" | "medium";

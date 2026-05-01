@@ -4,7 +4,7 @@ import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-age
 import {
   loadConfigOrDefault,
   resolveOptions as resolveConfigOptions,
-} from "./pi-config.js";
+} from "../shared/pi-config.js";
 import { z } from "zod";
 
 export type ExtraContextFilesOptions = {

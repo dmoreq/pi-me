@@ -1,4 +1,4 @@
-import { loadConfigOrDefault } from "../../foundation/pi-config.js";
+import { loadConfigOrDefault } from "../../shared/pi-config.js";
 import { DEFAULT_OPTIONS, type PresetOptions, preset } from "./extension.js";
 import { z } from "zod";
 

@@ -13,7 +13,7 @@
       "./foundation/secrets/secrets.ts",
       "./foundation/permission/permission.ts",
       "./foundation/context-window/context-window.ts",
-      "./foundation/memory-mode.ts",
+      "./core-tools/memory-mode.ts",
       "./foundation/status-widget.ts",
       "./foundation/safe-git.ts",
       "./foundation/safe-rm.ts",
@@ -89,6 +89,6 @@
     "tsx": "^4.21.0"
   },
   "scripts": {
-    "test": "tsx --test foundation/permission/tests/*.test.ts foundation/secrets/secrets.test.ts core-tools/calc.test.ts core-tools/ralph-loop/agents.test.ts core-tools/plan-tracker/tests/*.test.ts content-tools/notebook.test.ts session-lifecycle/token-rate/token-rate.test.ts session-lifecycle/git-checkpoint-new/tests/checkpoint.test.ts"
+    "test": "tsx --test \"foundation/**/*.test.ts\" \"session-lifecycle/**/*.test.ts\" \"core-tools/**/*.test.ts\" \"content-tools/**/*.test.ts\" \"authoring/**/*.test.ts\""
   }
 }
