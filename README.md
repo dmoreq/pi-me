@@ -35,8 +35,6 @@ Extensions are registered automatically. Each one hooks into the pi session life
 |-----------|------|--------------|
 | **Secrets** | `foundation/secrets/secrets.ts` | Scans tool results and context for secrets (tokens, keys, passwords) and obfuscates them. Loads from `~/.pi/agent/secrets.yml` and `.pi/secrets.yml`. |
 | **Permission** | `foundation/permission/permission.ts` | Three-layer safety system: hard safety nets (always active), dangerous-command detection, and tiered permission levels (minimal → bypassed). |
-| **LSP Hook** | `foundation/lsp/lsp-hook.ts` | Runs Language Server Protocol diagnostics automatically after edits. Displays inline errors/warnings. Supports 9 languages. |
-| **LSP Tool** | `foundation/lsp/lsp-tool.ts` | Exposes LSP queries as a tool: `definition`, `references`, `hover`, `signature`, `symbols`, `diagnostics`, `rename`, `codeAction`. |
 | **Context Window** | `foundation/context-window/context-window.ts` | Status bar widget showing context usage %. Warns at 70%, alerts at 90%, auto-suggests `/compact`. |
 
 ### Session Lifecycle
@@ -86,7 +84,6 @@ Skills are markdown files that guide the agent's behavior. They are available au
 | `commit-helper` | When committing code | Generate conventional commit messages |
 | `skill-bootstrap` | When documenting a project | Auto-generate SKILL.md |
 | `secrets` | When handling credentials | Secret obfuscation rules and config |
-| `lsp` | When using LSP tools | LSP actions and supported languages |
 | `output-artifacts` | When tool output is truncated | Retrieve full output via artifact:// URLs |
 | `permission` | When adjusting safety levels | Permission levels and safety commands |
 | `ralph-loop` | When running subagent loops | Loop controls: steer, pause, resume, stop |
@@ -104,8 +101,6 @@ Skills are markdown files that guide the agent's behavior. They are available au
 | `BRAVE_API_KEY` | Web Search | Brave Search API key |
 | `SERPAPI_API_KEY` | Web Search | SerpAPI key (Google backend) |
 | `KAGI_API_KEY` | Web Search | Kagi Search API key |
-| `PI_LSP_AUTO_DOWNLOAD_KOTLIN_LSP` | LSP | Set to `1` to auto-download Kotlin LSP |
-| `PI_LSP_KOTLIN_LSP_PATH` | LSP | Explicit path to Kotlin LSP binary |
 
 ### Permission Levels
 
@@ -147,7 +142,6 @@ pi-me/
 ├── foundation/          # Always-on safety and diagnostics
 │   ├── secrets/         # Secret detection + obfuscation
 │   ├── permission/      # Command permission classification
-│   ├── lsp/             # Language Server Protocol client
 │   └── context-window/  # Context usage display
 ├── session-lifecycle/   # Hooks that run at session boundaries
 │   ├── git-checkpoint-new/  # Code state snapshots
@@ -213,7 +207,7 @@ Then add the file path to the `pi.extensions` array in `package.json`.
 npm test
 ```
 
-The test suite covers: permission classification, secret obfuscation, calculator safety, ralph-loop agent loading, notebook editing, token rate tracking, git checkpoint creation/restore, and LSP diagnostics.
+The test suite covers: permission classification, secret obfuscation, calculator safety, ralph-loop agent loading, notebook editing, token rate tracking, git checkpoint creation/restore.
 
 ### Adding a Skill
 
