@@ -242,6 +242,7 @@ pi-me is inspired by and incorporates work from these excellent pi packages:
 | [pi-hooks](https://github.com/prateekmedia/pi-hooks) | [Prateek](https://github.com/prateekmedia) | Foundation architecture: permission system, git-checkpoint, token-rate, ralph-loop, repeat, and LSP (later removed) |
 | [pi-extensions](https://github.com/tmustier/pi-extensions) | [Thomas Mustier](https://github.com/tmustier) | Session tools: agent-guidance, session-recap, tab-status, usage-extension, pi-ralph-wiggum, code-actions, arcade, files-widget, raw-paste; skills: extending-pi, skill-creator |
 | [oh-my-pi](https://github.com/can1357/oh-my-pi) | [Can](https://github.com/can1357) | Early inspiration for the pi extension ecosystem |
+| [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Session enhancements: background-notify, session-emoji, session-color; safety: safe-git, safe-rm; compaction: compact-config |
 | [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Tools and widgets: clipboard, cost-tracker, flicker-corp, funny-working-message, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar; skill: a-nach-b |
 
 ---
