@@ -87,9 +87,10 @@ describe("classifyCommand", () => {
       assert.equal(r.dangerous, true);
     });
 
-    it("git push --force is dangerous", () => {
+    it("git push --force requires high permission", () => {
       const r = classifyCommand("git push --force", defaultConfig);
-      assert.equal(r.dangerous, true);
+      assert.equal(r.level, "high");
+      assert.equal(r.dangerous, false);
     });
   });
 
@@ -123,19 +124,19 @@ describe("classifyCommand", () => {
   });
 
   describe("overrides", () => {
-    it("config override allows command at lower level", () => {
+    it("config override lowers dangerous command to minimal", () => {
       const config: PermissionConfig = {
         ...defaultConfig,
-        overrides: { "dangerous-cmd": "minimal" },
+        overrides: { minimal: ["sudo *"] },
       };
-      const r = classifyCommand("dangerous-cmd arg", config);
+      const r = classifyCommand("sudo cmd arg", config);
       assert.equal(r.level, "minimal");
     });
 
     it("config override elevates safe command", () => {
       const config: PermissionConfig = {
         ...defaultConfig,
-        overrides: { "cat": "high" },
+        overrides: { high: ["cat *"] },
       };
       const r = classifyCommand("cat file.txt", config);
       assert.equal(r.level, "high");

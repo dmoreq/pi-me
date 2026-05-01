@@ -125,15 +125,10 @@ Five arcade games playable inside the terminal while tests run:
 
 Collects file paths and content from tool results based on regex patterns. Captures files matching configured rules and stores them for reuse. Configurable via JSONC config.
 
-### `sub-pi` — General-Purpose Subagent Tool
+### `sub-pi` — Subagent Tool + Skill Dispatch
 **Trigger:** 🤖 Tool (subagent dispatch) + 🔄 Hook (`before_agent_start`)
 
-Launches subprocesses running `pi` as a subagent. Passes the current conversation context, configures model/provider, runs the task, and returns results. More general than `ralph-loop` — single invocation, not a loop.
-
-### `sub-pi-skill` — Skill-Aware Subagent Dispatch
-**Trigger:** 🔄 Hook (`input`, `tool_call`, `turn_end`, `session_start`)
-
-Watches for skill references like `/skill:writing-plans` in user input and automatically dispatches the skill as a subagent task. Bridges the gap between skills and subagent execution.
+Launches subprocesses running `pi` as a subagent. Supports single, chain, and parallel modes. Automatically detects `/skill:name` references and dispatches skills as subagent tasks.
 
 ---
 
