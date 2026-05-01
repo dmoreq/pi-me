@@ -246,6 +246,7 @@ export default function (pi: ExtensionAPI) {
 
           // ── Build right content ──
           const rightLines: string[] = [];
+          rightLines.push(` `);
           rightLines.push(` ${tipsTitle}`);
           for (const t of tipLines) {
             rightLines.push(` ${t}`);
