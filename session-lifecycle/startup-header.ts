@@ -1,9 +1,9 @@
 /**
  * Startup Header Extension
  *
- * Replaces the built-in startup header (logo + keybinding hints) with a
- * custom welcome message featuring ASCII art, tips, skills count, recent
- * sessions, and model info.
+ * Replaces the built-in startup header with a premium welcome screen
+ * featuring a block-based "pi" logo with magenta→cyan gradient, two-column
+ * layout, tips, recent sessions, skills count, and model info.
  */
 
 import type { ExtensionAPI, Theme } from "@mariozechner/pi-coding-agent";
@@ -15,11 +15,9 @@ import { fileURLToPath } from "node:url";
 // ── Resolve pi-me root directory ───────────────────────────────────────
 
 function findPiMeRoot(): string | null {
-  // Try from this file's location (inside session-lifecycle/)
   try {
     const __filename = fileURLToPath(import.meta.url);
     let dir = path.dirname(__filename);
-    // Walk up to find package.json
     for (let i = 0; i < 5; i++) {
       const pkg = path.join(dir, "package.json");
       if (fs.existsSync(pkg)) {
@@ -52,7 +50,6 @@ function getRecentSessions(_cwd: string): RecentSession[] {
     .filter(d => d.isDirectory() && d.name !== "subagents" && !d.name.startsWith("."))
     .map(d => d.name);
 
-  // Get the most recent session file mtime for each directory
   const sessionAges: { label: string; timestamp: number }[] = [];
   for (const dirName of allDirs) {
     const dir = path.join(sessionsDir, dirName);
@@ -67,7 +64,6 @@ function getRecentSessions(_cwd: string): RecentSession[] {
       const stat = fs.statSync(filePath);
       const timestamp = stat.mtimeMs;
 
-      // Derive a human label from the dir name
       const label = dirName
         .replace(/^--+/, "")
         .replace(/--+$/, "")
@@ -79,7 +75,6 @@ function getRecentSessions(_cwd: string): RecentSession[] {
     } catch {}
   }
 
-  // Sort by most recent first
   sessionAges.sort((a, b) => b.timestamp - a.timestamp);
 
   const now = Date.now();
@@ -109,7 +104,6 @@ function countSkills(): number {
     ".pi/skills",
   ];
 
-  // Add pi-me's skills directory if resolvable
   const piMeRoot = findPiMeRoot();
   if (piMeRoot) {
     const pkgSkills = path.join(piMeRoot, "skills");
@@ -120,7 +114,6 @@ function countSkills(): number {
 
   const seen = new Set<string>();
   for (const sp of searchPaths) {
-    // Resolve relative paths against homedir or cwd as needed
     const resolved = sp.startsWith(".") ? path.resolve(sp) : sp;
     if (!fs.existsSync(resolved)) continue;
     try {
@@ -138,46 +131,101 @@ function countSkills(): number {
   return seen.size;
 }
 
-// ── Pi ASCII Block Art ─────────────────────────────────────────────────
+// ── Text Helpers ───────────────────────────────────────────────────────
 
-function renderPiArt(theme: Theme): string[] {
-  const B = theme.fg("accent", "█");
-  return [
-    `      ${B}${B}${B}${B}${B}${B}${B}${B}${B}${B}`,
-    `      ${B}${B}${B}${B}  ${B}${B}${B}${B}`,
-    `      ${B}${B}${B}${B}  ${B}${B}${B}${B}`,
-    `      ${B}${B}${B}${B}${B}${B}${B}${B}  ${B}${B}${B}${B}`,
-    `      ${B}${B}${B}${B}      ${B}${B}${B}${B}`,
-    `      ${B}${B}${B}${B}      ${B}${B}${B}${B}`,
-  ];
-}
-
-// ── Border Characters ──────────────────────────────────────────────────
-
-const TL = "╭";
-const TR = "╮";
-const BL = "╰";
-const BR = "╯";
-const H = "─";
-const V = "│";
-const B_SPLIT = "┴";
-
-// ── ANSI-aware string padding ────────────────────────────────────────────
-
-/**
- * Strip ANSI escape sequences to get the visible width of a string.
- */
+/** Strip ANSI escape sequences to get visible width of a string. */
 function visibleWidth(s: string): number {
   return s.replace(/\x1b\[[0-9;]*m/g, "").length;
 }
 
-/**
- * Pad a string (possibly containing ANSI codes) to a given visible width.
- */
-function ansiPadEnd(s: string, width: number): string {
-  const padLen = Math.max(0, width - visibleWidth(s));
-  return s + " ".repeat(padLen);
+/** Center text within a given width (ANSI-aware). */
+function centerText(text: string, width: number): string {
+  const visLen = visibleWidth(text);
+  if (visLen >= width) return text;
+  const leftPad = Math.floor((width - visLen) / 2);
+  const rightPad = width - visLen - leftPad;
+  return " ".repeat(leftPad) + text + " ".repeat(rightPad);
 }
+
+/** Pad a string to a given visible width. */
+function padEnd(text: string, width: number): string {
+  const padLen = Math.max(0, width - visibleWidth(text));
+  return text + " ".repeat(padLen);
+}
+
+/** ANSI-aware truncation with ellipsis. */
+function truncate(text: string, maxWidth: number): string {
+  const visLen = visibleWidth(text);
+  if (visLen <= maxWidth) return text;
+
+  const ellipsis = "\u2026";
+  const targetWidth = Math.max(0, maxWidth - 1);
+  let result = "";
+  let currentWidth = 0;
+  let inEscape = false;
+
+  for (const char of text) {
+    if (char === "\x1b") inEscape = true;
+    if (inEscape) {
+      result += char;
+      if (char === "m") inEscape = false;
+    } else if (currentWidth < targetWidth) {
+      result += char;
+      currentWidth++;
+    }
+  }
+  return result + ellipsis;
+}
+
+/** Apply magenta→cyan gradient to a string. */
+function gradientLine(line: string): string {
+  const colors = [
+    "\x1b[38;5;199m", // bright magenta
+    "\x1b[38;5;171m", // magenta-purple
+    "\x1b[38;5;135m", // purple
+    "\x1b[38;5;99m",  // purple-blue
+    "\x1b[38;5;75m",  // cyan-blue
+    "\x1b[38;5;51m",  // bright cyan
+  ];
+  const reset = "\x1b[0m";
+
+  let result = "";
+  let colorIdx = 0;
+  const step = Math.max(1, Math.floor(line.length / colors.length));
+
+  for (let i = 0; i < line.length; i++) {
+    if (i > 0 && i % step === 0 && colorIdx < colors.length - 1) {
+      colorIdx++;
+    }
+    const char = line[i];
+    if (char !== " ") {
+      result += colors[colorIdx] + char + reset;
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
+// ── Pi Logo (block-based) ─────────────────────────────────────────────
+
+const PI_LOGO_RAW = [
+  "\u2580\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2580",
+  " \u2558\u2588\u2588\u2588    \u2588\u2588\u2588  ",
+  "  \u2588\u2588\u2588    \u2588\u2588\u2588  ",
+  "  \u2588\u2588\u2588    \u2588\u2588\u2588  ",
+  " \u2584\u2588\u2588\u2588\u2584  \u2584\u2588\u2588\u2588\u2584 ",
+];
+
+// ── Border Characters ──────────────────────────────────────────────────
+
+const TL = "\u256D";
+const TR = "\u256E";
+const BL = "\u2570";
+const BR = "\u256F";
+const TEE_UP = "\u2534"; // ┴
+const H = "\u2500";
+const V = "\u2502";
 
 // ── Extension ──────────────────────────────────────────────────────────
 
@@ -192,100 +240,130 @@ export default function (pi: ExtensionAPI) {
     const skillsCount = countSkills();
     const recentSessions = getRecentSessions(ctx.cwd);
     const cwdBase = path.basename(ctx.cwd);
+    const version = ctx.appVersion ?? "0.0.0";
 
     ctx.ui.setHeader((_tui, theme) => {
       return {
         render(width: number): string[] {
-          const maxWidth = Math.min(width, 120);
+          // ── Responsive box dimensions ──
+          const maxWidth = 100;
+          const boxWidth = Math.min(maxWidth, Math.max(0, width - 2));
+          if (boxWidth < 4) return [];
 
-          // ── Build left column ──
-          const piArt = renderPiArt(theme);
-          const welcome = theme.bold(theme.fg("accent", "Welcome back!"));
-          const modelLine = theme.fg("accent", `     ${modelName}`);
-          const providerLine = theme.fg("dim", `         ${providerName}`);
-
-          const leftContent = [
-            `                          `,
-            `      ${welcome}`,
-            `                          `,
-            ...piArt,
-            `                          `,
-            modelLine,
-            providerLine,
-            `                          `,
-          ];
-
-          // ── Build right column ──
-          const tipsTitle = theme.bold("Tips");
-          const tipLines = [
-            `${theme.fg("muted", "/")} for commands`,
-            `${theme.fg("muted", "!")} to run bash`,
-            `${theme.fg("muted", "Shift+Tab")} cycle thinking`,
-          ];
-
-          const loadedTitle = theme.bold("Loaded");
-          const cwdLine = theme.fg("dim", `  ${cwdBase}`);
-          const skillsLine = theme.fg("dim", `  ${skillsCount} skills`);
-
-          const recentTitle = theme.bold("Recent sessions");
-          const recentLines = recentSessions.length > 0
-            ? recentSessions.slice(0, 3).map(s =>
-                theme.fg("dim", `  • ${s.name} (${s.age})`)
-              )
-            : [theme.fg("dim", "  • (none)")];
-
-          // ── Dimensions ──
-          const leftWidth = 28;
-          const rightPad = 2;
-          const dividerWidth = 1;
-          const borderWidth = 2; // left and right border chars
-          const usableRightWidth = Math.max(
-            20,
-            maxWidth - leftWidth - dividerWidth - borderWidth - rightPad
+          const dualContentWidth = boxWidth - 3; // │ + │ + │
+          const preferredLeftCol = 26;
+          const minLeftCol = 14;
+          const minRightCol = 20;
+          const leftMinContentWidth = Math.max(
+            minLeftCol,
+            visibleWidth("Welcome back!"),
+            visibleWidth(modelName),
+            visibleWidth(providerName),
           );
+          const desiredLeftCol = Math.min(
+            preferredLeftCol,
+            Math.max(minLeftCol, Math.floor(dualContentWidth * 0.35)),
+          );
+          const dualLeftCol =
+            dualContentWidth >= minRightCol + 1
+              ? Math.min(desiredLeftCol, dualContentWidth - minRightCol)
+              : Math.max(1, dualContentWidth - 1);
+          const dualRightCol = Math.max(1, dualContentWidth - dualLeftCol);
+          const showRightColumn =
+            dualLeftCol >= leftMinContentWidth && dualRightCol >= minRightCol;
+          const leftCol = showRightColumn ? dualLeftCol : boxWidth - 2;
+          const rightCol = showRightColumn ? dualRightCol : 0;
 
-          // ── Build right content ──
-          const rightLines: string[] = [];
-          rightLines.push(` `);
-          rightLines.push(` ${tipsTitle}`);
-          for (const t of tipLines) {
-            rightLines.push(` ${t}`);
-          }
-          rightLines.push(` ${H.repeat(Math.max(18, usableRightWidth - 2))}`);
-          rightLines.push(` ${loadedTitle}`);
-          rightLines.push(cwdLine);
-          rightLines.push(skillsLine);
-          rightLines.push(` ${H.repeat(Math.max(18, usableRightWidth - 2))}`);
-          rightLines.push(` ${recentTitle}`);
-          for (const r of recentLines) {
-            rightLines.push(r);
-          }
-          // Trailing empty row
-          rightLines.push(` `);
+          // ── Left column: logo + welcome ──
+          const logoColored = PI_LOGO_RAW.map(gradientLine);
 
-          // Pad right lines to match left content height
-          while (rightLines.length < leftContent.length) {
-            rightLines.push(` `);
+          const leftLines = [
+            "",
+            centerText(theme.bold("Welcome back!"), leftCol),
+            "",
+            ...logoColored.map(l => centerText(l, leftCol)),
+            "",
+            centerText(theme.fg("muted", modelName), leftCol),
+            centerText(theme.fg("dim", providerName), leftCol),
+          ];
+
+          // ── Right column: tips + loaded info + recent sessions ──
+          const separatorWidth = Math.max(0, rightCol - 3);
+          const separator = ` ${theme.fg("dim", H.repeat(separatorWidth))}`;
+
+          // Recent sessions
+          const sessionLines: string[] = [];
+          if (recentSessions.length === 0) {
+            sessionLines.push(` ${theme.fg("dim", "No recent sessions")}`);
+          } else {
+            for (const session of recentSessions.slice(0, 3)) {
+              sessionLines.push(
+                ` ${theme.fg("dim", "\u2022 ")}${theme.fg("muted", session.name)}${theme.fg("dim", ` (${session.age})`)}`,
+              );
+            }
           }
-          // Also pad left content if right is taller
-          while (leftContent.length < rightLines.length) {
-            leftContent.push(`                          `);
-          }
+
+          const rightLines = [
+            ` ${theme.bold("Tips")}`,
+            ` ${theme.fg("dim", "?")}${theme.fg("muted", " for keyboard shortcuts")}`,
+            ` ${theme.fg("dim", "#")}${theme.fg("muted", " for prompt actions")}`,
+            ` ${theme.fg("dim", "/")}${theme.fg("muted", " for commands")}`,
+            ` ${theme.fg("dim", "!")}${theme.fg("muted", " to run bash")}`,
+            ` ${theme.fg("dim", "$")}${theme.fg("muted", " to run python")}`,
+            separator,
+            ` ${theme.bold("Loaded")}`,
+            `  ${theme.fg("dim", cwdBase)}`,
+            `  ${theme.fg("dim", `${skillsCount} skills`)}`,
+            separator,
+            ` ${theme.bold("Recent sessions")}`,
+            ...sessionLines,
+            "",
+          ];
 
           // ── Assemble ──
           const lines: string[] = [];
-          const titleLen = Math.max(10, maxWidth - 15);
-          lines.push(`${TL}${H}${H}${H} pi agent ${H.repeat(titleLen)}${TR}`);
 
-          for (let i = 0; i < leftContent.length; i++) {
-            const left = leftContent[i] ?? `                          `;
-            const right = rightLines[i] ?? ` `;
-            const leftPadded = ansiPadEnd(left, leftWidth);
-            const rightPadded = ansiPadEnd(right, usableRightWidth);
-            lines.push(`${V}${leftPadded}${V}${rightPadded}${V}`);
+          // Top border with embedded title
+          const title = ` pi v${version} `;
+          const titlePrefix = H.repeat(3);
+          const titleVisLen = 3 + visibleWidth(title);
+          const titleSpace = boxWidth - 2;
+          if (titleVisLen >= titleSpace) {
+            lines.push(TL + theme.fg("dim", titlePrefix + title) + TR);
+          } else {
+            const afterTitle = titleSpace - titleVisLen;
+            lines.push(
+              TL +
+                theme.fg("dim", titlePrefix) +
+                theme.fg("muted", title) +
+                theme.fg("dim", H.repeat(afterTitle)) +
+                TR,
+            );
           }
 
-          lines.push(`${BL}${H.repeat(leftWidth + 1)}${B_SPLIT}${H.repeat(usableRightWidth)}${BR}`);
+          // Body rows
+          const maxRows = Math.max(leftLines.length, rightLines.length);
+          for (let i = 0; i < maxRows; i++) {
+            const l = truncate(leftLines[i] ?? "", leftCol);
+            if (showRightColumn) {
+              const r = truncate(rightLines[i] ?? "", rightCol);
+              lines.push(V + padEnd(l, leftCol) + V + padEnd(r, rightCol) + V);
+            } else {
+              lines.push(V + padEnd(l, leftCol) + V);
+            }
+          }
+
+          // Bottom border
+          if (showRightColumn) {
+            lines.push(
+              BL + theme.fg("dim", H.repeat(leftCol)) +
+              theme.fg("dim", TEE_UP) +
+              theme.fg("dim", H.repeat(rightCol)) +
+              BR,
+            );
+          } else {
+            lines.push(BL + theme.fg("dim", H.repeat(leftCol)) + BR);
+          }
 
           return lines;
         },
