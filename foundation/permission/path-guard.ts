@@ -34,12 +34,17 @@ export const DEFAULT_PROTECTED_PATHS: ProtectedGlob[] = [
 	{ glob: "**/.github/workflows/*.yaml", reason: "CI workflow — should not be modified by agent" },
 ];
 
+const _globCache = new Map<string, RegExp>();
+
 export function matchesGlob(relativePath: string, glob: string): boolean {
 	const normalized = relativePath.replace(/\\/g, "/");
 	const globNormalized = glob.replace(/\\/g, "/");
 
-	const regexStr = globToRegex(globNormalized);
-	const regex = new RegExp(`^${regexStr}$`);
+	let regex = _globCache.get(globNormalized);
+	if (!regex) {
+		regex = new RegExp(`^${globToRegex(globNormalized)}$`);
+		_globCache.set(globNormalized, regex);
+	}
 	return regex.test(normalized);
 }
 
