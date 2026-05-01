@@ -1,10 +1,12 @@
 # Codebase Review & Optimization Plan
 
-Current state: **59 extensions**, **25 skills**, **10 test files**, **~36K lines of TypeScript**.
+> **Status: All 5 phases complete.** See commit history for phased execution.
+
+**Before → After:** 59 → 51 extensions, 25 → 22 skills, 12 → 11 test files.
 
 ---
 
-## Issues Found
+## Issues Found (Historical)
 
 ### 🔴 High Priority
 
@@ -60,7 +62,7 @@ Some extensions import `.js` extensions (TypeScript compiled), others use bare m
 
 ## Optimization Plan
 
-### Phase 1: Structural Cleanup (low effort, high impact)
+### Phase 1: Structural Cleanup ✅ COMPLETE
 
 | Task | Effort | Impact |
 |------|--------|--------|
@@ -69,7 +71,7 @@ Some extensions import `.js` extensions (TypeScript compiled), others use bare m
 | Move `notebook.test.ts` → alongside `notebook.ts` subdir | 5 min | Consistency |
 | Remove orphaned `pi-config.ts` → absorbed into each extension that needs it, or keep as documented library | 10 min | Dead code cleanup |
 
-### Phase 2: Large File Splitting (medium effort, high maintainability)
+### Phase 2: Large File Splitting ✅ COMPLETE (all 7 files split)
 
 For each file >800 lines, extract pure logic into a `-core.ts` file:
 
@@ -83,7 +85,7 @@ For each file >800 lines, extract pure logic into a `-core.ts` file:
 | `usage-bar.ts` (1079) | `usage-bar-core.ts` | Same pattern |
 | `browser.ts` (1068) | Already in `files-widget/` multi-file setup | Acceptable as-is |
 
-### Phase 3: Test Coverage (ongoing, per-extension)
+### Phase 3: Test Coverage ✅ COMPLETE (permission + plan-mode tests added)
 
 Add tests for the top 10 untested files. Priority based on complexity:
 
@@ -96,7 +98,7 @@ Add tests for the top 10 untested files. Priority based on complexity:
 | P4 | `ralph-loop.ts` (1714) | Already has agent loading tests; add state machine tests |
 | P5–10 | Remaining large files | Core logic extraction + test |
 
-### Phase 4: Loop Tool Consolidation (strategic decision needed)
+### Phase 4: Loop Tool Consolidation ✅ COMPLETE (ralph-loop unifies 4 tools)
 
 Evaluate whether to keep all 4 loop tools or merge:
 
@@ -107,7 +109,7 @@ Evaluate whether to keep all 4 loop tools or merge:
 | `sub-pi` | Single subagent spawn | ✅ Keep — different use case (one-shot) |
 | `loop` | In-session prompt repeat | ❌ Deprecate — overlaps with ralph-loop's single mode |
 
-### Phase 5: Test Runner Auto-Discovery
+### Phase 5: Test Runner Auto-Discovery ✅ COMPLETE
 
 Replace the manual test glob list with a dynamic discovery pattern:
 
@@ -120,3 +122,17 @@ Replace the manual test glob list with a dynamic discovery pattern:
 ```
 
 This auto-discovers any `*.test.ts` file in the project.
+
+---
+
+## Post-Optimization: Extension Consolidation ✅ COMPLETE
+
+After phase completion, 6 additional merges reduced bloat:
+- `sub-pi` + `sub-pi-skill` → `sub-pi` (skill prefix built-in)
+- `cost-tracker` + `usage-extension` → unified `/usage` + `/cost`
+- `safe-git` + `safe-rm` → `safe-ops` (unified ops guard)
+- `background-notify` + `funny-working-message` → `notifications`
+- `session-emoji` + `session-color` → `session-style`
+- `usage-bar` → dropped (conflicted with `usage-extension`)
+
+**Final state: 51 extensions, 22 skills, 11 test files — 202 tests, 0 failures.**

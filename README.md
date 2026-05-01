@@ -11,7 +11,7 @@ Essential extension suite for the [pi coding agent](https://github.com/mariozech
 pi install https://github.com/dmoreq/pi-me
 
 # 2. Restart pi
-#    All 59 extensions and 25 skills load automatically.
+#    All 51 extensions and 22 skills load automatically.
 #    No further setup needed — everything just works.
 ```
 
@@ -51,7 +51,7 @@ Or add the source to `~/.pi/agent/settings.json`:
 }
 ```
 
-Restart pi — all 59 extensions and 25 skills load automatically.
+Restart pi — all 51 extensions and 22 skills load automatically.
 
 ---
 

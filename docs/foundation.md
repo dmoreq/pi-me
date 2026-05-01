@@ -40,20 +40,15 @@ Opens a text input where you type an instruction. The AI integrates it into your
 
 Fetches live status from Anthropic, OpenAI, and GitHub status pages. Shows ✅ / ⚠️ / ❌ in the footer. Refreshes every 5 minutes.
 
-### `safe-git` — Git Safety Guard
-**Trigger:** 🔄 Hook (`tool_call`, `session_start`) + ⌨️ `/safegit`, `/safegit-level`, `/safegit-status`
+### `safe-ops` — Git Safety + Safe Deletion
+**Trigger:** 🔄 Hook (`tool_call`, `session_start`) + ⌨️ `/safegit*`, `/saferm*`
 
-Intercepts dangerous git/gh commands (force push, hard reset, rebase, merge). Requires explicit user approval. In non-interactive mode, blocks entirely. Categorizes commands by risk level.
-
-### `safe-rm` — Safe Deletion
-**Trigger:** 🔄 Hook (`tool_call`) + ⌨️ `/saferm`, `/saferm-toggle`, `/saferm-on`, `/saferm-off`, `/saferm-log`
-
-Intercepts `rm` commands and replaces them with macOS `trash` command. Logs original and replacement commands to a debug log.
+Intercepts dangerous git/gh commands (force push, hard reset, rebase) requiring approval. Replaces `rm` with macOS `trash`. Configurable risk levels.
 
 ### `pi-config` — JSONC Config Utility
 **Trigger:** — (library)
 
-Shared configuration loader used by `extra-context-files`, `file-collector`, `files`, `preset`, `sub-pi`, and `sub-pi-skill`. Reads `.jsonc` config files from the pi agent directory. Not directly active — imported by other extensions.
+Shared configuration loader used by `extra-context-files`, `file-collector`, `files`, `preset`, and `sub-pi`. Reads `.jsonc` config files from the pi agent directory.
 
 ### `extra-context-files` — Auto-Load Context Files
 **Trigger:** 🔄 Hook (`session_start`, `before_agent_start`)

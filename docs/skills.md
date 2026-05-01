@@ -39,8 +39,7 @@ Skills are markdown files (`SKILL.md` with YAML frontmatter) that guide the agen
 | context-window | ✅ | — | — | — |
 | memory-mode | — | — | `/mem`, `/remember` | — |
 | status-widget | ✅ | — | `/status`, `/status-refresh` | — |
-| safe-git | ✅ | — | `/safegit`, `/safegit-level`, `/safegit-status` | — |
-| safe-rm | ✅ | — | `/saferm`, `/saferm-toggle`, `/saferm-on`, `/saferm-off`, `/saferm-log` | — |
+| safe-ops | ✅ | — | `/safegit*`, `/saferm*` | — |
 | extra-context-files | ✅ | — | — | AGENTS.local.md files |
 | git-checkpoint | ✅ | — | — | — |
 | auto-compact | ✅ | — | — | — |
@@ -49,14 +48,10 @@ Skills are markdown files (`SKILL.md` with YAML frontmatter) that guide the agen
 | agent-guidance | ✅ | — | — | CLAUDE.md / CODEX.md / GEMINI.md files |
 | session-recap | ✅ | — | `/recap` | — |
 | tab-status | ✅ | — | — | — |
-| usage-extension | — | — | `/usage` | — |
-| cost-tracker | — | — | `/cost` | — |
-| funny-working-message | ✅ | — | `/fun-working` | — |
+| usage-extension | — | — | `/usage`, `/cost` | — |
+| notifications | ✅ | — | `/notify-*`, `/fun-working` | — |
 | handoff | — | — | `/handoff` | — |
-| usage-bar | — | — | `/usage` | — |
-| background-notify | ✅ | — | multiple `/notify-*` | — |
-| session-emoji | ✅ | — | `/emoji`, `/emoji-set`, etc. | — |
-| session-color | ✅ | — | `/color`, `/color-set`, etc. | — |
+| session-style | ✅ | — | `/emoji*`, `/color*` | — |
 | compact-config | ✅ | — | `/compact-config` | — |
 | preset | ✅ | — | `/preset` | — |
 | web-search | — | ✅ | — | `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY` |
@@ -78,7 +73,6 @@ Skills are markdown files (`SKILL.md` with YAML frontmatter) that guide the agen
 | arcade | — | ✅ | — | — |
 | file-collector | ✅ | — | — | — |
 | sub-pi | ✅ | ✅ | — | — |
-| sub-pi-skill | ✅ | — | — | — |
 | notebook | — | ✅ | — | — |
 | mermaid | — | ✅ | — | `mmdc` CLI (`npm i -g @mermaid-js/mermaid-cli`) |
 | github | — | ✅ | — | `GITHUB_TOKEN` or `GH_TOKEN` |

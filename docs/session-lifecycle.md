@@ -42,45 +42,25 @@ Shows a one-line summary above the editor when you refocus the terminal (or afte
 
 Sets the terminal tab title with status icons: ✅ done, 🚧 stuck, 🛑 timed out. Helps distinguish parallel sessions at a glance.
 
-### `usage-extension` — Usage Cost Dashboard
-**Trigger:** ⌨️ `/usage`
+### `usage-extension` — Usage Dashboard + Cost Tracker
+**Trigger:** ⌨️ `/usage`, `/cost`
 
-Displays a detailed cost/token/message dashboard grouped by provider and model. Shows Today, This Week, Last Week, and All Time views. Includes insights for high-cost sessions and uncached prompts.
+Detailed cost/token/message dashboard grouped by provider and model (Today/Week/AllTime). `/cost` scans session logs for spending breakdown.
 
-### `cost-tracker` — Per-Provider Spending
-**Trigger:** ⌨️ `/cost`
+### `notifications` — Background Alerts + Funny Messages
+**Trigger:** 🔄 Hooks + ⌨️ `/notify-*`, `/fun-working`
 
-Scans session logs from the last 30 days and shows spending broken down by provider. Simpler than usage-extension — focused purely on cost.
-
-### `funny-working-message` — Culinary Working Messages
-**Trigger:** 🔄 Hook (`agent_start`, `agent_end`) + ⌨️ `/fun-working`
-
-Replaces the standard "Working..." spinner message with culinary verbs: "Simmering...", "Julienning...", "Caramelizing...", "Braising..." etc. Rotates randomly.
+Plays beep/brings terminal to front when long tasks complete in background. Rotates humorous spinner messages ("Simmering...", "Reticulating splines...").
 
 ### `handoff` — Context Handoff to New Session
 **Trigger:** ⌨️ `/handoff <prompt>`
 
-Instead of compacting (lossy), generates a focused prompt summarizing what matters for the next task and creates a new session draft. Great for switching context cleanly.
+Instead of compacting (lossy), generates a focused prompt summarizing what matters for the next task and creates a new session draft.
 
-### `usage-bar` — Usage Progress Bars
-**Trigger:** ⌨️ `/usage`
+### `session-style` — Emoji + Color Branding
+**Trigger:** 🔄 Hooks + ⌨️ `/emoji*`, `/color*`
 
-Shows AI provider usage with progress bars, provider status indicators, and reset countdowns. Shows Claude, Copilot, Gemini, and Codex rate limits.
-
-### `background-notify` — Task Completion Notification
-**Trigger:** 🔄 Hook (`session_start`, `agent_start`, `tool_result`, `agent_end`) + ⌨️ `/notify-beep`, `/notify-focus`, `/notify-say`, `/notify-threshold`, `/notify-status`
-
-Plays a beep and optionally brings the terminal to front (macOS) when a long-running task completes while the terminal is backgrounded. Configurable threshold (default: 2s).
-
-### `session-emoji` — AI-Powered Session Emoji
-**Trigger:** 🔄 Hook (`session_start`, `session_switch`, `agent_start`) + ⌨️ `/emoji`, `/emoji-set`, `/emoji-config`, `/emoji-history`
-
-Displays an emoji in the footer that represents the conversation. Three modes: `ai` (analyzes context to pick an emoji), `random`, or `manual`. Enforces 24-hour uniqueness.
-
-### `session-color` — Session Color Band
-**Trigger:** 🔄 Hook (`session_start`, `session_switch`) + ⌨️ `/color`, `/color-set`, `/color-next`, `/color-char`, `/color-config`
-
-Displays a colored band (▁▁▁) in the footer to visually distinguish sessions. Picks from a 40-color palette designed for maximum visual distinction between consecutive sessions.
+Displays an AI-picked emoji in the footer representing the conversation. Adds a colored band from a 40-color palette to visually distinguish sessions.
 
 ### `compact-config` — Per-Model Compaction Thresholds
 **Trigger:** 🔄 Hook (`turn_end`, `agent_end`) + ⌨️ `/compact-config`
