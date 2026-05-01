@@ -17,6 +17,8 @@
       "./foundation/status-widget.ts",
       "./foundation/safe-git.ts",
       "./foundation/safe-rm.ts",
+      "./foundation/pi-config.ts",
+      "./foundation/extra-context-files.ts",
       "./session-lifecycle/git-checkpoint-new/checkpoint.ts",
       "./session-lifecycle/auto-compact/auto-compact.ts",
       "./session-lifecycle/session-name/session-name.ts",
@@ -33,6 +35,7 @@
       "./session-lifecycle/session-emoji.ts",
       "./session-lifecycle/session-color.ts",
       "./session-lifecycle/compact-config.ts",
+      "./session-lifecycle/preset/index.ts",
       "./core-tools/web-search.ts",
       "./core-tools/todo.ts",
       "./core-tools/calc.ts",
@@ -54,12 +57,16 @@
       "./core-tools/resistance.ts",
       "./core-tools/speedreading.ts",
       "./core-tools/ultrathink.ts",
+      "./core-tools/file-collector/index.ts",
+      "./core-tools/sub-pi/index.ts",
+      "./core-tools/sub-pi-skill/index.ts",
       "./content-tools/notebook.ts",
       "./content-tools/mermaid.ts",
       "./content-tools/github.ts",
       "./content-tools/repeat/repeat.ts",
       "./content-tools/files-widget/index.ts",
       "./content-tools/raw-paste/index.ts",
+      "./content-tools/richard-files/index.ts",
       "./authoring/output-artifacts/output-artifacts.ts",
       "./authoring/commit-helper/commit-helper.ts",
       "./authoring/skill-bootstrap/skill-bootstrap.ts"
@@ -69,7 +76,9 @@
     ]
   },
   "dependencies": {
-    "shell-quote": "^1.8.3"
+    "jsonc-parser": "^3.3.1",
+    "shell-quote": "^1.8.3",
+    "zod": "^4.4.1"
   },
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",
