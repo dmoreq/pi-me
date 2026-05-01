@@ -1,138 +1,196 @@
-## Core Tools Layer
+# Core Tools Layer
 
-General-purpose tools the agent can invoke directly.
-
-### `web-search` — Web Search
-**Trigger:** 🤖 Tool (`web_search`)
-
-Searches the web via Brave, SerpAPI, or Kagi backends. Auto-detects which API key is set. Returns formatted results with titles, URLs, and snippets.
-
-**Config:** Set `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY`.
-
-### `todo` — Session Todo List
-**Trigger:** 🤖 Tool (`todo`) + 🔄 Hook (`session_start`, `session_tree`) + ⌨️ `/todos`
-
-Stateful todo list for the current session. Persists across session tree operations. Actions: `list`, `add`, `toggle`, `clear`.
-
-### `calc` — Safe Math Evaluator
-**Trigger:** 🤖 Tool (`calc`)
-
-Evaluates mathematical expressions. Whitelists `Math.*` functions. Blocks `eval`, `require`, and other dangerous patterns. Supports +, -, *, /, %, **, and all Math functions.
-
-### `ask` — Interactive User Prompting
-**Trigger:** 🤖 Tool (`ask`)
-
-Prompts the user with text, confirm, or choice modes. Falls back gracefully in non-interactive mode. Used by the agent when it needs clarification.
-
-### `ralph-loop` — Subagent Loop Executor
-**Trigger:** 🤖 Tool (`ralph_loop`) + ⌨️ `/ralph-steer`, `/ralph-follow`, `/ralph-clear`, `/ralph-pause`, `/ralph-resume`
-
-Runs subagents in a loop with condition polling. Supports single (one agent per iteration) and chain (sequential agents) modes. Features: pause/resume, steering messages, usage tracking per iteration.
-
-**Related skill:** `skills/ralph-loop/`
-
-### `plan-tracker` — Plan Progress Tracking
-**Trigger:** 🤖 Tool (`plan_tracker`)
-
-Tracks implementation plan progress inline. Actions: `init` (set task list), `update` (change task status), `status` (show current state), `clear` (remove plan). Shows a TUI widget: `Tasks: ✓✓→○○ (2/5)`.
-
-**Origin:** [superpowers](https://github.com/obra/superpowers)
-
-### `pi-ralph-wiggum` — File-Based Task Loops
-**Trigger:** 🤖 Tool (`ralph_start`) + ⌨️ commands
-
-Long-running iterative development loops using a markdown task file (`.ralph/`). Features: iteration count, reflection checkpoints, pause/resume. Different from `ralph-loop` — this works with a flat task file instead of dispatching subagents.
-
-**Origin:** [pi-extensions](https://github.com/tmustier/pi-extensions)
-
-### `code-actions` — Code Snippet Picker
-**Trigger:** ⌨️ `/code`
-
-Picks code blocks or inline snippets from assistant messages. Offers actions: copy to clipboard, insert into editor, or run the snippet. Filters by language.
-
-**Origin:** [pi-extensions](https://github.com/tmustier/pi-extensions)
-
-### `clipboard` — OSC52 Clipboard Copy
-**Trigger:** 🤖 Tool (clipboard tool)
-
-Copies text to the user's clipboard using OSC52 escape sequences. Works across SSH sessions and most modern terminal emulators (iTerm2, Kitty, Alacritty, WezTerm, Windows Terminal, tmux).
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `flicker-corp` — Terminal Display Animation
-**Trigger:** 🔄 Hook (session lifecycle, TUI rendering)
-
-An animated terminal effect. High-speed scrolling display with occasional "glitch" artifacts. Pure entertainment.
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `loop` — In-Session Loop with Breakout
-**Trigger:** 🤖 Tool (signal_loop_success) + ⌨️ `/loop`
-
-Repeats a prompt on turn end until the agent signals success via `signal_loop_success` tool. Three modes: `tests` (until tests pass), `custom` (until custom condition), `self` (agent decides). Shows a loop status widget.
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `oracle` — Second Opinion from Other Models
-**Trigger:** ⌨️ `/oracle <prompt>` or `/oracle -m <model> <prompt>`
-
-Sends your conversation to another AI model (GPT-4o, Gemini, Claude Sonnet, etc.) for a second opinion. Picks from a curated model list. Includes file context optionally.
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `plan-mode` — File-Based Plan Manager
-**Trigger:** 🤖 Tool (`plan`) + 🔄 Hook (`tool_call`, `before_agent_start`, `session_start`, `session_switch`) + ⌨️ `/plan`
-
-Full-featured plan management: file-based plans stored as markdown with JSON frontmatter in `.pi/plans/`. Features: plan locking per session, read-only planning mode (`/plan on`/`/plan off`), interactive TUI, task creation and status tracking.
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `resistance` — Battlestar Galactica Footer Quote
-**Trigger:** 🔄 Hook (`session_start`, `session_shutdown`) + ⌨️ `/resistance`
-
-Displays "If you're listening to this, you are the resistance." with a typewriter reveal effect and periodic glitch animations. Resets on session end.
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `speedreading` — RSVP Speed Reader
-**Trigger:** ⌨️ `/speedread <text>` or `/speedread @file` or `/speedread -c`
-
-RSVP (Rapid Serial Visual Presentation) reader using the Spritz technique: displays words one at a time with the optimal recognition point highlighted. Adjustable WPM (default: 400). Reads from text, files, clipboard, or last assistant message.
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `ultrathink` — Rainbow Ultrathink Animation
-**Trigger:** 🔄 Hook (`session_start`, `before_agent_start`, `agent_start`, `session_shutdown`, `session_switch`) + ⌨️ `/ultrathink`
-
-Detects "ultrathink" as you type and shows a rainbow shimmer animation. Like Claude Code's ultrathink — type u-l-t-r-a-t-h-i-n-k and watch the magic.
-
-**Origin:** [shitty-extensions](https://github.com/hjanuschka/shitty-extensions)
-
-### `arcade` — Minigames
-**Trigger:** 🤖 Tool (per-game tools)
-
-Five arcade games playable inside the terminal while tests run:
-- **spice-invaders** — Space Invaders clone
-- **picman** — Pac-Man clone
-- **ping** — Pong clone
-- **tetris** — Tetris clone
-- **mario-not** — Platformer (not Mario)
-
-**Origin:** [pi-extensions](https://github.com/tmustier/pi-extensions)
-
-### `file-collector` — Collect Files from Tool Results
-**Trigger:** 🔄 Hook (`before_agent_start`, `tool_call`, `tool_result`, `message_end`)
-
-Collects file paths and content from tool results based on regex patterns. Captures files matching configured rules and stores them for reuse. Configurable via JSONC config.
-
-### `sub-pi` — Subagent Tool + Skill Dispatch
-**Trigger:** 🤖 Tool (subagent dispatch) + 🔄 Hook (`before_agent_start`)
-
-Launches subprocesses running `pi` as a subagent. Supports single, chain, and parallel modes. Automatically detects `/skill:name` references and dispatches skills as subagent tasks.
+General-purpose tools the agent invokes directly. Includes task management, computation, user interaction,
+external access, and utility operations.
 
 ---
 
+## Extensions
+
+### Web Search
+
+**Source:** `core-tools/web-search.ts`
+**Trigger:** Tool (`web_search`)
+
+Searches the web via Brave, SerpAPI, or Kagi. Auto-detects which API key is available. Returns formatted
+results with titles, URLs, and text snippets.
+
+**Configuration:** `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY`
+
+### Todo
+
+**Source:** `core-tools/todo/index.ts`
+**Trigger:** Hook (`session_start`, `session_compact`, `session_tree`, `tool_execution_end`) · Tool (`todo`) · Command (`/todos`)
+
+Live overlay task list with a 4-state machine:
+
+- **`pending`:** Not yet started
+- **`in_progress`:** Currently active (exactly one at a time)
+- **`completed`:** Finished successfully
+- **`deleted`:** Soft-deleted tombstone
+
+Features dependency tracking (`blockedBy`) with cycle detection, branch replay for survival across
+`/reload` and compaction, and a persistent above-editor overlay widget with smart truncation.
+The agent receives detailed `promptGuidelines` instructing it when and how to manage tasks.
+
+### Calc
+
+**Source:** `core-tools/calc.ts`
+**Trigger:** Tool (`calc`)
+
+Safe arithmetic expression evaluator. Whitelists `Math.*` functions and standard operators.
+Blocks `eval`, `require`, `import`, and other dangerous patterns.
+
+### Ask User Question
+
+**Source:** `core-tools/ask-user-question/index.ts`
+**Trigger:** Tool (`ask_user_question`)
+
+Structured multi-question UI for gathering user input during agent execution. Supports:
+
+- **Multi-question tabs:** Up to 5 questions per invocation
+- **Multi-select:** Checkbox-style multiple answers per question
+- **Side-by-side previews:** Markdown-rendered previews for code snippets, diagrams, and mockups
+- **Free-text fallback:** "Type something" row on single-select questions
+- **Escape hatch:** "Chat about this" to abandon the questionnaire
+
+The agent receives `promptGuidelines` for when to use this tool versus proceeding autonomously.
+
+### Ralph Loop
+
+**Source:** `core-tools/ralph-loop/ralph-loop.ts`
+**Trigger:** Tool (`ralph_loop`) · Hook (`agent_end`) · Command (`/ralph-self`, `/ralph-self-stop`, `/ralph-steer`, `/ralph-follow`, `/ralph-clear`, `/ralph-pause`, `/ralph-resume`)
+
+Subagent loop executor supporting three modes:
+
+- **Single:** One agent per iteration with condition polling
+- **Chain:** Sequential agents passing output between iterations
+- **Parallel:** Concurrent subagent dispatch for independent tasks
+
+Pause/resume controls, steering messages to redirect agent behavior mid-loop, and usage tracking per iteration.
+
+### Plan Tracker
+
+**Source:** `core-tools/plan-tracker/plan-tracker.ts`
+**Trigger:** Tool (`plan_tracker`)
+
+Inline plan progress tracking with a footer widget. Actions: `init` (set task list), `update` (change status),
+`status` (display progress), `clear` (remove plan). Shows `Tasks: ✓✓→○○ (2/5)` style progress indicator.
+
+### Plan Mode
+
+**Source:** `core-tools/plan-mode.ts`
+**Trigger:** Tool (`plan`) · Hook (`tool_call`, `before_agent_start`, `session_start`, `session_switch`) · Command (`/plan`) · Shortcut (`ctrl+shift+x`)
+
+File-based plan manager with markdown files and JSON frontmatter stored in `.pi/plans/`.
+Features include session-level plan locking, read-only planning mode (`/plan on`/`/plan off`),
+interactive TUI for plan browsing, and task status management.
+
+### Sub-Pi
+
+**Source:** `core-tools/sub-pi/index.ts`
+**Trigger:** Tool (subagent dispatch) · Hook (`before_agent_start`)
+
+Launches `pi` subprocesses as subagents with three execution modes:
+- **Single:** One task, one subagent
+- **Chain:** Sequential tasks with context passing
+- **Parallel:** Concurrent tasks up to configured maximum
+
+Automatically detects `/skill:name` references in user input and dispatches matching skills as subagent tasks.
+Supports model and thinking level overrides per invocation.
+
+### BTW
+
+**Source:** `core-tools/btw/index.ts`
+**Trigger:** Command (`/btw`)
+
+Asks the primary model a one-off side question using cloned conversation context.
+The answer renders in an overlay and never enters the main agent's message history.
+History persists per session via in-process storage.
+
+### Oracle
+
+**Source:** `core-tools/oracle.ts`
+**Trigger:** Command (`/oracle`)
+
+Sends the current conversation to another AI model for a second opinion. Supports model selection
+via `/oracle -m <model> <prompt>`. Includes file context from the current session.
+
+### Code Actions
+
+**Source:** `core-tools/code-actions/index.ts`
+**Trigger:** Command (`/code`)
+
+Extracts code blocks from assistant messages with actions to copy to clipboard, insert into the editor,
+or execute the snippet. Filterable by programming language.
+
+### Speed Reading
+
+**Source:** `core-tools/speedreading.ts`
+**Trigger:** Command (`/speedread`) · Shortcut (`ctrl+shift+s`)
+
+RSVP (Rapid Serial Visual Presentation) reader using the Spritz technique. Displays words one at a time
+with the optimal recognition point highlighted. Adjustable WPM (default: 400). Reads from text input,
+files, clipboard, or the last assistant message.
+
+### Ultrathink
+
+**Source:** `core-tools/ultrathink.ts`
+**Trigger:** Hook (`session_start`, `before_agent_start`, `agent_start`, `session_switch`) · Command (`/ultrathink`) · Shortcut (`ctrl+shift+t`)
+
+Rainbow shimmer animation triggered by "ultrathink" keyword detection as the user types.
+The `/ultrathink` command toggles manual mode; the shortcut provides quick access.
+
+### Memory Mode
+
+**Source:** `core-tools/memory-mode.ts`
+**Trigger:** Command (`/mem`, `/remember`)
+
+Saves instructions to project `AGENTS.md` or `AGENTS.local.md` files. Supports global
+(`~/.pi/agent/AGENTS.md`) and project-local contexts. Automatically adds `.local.md` to `.gitignore`.
+
+### File Collector
+
+**Source:** `core-tools/file-collector/index.ts`
+**Trigger:** Hook (`before_agent_start`, `tool_call`, `tool_result`, `message_end`)
+
+Collects file paths and content from tool results based on configurable regex patterns.
+Captures matching files for reuse across the session.
+
+### Clipboard
+
+**Source:** `core-tools/clipboard.ts`
+**Trigger:** Tool (clipboard operations)
+
+Copies text to the system clipboard using OSC52 escape sequences. Compatible with SSH sessions
+and most modern terminal emulators (iTerm2, Kitty, Alacritty, WezTerm, Windows Terminal, tmux).
+
+### Arcade
+
+**Source:** `core-tools/arcade/`
+**Trigger:** Tools (per-game)
+
+Five terminal minigames:
+- **Spice Invaders:** Space Invaders clone
+- **Picman:** Pac-Man clone
+- **Ping:** Pong clone
+- **Tetris:** Tetris clone
+- **Mario-Not:** Platformer
+
+### Flicker Corp
+
+**Source:** `core-tools/flicker-corp.ts`
+**Trigger:** Hook (session lifecycle, TUI rendering) · Command (`/flicker-corp`, `/signature-flicker`)
+
+Animated terminal display effect with high-speed scrolling and "glitch" artifacts.
+
+### Resistance
+
+**Source:** `core-tools/resistance.ts`
+**Trigger:** Hook (`session_start`, `session_shutdown`) · Command (`/resistance`)
+
+Footer display with a typewriter reveal effect and periodic glitch animations.
 
 ---
 
-**See also:** [Intro](intro.md) · [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Core Tools](core-tools.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md) · [Skills](skills.md)
+**See also:** [Architecture Overview](intro.md) · [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md) · [Skills](skills.md)
