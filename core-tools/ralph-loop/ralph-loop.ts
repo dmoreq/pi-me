@@ -29,7 +29,11 @@ import type {
 	LoopPromptItem, LoopPromptInfo, LoopRunStatus, RalphLoopDetails,
 	LoopControlState, ActiveRun, ActiveRunRegistration,
 } from "./ralph-types.js";
-import { getFinalOutput, buildLoopEntries, renderLoopEntries, formatSteeringText, formatLoopPromptItem, extractTextFromContent, type LoopViewerEntry } from "./ralph-render.js";
+import {
+	getFinalOutput, buildLoopEntries, renderLoopEntries,
+	formatSteeringText, formatLoopPromptItem, extractTextFromContent,
+	type LoopViewerEntry,
+} from "./ralph-render.js";
 
 /**
  * Look up the provider for a model using `pi --list-models`.
