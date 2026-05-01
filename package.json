@@ -22,6 +22,7 @@
       "./core-tools/calc.ts",
       "./core-tools/ask.ts",
       "./core-tools/ralph-loop/ralph-loop.ts",
+      "./core-tools/plan-tracker/plan-tracker.ts",
       "./content-tools/notebook.ts",
       "./content-tools/mermaid.ts",
       "./content-tools/github.ts",
@@ -40,12 +41,13 @@
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",
     "@mariozechner/pi-coding-agent": "*",
-    "@mariozechner/pi-tui": "*"
+    "@mariozechner/pi-tui": "*",
+    "@sinclair/typebox": "*"
   },
   "devDependencies": {
     "tsx": "^4.21.0"
   },
   "scripts": {
-    "test": "tsx --test foundation/permission/tests/*.test.ts foundation/secrets/secrets.test.ts core-tools/calc.test.ts core-tools/ralph-loop/agents.test.ts content-tools/notebook.test.ts session-lifecycle/token-rate/token-rate.test.ts session-lifecycle/git-checkpoint-new/tests/checkpoint.test.ts"
+    "test": "tsx --test foundation/permission/tests/*.test.ts foundation/secrets/secrets.test.ts core-tools/calc.test.ts core-tools/ralph-loop/agents.test.ts core-tools/plan-tracker/tests/*.test.ts content-tools/notebook.test.ts session-lifecycle/token-rate/token-rate.test.ts session-lifecycle/git-checkpoint-new/tests/checkpoint.test.ts"
   }
 }
