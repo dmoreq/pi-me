@@ -1,18 +1,20 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { QuestionnaireSession } from "./state/questionnaire-session.js";
-import { ROW_INTENT_META, sentinelsToAppend } from "./state/row-intent.js";
-import { buildQuestionnaireResponse, buildToolResult } from "./tool/response-envelope.js";
 import {
-	MAX_OPTIONS,
-	MAX_QUESTIONS,
-	MIN_OPTIONS,
-	type QuestionData,
-	type QuestionnaireResult,
-	type QuestionParams,
-	QuestionParamsSchema,
-} from "./tool/types.js";
-import { validateQuestionnaire } from "./tool/validate-questionnaire.js";
-import type { WrappingSelectItem } from "./view/components/wrapping-select.js";
+  QuestionnaireSession,
+  ROW_INTENT_META,
+  sentinelsToAppend,
+  buildQuestionnaireResponse,
+  buildToolResult,
+  MAX_OPTIONS,
+  MAX_QUESTIONS,
+  MIN_OPTIONS,
+  validateQuestionnaire,
+  QuestionParamsSchema,
+  type QuestionData,
+  type QuestionnaireResult,
+  type QuestionParams,
+  type WrappingSelectItem,
+} from "../../foundation/dialog/index.js";
 
 const ERROR_NO_UI = "Error: UI not available (running in non-interactive mode)";
 

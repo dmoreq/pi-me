@@ -2,3 +2,4 @@ node_modules/
 .piper
 *.log
 .pi/artifacts/
+.worktrees/
