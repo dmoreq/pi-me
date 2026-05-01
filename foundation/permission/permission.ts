@@ -62,6 +62,7 @@ import {
 } from "./permission-core.js";
 import { DEFAULT_SAFETY_PATTERNS, type SafetyPattern } from "./safety-patterns.js";
 import { DEFAULT_PROTECTED_PATHS, matchesGlob, type ProtectedGlob } from "./path-guard.js";
+import { confirmDialog } from "../dialog/index.js";
 
 // Re-export types and constants needed by the hook
 export {
@@ -288,10 +289,10 @@ export async function handlePermissionCommand(
     const newLevel = arg as PermissionLevel;
 
     if (hasInteractiveUI(ctx)) {
-      const scope = await ctx.ui.select("Save permission level to:", [
-        "Session only",
-        "Global (persists)",
-      ]);
+      const scope = await confirmDialog(ctx, `Set permission to ${LEVEL_INFO[newLevel].label}`, [
+        { label: "Session only",     description: "Takes effect now, reverts when session ends" },
+        { label: "Global (persists)", description: "Saved to settings.json, applies to all sessions" },
+      ], "Scope");
       if (!scope) return;
 
       setLevel(state, newLevel, scope === "Global (persists)", ctx);
@@ -314,20 +315,25 @@ export async function handlePermissionCommand(
   }
 
   // Show selector
-  const options = LEVELS.map((level) => {
-    const info = LEVEL_INFO[level];
-    const marker = level === state.currentLevel ? " ← current" : "";
-    return `${info.label}: ${info.desc}${marker}`;
-  });
+  const levelChoice = await confirmDialog(
+    ctx,
+    "Select permission level",
+    LEVELS.map((level) => ({
+      label: LEVEL_INFO[level].label + (level === state.currentLevel ? " (current)" : ""),
+      description: LEVEL_INFO[level].desc,
+    })),
+    "Permission",
+  );
+  if (!levelChoice) return;
 
-  const choice = await ctx.ui.select("Select permission level", options);
-  if (!choice) return;
-
-  const selectedLabel = choice.split(":")[0].trim();
-  const newLevel = LEVELS.find((l) => LEVEL_INFO[l].label === selectedLabel);
+  const chosenLabel = levelChoice.replace(" (current)", "").trim();
+  const newLevel = LEVELS.find((l) => LEVEL_INFO[l].label === chosenLabel);
   if (!newLevel || newLevel === state.currentLevel) return;
 
-  const scope = await ctx.ui.select("Save to:", ["Session only", "Global (persists)"]);
+  const scope = await confirmDialog(ctx, `Set permission to ${LEVEL_INFO[newLevel].label}`, [
+    { label: "Session only",     description: "Takes effect now, reverts when session ends" },
+    { label: "Global (persists)", description: "Saved to settings.json, applies to all sessions" },
+  ], "Scope");
   if (!scope) return;
 
   setLevel(state, newLevel, scope === "Global (persists)", ctx);
@@ -347,10 +353,10 @@ export async function handlePermissionModeCommand(
     const newMode = arg as PermissionMode;
 
     if (hasInteractiveUI(ctx)) {
-      const scope = await ctx.ui.select("Save permission mode to:", [
-        "Session only",
-        "Global (persists)",
-      ]);
+      const scope = await confirmDialog(ctx, `Set permission mode to ${PERMISSION_MODE_INFO[newMode].label}`, [
+        { label: "Session only",     description: "Takes effect now, reverts when session ends" },
+        { label: "Global (persists)", description: "Saved to settings.json, applies to all sessions" },
+      ], "Scope");
       if (!scope) return;
 
       setMode(state, newMode, scope === "Global (persists)", ctx);
@@ -371,20 +377,25 @@ export async function handlePermissionModeCommand(
     return;
   }
 
-  const options = PERMISSION_MODES.map((mode) => {
-    const info = PERMISSION_MODE_INFO[mode];
-    const marker = mode === state.permissionMode ? " ← current" : "";
-    return `${info.label}: ${info.desc}${marker}`;
-  });
+  const modeChoice = await confirmDialog(
+    ctx,
+    "Select permission mode",
+    PERMISSION_MODES.map((mode) => ({
+      label: PERMISSION_MODE_INFO[mode].label + (mode === state.permissionMode ? " (current)" : ""),
+      description: PERMISSION_MODE_INFO[mode].desc,
+    })),
+    "Mode",
+  );
+  if (!modeChoice) return;
 
-  const choice = await ctx.ui.select("Select permission mode", options);
-  if (!choice) return;
-
-  const selectedLabel = choice.split(":")[0].trim();
-  const newMode = PERMISSION_MODES.find((m) => PERMISSION_MODE_INFO[m].label === selectedLabel);
+  const chosenLabel = modeChoice.replace(" (current)", "").trim();
+  const newMode = PERMISSION_MODES.find((m) => PERMISSION_MODE_INFO[m].label === chosenLabel);
   if (!newMode || newMode === state.permissionMode) return;
 
-  const scope = await ctx.ui.select("Save to:", ["Session only", "Global (persists)"]);
+  const scope = await confirmDialog(ctx, `Set permission mode to ${PERMISSION_MODE_INFO[newMode].label}`, [
+    { label: "Session only",     description: "Takes effect now, reverts when session ends" },
+    { label: "Global (persists)", description: "Saved to settings.json, applies to all sessions" },
+  ], "Scope");
   if (!scope) return;
 
   setMode(state, newMode, scope === "Global (persists)", ctx);
@@ -464,9 +475,14 @@ export async function handleBashToolCall(
     }
 
     playPermissionSound();
-    const choice = await ctx.ui.select(
-      `⚠️  Safety violation: ${categories}\n\n  ${command}\n\nReasons:\n${matchDetails}\n\nExecute anyway?`,
-      ["Block", "Allow once"]
+    const choice = await confirmDialog(
+      ctx,
+      `⚠️ Safety violation: ${categories}\n  ${command}\n\n${matchDetails}`,
+      [
+        { label: "Block",      description: "Skip this command (recommended)" },
+        { label: "Allow once", description: "Run this command despite the safety warning" },
+      ],
+      "Safety",
     );
 
     if (choice !== "Allow once") {
@@ -496,9 +512,14 @@ export async function handleBashToolCall(
     }
 
     playPermissionSound();
-    const choice = await ctx.ui.select(
-      `⚠️ Dangerous command`,
-      ["Allow once", "Cancel"]
+    const choice = await confirmDialog(
+      ctx,
+      `⚠️ Dangerous command\n  ${command}`,
+      [
+        { label: "Cancel",     description: "Skip this command (recommended)" },
+        { label: "Allow once", description: "Run this dangerous command once" },
+      ],
+      "Danger",
     );
 
     if (choice !== "Allow once") {
@@ -533,14 +554,27 @@ export async function handleBashToolCall(
 
   // Interactive mode: prompt
   playPermissionSound();
-  const choice = await ctx.ui.select(
-    `Requires ${requiredInfo.label}`,
-    ["Allow once", `Allow all (${requiredInfo.label})`, "Cancel"]
+  const choice = await confirmDialog(
+    ctx,
+    `Requires ${requiredInfo.label}\n  ${command}`,
+    [
+      { label: "Allow once",      description: "Run this command, ask again next time" },
+      { label: "Allow (session)", description: `Raise permission to ${requiredInfo.label} until session ends` },
+      { label: "Allow (global)",  description: `Save ${requiredInfo.label} as default in settings.json` },
+      { label: "Cancel",          description: "Skip this command" },
+    ],
+    "Permission",
   );
 
   if (choice === "Allow once") return undefined;
 
-  if (choice === `Allow all (${requiredInfo.label})`) {
+  if (choice === "Allow (session)") {
+    setLevel(state, requiredLevel, false, ctx);
+    ctx.ui.notify(`Permission → ${requiredInfo.label} (session only)`, "info");
+    return undefined;
+  }
+
+  if (choice === "Allow (global)") {
     setLevel(state, requiredLevel, true, ctx);
     ctx.ui.notify(`Permission → ${requiredInfo.label} (saved globally)`, "info");
     return undefined;
@@ -590,9 +624,14 @@ export async function handleWriteToolCall(
     }
 
     playPermissionSound();
-    const choice = await ctx.ui.select(
-      `🛡️  Protected path: ${action}\n\n  → ${filePath}\n\n${detail}\n\nAllow this write?`,
-      ["Block", "Allow"]
+    const choice = await confirmDialog(
+      ctx,
+      `🛡️ Protected path: ${action}\n  ${filePath}\n\n${detail}`,
+      [
+        { label: "Block", description: "Skip this write (recommended)" },
+        { label: "Allow", description: "Write to this protected path anyway" },
+      ],
+      "Protected",
     );
 
     if (choice !== "Allow") {
@@ -628,14 +667,27 @@ Use /permission low or /permission-mode ask to enable prompts.`
 
   // Interactive mode: prompt
   playPermissionSound();
-  const choice = await ctx.ui.select(
-    message,
-    ["Allow once", "Allow all (Low)", "Cancel"]
+  const choice = await confirmDialog(
+    ctx,
+    `Requires Low permission\n  ${action} ${filePath}`,
+    [
+      { label: "Allow once",      description: "Perform this write, ask again next time" },
+      { label: "Allow (session)", description: "Raise permission to Low until session ends" },
+      { label: "Allow (global)",  description: "Save Low as default in settings.json" },
+      { label: "Cancel",          description: "Skip this write" },
+    ],
+    "Permission",
   );
 
   if (choice === "Allow once") return undefined;
 
-  if (choice === "Allow all (Low)") {
+  if (choice === "Allow (session)") {
+    setLevel(state, "low", false, ctx);
+    ctx.ui.notify(`Permission → Low (session only)`, "info");
+    return undefined;
+  }
+
+  if (choice === "Allow (global)") {
     setLevel(state, "low", true, ctx);
     ctx.ui.notify(`Permission → Low (saved globally)`, "info");
     return undefined;
