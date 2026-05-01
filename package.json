@@ -1,7 +1,7 @@
 {
   "name": "pi-me",
   "version": "0.2.0",
-  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers, LSP, ralph-loop",
+  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers, ralph-loop",
   "license": "MIT",
   "keywords": [
     "pi-package",
@@ -12,8 +12,6 @@
     "extensions": [
       "./foundation/secrets/secrets.ts",
       "./foundation/permission/permission.ts",
-      "./foundation/lsp/lsp-hook.ts",
-      "./foundation/lsp/lsp-tool.ts",
       "./foundation/context-window/context-window.ts",
       "./session-lifecycle/git-checkpoint-new/checkpoint.ts",
       "./session-lifecycle/auto-compact/auto-compact.ts",
@@ -37,8 +35,7 @@
     ]
   },
   "dependencies": {
-    "shell-quote": "^1.8.3",
-    "vscode-languageserver-protocol": "^3.17.5"
+    "shell-quote": "^1.8.3"
   },
   "peerDependencies": {
     "@mariozechner/pi-ai": "*",
@@ -49,6 +46,6 @@
     "tsx": "^4.21.0"
   },
   "scripts": {
-    "test": "tsx --test foundation/permission/tests/*.test.ts foundation/secrets/secrets.test.ts core-tools/calc.test.ts core-tools/ralph-loop/agents.test.ts content-tools/notebook.test.ts session-lifecycle/token-rate/token-rate.test.ts session-lifecycle/git-checkpoint-new/tests/checkpoint.test.ts foundation/lsp/tests/*.test.ts"
+    "test": "tsx --test foundation/permission/tests/*.test.ts foundation/secrets/secrets.test.ts core-tools/calc.test.ts core-tools/ralph-loop/agents.test.ts content-tools/notebook.test.ts session-lifecycle/token-rate/token-rate.test.ts session-lifecycle/git-checkpoint-new/tests/checkpoint.test.ts"
   }
 }
