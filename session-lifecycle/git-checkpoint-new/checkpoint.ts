@@ -15,7 +15,7 @@
  * Or add to ~/.pi/agent/extensions/ or .pi/extensions/ for automatic loading.
  */
 
-import { spawn } from "child_process";
+import { readFileSync } from "fs";
 import {
   isGitRepo,
   getRepoRoot,
@@ -116,17 +116,13 @@ function resetRepoCache(): void {
   cachedRepoCwd = null;
 }
 
-/** Read first line of a file using head (efficient, doesn't load entire file) */
 function readFirstLine(filePath: string): Promise<string> {
-  return new Promise((resolve) => {
-    const proc = spawn("head", ["-1", filePath], {
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    let data = "";
-    proc.stdout.on("data", (chunk) => (data += chunk));
-    proc.on("close", () => resolve(data.trim()));
-    proc.on("error", () => resolve(""));
-  });
+  try {
+    const content = readFileSync(filePath, "utf-8");
+    return Promise.resolve(content.split("\n")[0]?.trim() ?? "");
+  } catch {
+    return Promise.resolve("");
+  }
 }
 
 /** Extract a JSON field from a line using regex (avoids JSON.parse overhead) */

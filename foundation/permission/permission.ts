@@ -60,6 +60,8 @@ import {
   invalidateConfigCache,
   type PermissionConfig,
 } from "./permission-core.js";
+import { DEFAULT_SAFETY_PATTERNS, type SafetyPattern } from "./safety-patterns.js";
+import { DEFAULT_PROTECTED_PATHS, matchesGlob, type ProtectedGlob } from "./path-guard.js";
 
 // Re-export types and constants needed by the hook
 export {
@@ -425,31 +427,71 @@ export function handleSessionStart(state: PermissionState, ctx: any): void {
   }
 }
 
+/** Check safety patterns against a command — always-active safety net */
+function checkSafetyPatterns(
+  command: string,
+  patterns: SafetyPattern[]
+): SafetyPattern[] {
+  return patterns.filter((p) => p.pattern.test(command));
+}
+
 /** Handle bash tool_call - check permission and prompt if needed */
 export async function handleBashToolCall(
   state: PermissionState,
   command: string,
   ctx: any
 ): Promise<{ block: true; reason: string } | undefined> {
-  if (state.currentLevel === "bypassed") return undefined;
+  // ── Layer 1: Hard safety net — always check dangerous patterns (even bypassed) ──
+  const safetyMatches = checkSafetyPatterns(command, DEFAULT_SAFETY_PATTERNS);
+  if (safetyMatches.length > 0) {
+    const categories = [...new Set(safetyMatches.map((m) => m.category))].join(", ");
+    const matchDetails = safetyMatches
+      .map((m) => `  [${m.category}] ${m.description}`)
+      .join("\n");
 
-  const classification = classifyCommand(command);
-
-  // Dangerous commands - always prompt unless in block mode
-  if (classification.dangerous) {
     if (!hasInteractiveUI(ctx)) {
       return {
         block: true,
-        reason: `Dangerous command requires confirmation: ${command}
-User can re-run with: PI_PERMISSION_LEVEL=bypassed pi -p "..."`
+        reason: `Safety violation blocked (${categories}).\nCommand: ${command}\nReasons:\n${matchDetails}`,
       };
     }
 
     if (state.permissionMode === "block") {
       return {
         block: true,
-        reason: `Blocked by permission mode (block). Dangerous command: ${command}
-Use /permission-mode ask to enable confirmations.`
+        reason: `Blocked by safety net (${categories}). Command: ${command}\nUse /permission-mode ask to enable confirmations.`,
+      };
+    }
+
+    playPermissionSound();
+    const choice = await ctx.ui.select(
+      `⚠️  Safety violation: ${categories}\n\n  ${command}\n\nReasons:\n${matchDetails}\n\nExecute anyway?`,
+      ["Block", "Allow once"]
+    );
+
+    if (choice !== "Allow once") {
+      return { block: true, reason: "Blocked by safety net" };
+    }
+    // Fall through to tier check
+  }
+
+  if (state.currentLevel === "bypassed") return undefined;
+
+  const classification = classifyCommand(command);
+
+  // ── Layer 2: Tier-based dangerous classification ──
+  if (classification.dangerous) {
+    if (!hasInteractiveUI(ctx)) {
+      return {
+        block: true,
+        reason: `Dangerous command requires confirmation: ${command}\nUser can re-run with: PI_PERMISSION_LEVEL=bypassed pi -p "..."`,
+      };
+    }
+
+    if (state.permissionMode === "block") {
+      return {
+        block: true,
+        reason: `Blocked by permission mode (block). Dangerous command: ${command}\nUse /permission-mode ask to enable confirmations.`,
       };
     }
 
@@ -465,7 +507,7 @@ Use /permission-mode ask to enable confirmations.`
     return undefined;
   }
 
-  // Check level
+  // ── Layer 3: Tier-based level check ──
   const requiredIndex = LEVEL_INDEX[classification.level];
   const currentIndex = LEVEL_INDEX[state.currentLevel];
 
@@ -478,18 +520,14 @@ Use /permission-mode ask to enable confirmations.`
   if (!hasInteractiveUI(ctx)) {
     return {
       block: true,
-      reason: `Blocked by permission (${state.currentLevel}). Command: ${command}
-Allowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}
-User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`
+      reason: `Blocked by permission (${state.currentLevel}). Command: ${command}\nAllowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}\nUser can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     };
   }
 
   if (state.permissionMode === "block") {
     return {
       block: true,
-      reason: `Blocked by permission (${state.currentLevel}, mode: block). Command: ${command}
-Requires ${requiredInfo.label}. Allowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}
-Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`
+      reason: `Blocked by permission (${state.currentLevel}, mode: block). Command: ${command}\nRequires ${requiredInfo.label}. Allowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}\nUse /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     };
   }
 
@@ -511,6 +549,19 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`
   return { block: true, reason: "Cancelled" };
 }
 
+/** Check if file path matches any protected path glob — always-active safety net */
+function checkProtectedPath(
+  filePath: string,
+  cwd: string,
+  protectedPaths: ProtectedGlob[]
+): ProtectedGlob[] {
+  const relativePath = path.isAbsolute(filePath)
+    ? path.relative(cwd, filePath)
+    : filePath;
+  if (relativePath.startsWith("..")) return [];
+  return protectedPaths.filter((p) => matchesGlob(relativePath, p.glob));
+}
+
 /** Options for handleWriteToolCall */
 export interface WriteToolCallOptions {
   state: PermissionState;
@@ -524,12 +575,36 @@ export async function handleWriteToolCall(
   opts: WriteToolCallOptions
 ): Promise<{ block: true; reason: string } | undefined> {
   const { state, toolName, filePath, ctx } = opts;
-  
+  const action = toolName === "write" ? "Write" : "Edit";
+
+  // ── Layer 1: Hard safety net — protected paths (always checked) ──
+  const pathMatches = checkProtectedPath(filePath, ctx.cwd, DEFAULT_PROTECTED_PATHS);
+  if (pathMatches.length > 0) {
+    const detail = pathMatches.map((m) => `  ${m.glob} — ${m.reason}`).join("\n");
+
+    if (!hasInteractiveUI(ctx)) {
+      return {
+        block: true,
+        reason: `Protected path write blocked:\n${detail}`,
+      };
+    }
+
+    playPermissionSound();
+    const choice = await ctx.ui.select(
+      `🛡️  Protected path: ${action}\n\n  → ${filePath}\n\n${detail}\n\nAllow this write?`,
+      ["Block", "Allow"]
+    );
+
+    if (choice !== "Allow") {
+      return { block: true, reason: "Protected path write blocked by user" };
+    }
+    // Fall through to tier check
+  }
+
   if (state.currentLevel === "bypassed") return undefined;
 
   if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX["low"]) return undefined;
 
-  const action = toolName === "write" ? "Write" : "Edit";
   const message = `Requires Low: ${action} ${filePath}`;
 
   // Print mode: block

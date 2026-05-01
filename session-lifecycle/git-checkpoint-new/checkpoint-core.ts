@@ -10,6 +10,7 @@ import { mkdtemp, rm } from "fs/promises";
 import { statSync, readdirSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { parse } from "shell-quote";
 
 // ============================================================================
 // Constants & Types
@@ -64,34 +65,17 @@ export interface CheckpointData {
 // Git helpers
 // ============================================================================
 
-/**
- * Parse a command string into arguments, handling quotes.
- * This avoids shell injection by not using shell execution.
- */
 function parseArgs(cmd: string): string[] {
+  const parsed = parse(cmd);
   const args: string[] = [];
-  let current = "";
-  let inSingleQuote = false;
-  let inDoubleQuote = false;
-
-  for (let i = 0; i < cmd.length; i++) {
-    const char = cmd[i];
-
-    if (char === "'" && !inDoubleQuote) {
-      inSingleQuote = !inSingleQuote;
-    } else if (char === '"' && !inSingleQuote) {
-      inDoubleQuote = !inDoubleQuote;
-    } else if (char === " " && !inSingleQuote && !inDoubleQuote) {
-      if (current) {
-        args.push(current);
-        current = "";
-      }
-    } else {
-      current += char;
+  for (const part of parsed) {
+    if (typeof part === "string") {
+      args.push(part);
+    } else if (part && typeof part === "object" && "op" in part) {
+      // shell operator — treat as literal to preserve exact git args
+      args.push(part.op as string);
     }
   }
-  if (current) args.push(current);
-
   return args;
 }
 

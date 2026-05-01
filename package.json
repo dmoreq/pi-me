@@ -1,34 +1,54 @@
 {
   "name": "pi-me",
-  "version": "0.1.0",
-  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers",
+  "version": "0.2.0",
+  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers, LSP, ralph-loop",
   "license": "MIT",
-  "keywords": ["pi-package", "pi", "pi-coding-agent"],
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent"
+  ],
   "pi": {
     "extensions": [
       "./foundation/secrets/secrets.ts",
-      "./foundation/permission-gate/permission-gate.ts",
-      "./foundation/protected-paths/protected-paths.ts",
+      "./foundation/permission/permission.ts",
+      "./foundation/lsp/lsp-hook.ts",
+      "./foundation/lsp/lsp-tool.ts",
       "./foundation/context-window/context-window.ts",
-      "./session-lifecycle/git-checkpoint/git-checkpoint.ts",
+      "./session-lifecycle/git-checkpoint-new/checkpoint.ts",
       "./session-lifecycle/auto-compact/auto-compact.ts",
       "./session-lifecycle/session-name/session-name.ts",
+      "./session-lifecycle/token-rate/token-rate.ts",
       "./core-tools/web-search.ts",
       "./core-tools/todo.ts",
       "./core-tools/calc.ts",
       "./core-tools/ask.ts",
+      "./core-tools/ralph-loop/ralph-loop.ts",
       "./content-tools/notebook.ts",
       "./content-tools/mermaid.ts",
       "./content-tools/github.ts",
+      "./content-tools/repeat/repeat.ts",
       "./authoring/output-artifacts/output-artifacts.ts",
       "./authoring/commit-helper/commit-helper.ts",
       "./authoring/skill-bootstrap/skill-bootstrap.ts"
     ],
-    "skills": ["./skills"]
+    "skills": [
+      "./skills"
+    ]
+  },
+  "dependencies": {
+    "shell-quote": "^1.8.3",
+    "vscode-languageserver-protocol": "^3.17.5"
   },
   "peerDependencies": {
-    "@mariozechner/pi-coding-agent": "*",
     "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*",
     "@mariozechner/pi-tui": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  },
+  "scripts": {
+    "test": "tsx --test foundation/permission/tests/*.test.ts foundation/secrets/secrets.test.ts core-tools/calc.test.ts core-tools/ralph-loop/agents.test.ts content-tools/notebook.test.ts session-lifecycle/token-rate/token-rate.test.ts session-lifecycle/git-checkpoint-new/tests/checkpoint.test.ts foundation/lsp/tests/*.test.ts"
   }
 }

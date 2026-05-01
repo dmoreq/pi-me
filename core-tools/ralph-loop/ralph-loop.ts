@@ -1640,5 +1640,381 @@ export default function (pi: ExtensionAPI) {
 
 			if (hasSingle) {
 				if (!loopParams.agent) {
+					const defaultAgent = pickDefaultAgent(agents);
+					if (!defaultAgent) {
+						return {
+							content: [{ type: "text", text: "No agents available for the selected scope." }],
+							details: buildDetails({ stopReason: "no-agents" }),
+							isError: true,
+						};
+					}
+					loopParams.agent = defaultAgent;
+				}
+				if (!loopParams.task) {
+					const inferredTask = getLastUserText(ctx);
+					if (!inferredTask) {
+						return {
+							content: [{ type: "text", text: "Unable to infer task. Provide a task." }],
+							details: buildDetails({ stopReason: "missing-task" }),
+							isError: true,
+						};
+					}
+					loopParams.task = inferredTask;
+				}
+			}
 
-[Showing lines 1-1642 of 2021 (50.0KB limit). Use offset=1643 to continue.]
+			const sessionThinking = pi.getThinkingLevel();
+			if (loopParams.thinking === undefined) {
+				loopParams.thinking = sessionThinking;
+			}
+			if (Array.isArray(loopParams.chain)) {
+				loopParams.chain = loopParams.chain.map((step: any) => ({
+					...step,
+					thinking: step.thinking ?? loopParams.thinking,
+				}));
+			}
+
+			const promptInfo = buildLoopPromptInfo(loopParams);
+
+			const conditionCandidate =
+				typeof params.conditionCommand === "string" && params.conditionCommand.trim()
+					? params.conditionCommand.trim()
+					: null;
+
+			let conditionSource: "provided" | "inferred" | "default" = "default";
+			let conditionCommand = conditionCandidate || "";
+			if (conditionCandidate) {
+				conditionSource = "provided";
+			} else {
+				let textForInference: string | undefined;
+				if (typeof loopParams.task === "string") textForInference = loopParams.task;
+				else if (Array.isArray(loopParams.chain) && loopParams.chain.length > 0) textForInference = loopParams.chain[0].task;
+				const inferred = inferConditionCommandFromText(textForInference);
+				if (inferred) {
+					conditionCommand = inferred;
+					conditionSource = "inferred";
+				} else {
+					conditionCommand = "echo true";
+					conditionSource = "default";
+				}
+			}
+
+			const maxIterations = parseLoopNumber(
+				params.maxIterations === undefined ? null : String(params.maxIterations),
+				DEFAULT_LOOP_MAX_ITERATIONS,
+			);
+			if (maxIterations === null || maxIterations <= 0) {
+				return {
+					content: [{ type: "text", text: "maxIterations must be a positive number." }],
+					details: buildDetails({
+						stopReason: "invalid-params",
+						conditionCommand,
+						conditionSource,
+						prompt: promptInfo,
+					}),
+					isError: true,
+				};
+			}
+
+			const sleepMs = parseLoopNumber(
+				params.sleepMs === undefined ? null : String(params.sleepMs),
+				DEFAULT_LOOP_SLEEP_MS,
+				true,
+			);
+			if (sleepMs === null || sleepMs < 0) {
+				return {
+					content: [{ type: "text", text: "sleepMs must be zero or a positive number." }],
+					details: buildDetails({
+						stopReason: "invalid-params",
+						conditionCommand,
+						conditionSource,
+						maxIterations,
+						prompt: promptInfo,
+					}),
+					isError: true,
+				};
+			}
+
+			const confirmProjectAgents = params.confirmProjectAgents ?? true;
+			const approved = confirmProjectAgents ? await confirmProjectAgentsOnce(loopParams, ctx) : true;
+			if (!approved) {
+				return {
+					content: [{ type: "text", text: "Canceled: project-local agents not approved." }],
+					details: buildDetails({
+						stopReason: "canceled",
+						conditionCommand,
+						conditionSource,
+						maxIterations,
+						sleepMs,
+						prompt: promptInfo,
+					}),
+					isError: true,
+				};
+			}
+			loopParams.confirmProjectAgents = false;
+
+			const runAbortController = new AbortController();
+			const mergedSignal = mergeAbortSignals(signal, runAbortController.signal);
+			const baseLoopParams = cloneLoopParams(loopParams);
+
+			loopControl.status = "running";
+			loopControl.runId = crypto.randomUUID().slice(0, 8);
+			loopControl.iterations = 0;
+			loopControl.steering = [];
+			loopControl.steeringOnce = [];
+			loopControl.followUps = [];
+			loopControl.steeringSent = [];
+			loopControl.followUpsSent = [];
+			loopControl.paused = false;
+			loopControl.abortController = runAbortController;
+			loopControl.lastDetails = null;
+
+			if (ctx.hasUI) {
+				ctx.ui.setStatus("ralph-loop", getLoopStatusLine());
+			}
+
+			const iterations: LoopIterationResult[] = [];
+			let stopReason = "running";
+			let errorMessage = "";
+			let lastCondition = { stdout: "", stderr: "", exitCode: 0 };
+
+			const buildLoopDetails = (currentIterations: LoopIterationResult[]): RalphLoopDetails => {
+				const details: RalphLoopDetails = {
+					iterations: [...currentIterations],
+					stopReason,
+					conditionCommand,
+					conditionSource,
+					maxIterations,
+					sleepMs,
+					lastCondition,
+					prompt: promptInfo,
+					steering: [...loopControl.steering, ...loopControl.steeringOnce],
+					followUps: [...loopControl.followUps],
+					steeringSent: [...loopControl.steeringSent],
+					followUpsSent: [...loopControl.followUpsSent],
+					status: loopControl.status,
+				};
+				loopControl.iterations = currentIterations.length;
+				loopControl.lastDetails = details;
+				return details;
+			};
+
+			const emitUpdate = () => {
+				const details = buildLoopDetails(iterations);
+				if (ctx.hasUI) {
+					ctx.ui.setStatus("ralph-loop", getLoopStatusLine());
+				}
+				if (!onUpdate) return;
+				onUpdate({
+					content: [
+						{
+							type: "text",
+							text: `ralph-loop: ${iterations.length}/${maxIterations} iterations complete`,
+						},
+					],
+					details,
+				});
+			};
+
+			for (let i = 0; i < maxIterations; i++) {
+				if (mergedSignal?.aborted) {
+					stopReason = "aborted";
+					break;
+				}
+
+				if (mergedSignal?.aborted) {
+					stopReason = "aborted";
+					break;
+				}
+
+				const condition = await checkLoopCondition(pi, conditionCommand, ctx.cwd, mergedSignal);
+				lastCondition = { stdout: condition.stdout, stderr: condition.stderr, exitCode: condition.exitCode };
+				if (!condition.shouldContinue) {
+					stopReason = "condition-false";
+					break;
+				}
+
+				const iterationIndex = i + 1;
+				const iterationUpdate: OnUpdateCallback | undefined = onUpdate
+					? (partial) => {
+						if (!partial.details) return;
+						const partialOutput = extractTextFromContent(partial.content);
+						const streamingIterations = [
+							...iterations,
+							{
+								index: iterationIndex,
+								details: partial.details,
+								output: partialOutput || "(running...)",
+								isError: partial.isError,
+							},
+						];
+						const details = buildLoopDetails(streamingIterations);
+						if (ctx.hasUI) {
+							ctx.ui.setStatus("ralph-loop", getLoopStatusLine());
+						}
+						onUpdate({
+							content: partial.content ?? [
+								{ type: "text", text: `ralph-loop iteration ${iterationIndex} running...` },
+							],
+							details,
+						});
+					}
+					: undefined;
+
+				let runResult: LoopExecutionResult | null = null;
+				const steeringOnceCount = loopControl.steeringOnce.length;
+				const steeringText = formatSteeringText([...loopControl.steering, ...loopControl.steeringOnce]);
+				const iterationParams = applySteeringToParams(baseLoopParams, steeringText);
+				const queuedFollowUps = loopControl.followUps;
+				if (queuedFollowUps.length > 0) {
+					loopControl.followUps = [];
+					loopControl.followUpsSent.push(...queuedFollowUps);
+				}
+				try {
+					runResult = await executeSubagentOnce(
+						iterationParams,
+						ctx,
+						mergedSignal,
+						iterationUpdate,
+						registerActiveRun,
+						queuedFollowUps,
+					);
+				} catch (error: any) {
+					stopReason = mergedSignal?.aborted ? "aborted" : "error";
+					errorMessage = error?.message || String(error);
+					break;
+				}
+				loopControl.steeringOnce = loopControl.steeringOnce.slice(steeringOnceCount);
+				loopControl.steeringSent = [];
+				loopControl.followUpsSent = [];
+				if (loopControl.paused && activeRuns.size === 0) {
+					clearPausedState(loopControl);
+				}
+
+				iterations.push({
+					index: iterationIndex,
+					details: runResult.details,
+					output: runResult.output,
+					isError: runResult.isError,
+				});
+				emitUpdate();
+
+				if (runResult.isError) {
+					stopReason = "error";
+					errorMessage = runResult.output;
+					break;
+				}
+
+				if (sleepMs > 0 && i < maxIterations - 1) {
+					await sleep(sleepMs, mergedSignal);
+				}
+			}
+
+			if (stopReason === "running") {
+				stopReason = "max-iterations";
+			}
+
+			const lastOutput = iterations.length > 0 ? iterations[iterations.length - 1].output : "";
+			const summaryLines = [
+				`ralph-loop finished after ${iterations.length} iteration${iterations.length === 1 ? "" : "s"}.`,
+				`Stop reason: ${stopReason}.`,
+				`Condition: ${conditionCommand} (${conditionSource}).`,
+				`Max iterations: ${maxIterations}.`,
+				`Sleep: ${sleepMs}ms.`,
+			];
+
+			if (lastCondition.stdout) summaryLines.push(`Condition stdout: ${lastCondition.stdout}`);
+			if (lastCondition.stderr) summaryLines.push(`Condition stderr: ${lastCondition.stderr}`);
+			if (lastCondition.exitCode !== 0) summaryLines.push(`Condition exit code: ${lastCondition.exitCode}`);
+			if (errorMessage && errorMessage !== lastOutput) summaryLines.push(`Error: ${errorMessage}`);
+			let lastOutputFullPath: string | null = null;
+			if (lastOutput) {
+				const formatted = formatLastOutputForSummary(lastOutput);
+				lastOutputFullPath = formatted.fullOutputPath;
+				summaryLines.push(`Last output:\n${formatted.text}`);
+			}
+
+			loopControl.status = "idle";
+			loopControl.abortController = null;
+			loopControl.paused = false;
+			loopControl.steering = [];
+			loopControl.steeringOnce = [];
+			loopControl.followUps = [];
+			loopControl.steeringSent = [];
+			loopControl.followUpsSent = [];
+			if (ctx.hasUI) {
+				ctx.ui.setStatus("ralph-loop", undefined);
+			}
+
+			const finalDetails = buildLoopDetails(iterations);
+			if (lastOutputFullPath) {
+				(finalDetails as any).lastOutputPath = lastOutputFullPath;
+			}
+			const summaryText = summaryLines.join("\n\n");
+			const isError = stopReason === "error" || stopReason === "aborted";
+			return {
+				content: [{ type: "text", text: summaryText }],
+				details: finalDetails,
+				isError,
+			};
+		},
+
+		renderCall(args, theme) {
+			const scope: AgentScope = args.agentScope ?? "user";
+			const hasChain = Array.isArray(args.chain) && args.chain.length > 0;
+			const hasSingle = Boolean(args.agent || args.task);
+			const mode = hasChain ? `chain (${args.chain.length} steps)` : hasSingle ? `single ${args.agent || "(auto)"}` : "auto";
+			const condition = args.conditionCommand ? `cond: ${args.conditionCommand}` : "cond: (auto)";
+			const maxIterations = args.maxIterations ?? DEFAULT_LOOP_MAX_ITERATIONS;
+			const sleepMs = args.sleepMs ?? DEFAULT_LOOP_SLEEP_MS;
+			const promptInfo = buildLoopPromptInfo(args);
+			let text =
+				theme.fg("toolTitle", theme.bold("ralph_loop ")) +
+				theme.fg("accent", mode) +
+				theme.fg("muted", ` [${scope}]`);
+			text += `\n  ${theme.fg("dim", condition)}`;
+			if (promptInfo.items.length > 0) {
+				const preview = formatLoopPromptItem(promptInfo.items[0], 40);
+				const more = promptInfo.items.length > 1 ? ` +${promptInfo.items.length - 1} more` : "";
+				text += `\n  ${theme.fg("dim", `prompt: ${preview}${more}`)}`;
+			}
+			text += `\n  ${theme.fg("dim", `max:${maxIterations} sleep:${sleepMs}ms`)}`;
+			return new Text(text, 0, 0);
+		},
+
+		renderResult(result, { expanded }, theme) {
+			const details = result.details as RalphLoopDetails | undefined;
+			if (!details) {
+				const text = result.content[0];
+				return new Text(text?.type === "text" ? text.text : "(no output)", 0, 0);
+			}
+
+			const iterations = details.iterations || [];
+			const isError = details.stopReason === "error" || details.stopReason === "aborted";
+			const icon = isError ? theme.fg("error", "✗") : theme.fg("success", "✓");
+			const header =
+				icon +
+				" " +
+				theme.fg("toolTitle", theme.bold("ralph_loop ")) +
+				theme.fg("accent", `${iterations.length} iteration${iterations.length === 1 ? "" : "s"}`);
+
+			const wrapper = new Container();
+			const mainBox = new Box(1, 0, (text: string) => theme.bg("toolPendingBg", text));
+			const container = new Container();
+
+			container.addChild(new DynamicBorder((s: string) => theme.fg("accent", s)));
+			container.addChild(new Spacer(1));
+			container.addChild(new Text(header, 1, 0));
+			container.addChild(new Spacer(1));
+			container.addChild(new DynamicBorder((s: string) => theme.fg("muted", s)));
+
+			const entriesComponent = renderLoopEntries(buildLoopEntries(details), theme, undefined, process.cwd(), expanded);
+			container.addChild(entriesComponent);
+			container.addChild(new DynamicBorder((s: string) => theme.fg("accent", s)));
+
+			mainBox.addChild(container);
+			wrapper.addChild(mainBox);
+			return wrapper;
+		},
+	});
+}
