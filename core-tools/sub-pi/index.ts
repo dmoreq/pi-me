@@ -5,7 +5,9 @@ import {
   type SubPiOptions,
   subPi,
 } from "./extension.js";
+import { subPiSkill } from "../sub-pi-skill/extension.js";
 import { z } from "zod";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 type PromptPatchConfig = { match: string; flags?: string; replace: string };
 
@@ -56,7 +58,14 @@ const config = loadConfigOrDefault({
   defaults: defaultConfig,
 });
 
-export default subPi({
+const subPiRegister = subPi({
   ...config,
   systemPromptPatches: (config.systemPromptPatches ?? defaultPromptPatches).map(toPromptPatch),
 } satisfies SubPiOptions);
+
+const subPiSkillRegister = subPiSkill({ toolName: "sub-pi" });
+
+export default function (pi: ExtensionAPI) {
+  subPiRegister(pi);
+  subPiSkillRegister(pi);
+}
