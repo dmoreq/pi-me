@@ -1,0 +1,34 @@
+{
+  "name": "pi-me",
+  "version": "0.1.0",
+  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers",
+  "license": "MIT",
+  "keywords": ["pi-package", "pi", "pi-coding-agent"],
+  "pi": {
+    "extensions": [
+      "./foundation/secrets/secrets.ts",
+      "./foundation/permission-gate/permission-gate.ts",
+      "./foundation/protected-paths/protected-paths.ts",
+      "./foundation/context-window/context-window.ts",
+      "./session-lifecycle/git-checkpoint/git-checkpoint.ts",
+      "./session-lifecycle/auto-compact/auto-compact.ts",
+      "./session-lifecycle/session-name/session-name.ts",
+      "./core-tools/web-search.ts",
+      "./core-tools/todo.ts",
+      "./core-tools/calc.ts",
+      "./core-tools/ask.ts",
+      "./content-tools/notebook.ts",
+      "./content-tools/mermaid.ts",
+      "./content-tools/github.ts",
+      "./authoring/output-artifacts/output-artifacts.ts",
+      "./authoring/commit-helper/commit-helper.ts",
+      "./authoring/skill-bootstrap/skill-bootstrap.ts"
+    ],
+    "skills": ["./skills"]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-tui": "*"
+  }
+}
