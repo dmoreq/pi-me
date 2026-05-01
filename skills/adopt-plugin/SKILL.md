@@ -5,449 +5,174 @@ description: Adopt an external pi package into pi-me. Review, compare, refactor 
 
 # Plugin Adoption Workflow
 
-Step-by-step process for reviewing an external pi package, comparing it against the pi-me codebase, planning adoption, implementing it with optimizations, and verifying with tests.
+## Phase 1: Assess
 
----
-
-## Phase 1: Discovery & Review
-
-### 1a. Explore Both Codebases
-
-Start by understanding the full structure of both packages:
+### 1a. Explore the external package
 
 ```bash
-# External package
-ls -la /path/to/external-package/
-find /path/to/external-package -type f -not -path '*/node_modules/*' -not -path '*/.git/*'
-
-# Our codebase
-ls -la /path/to/pi-me/
-find /path/to/pi-me -type f -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/.pi/*'
+ls -R /path/to/external-package/ | grep -v node_modules
 ```
 
-### 1b. Read All Source Files
+Read the external `package.json` to extract `pi.extensions` — those are the files you need to review. Read every file listed in `pi.extensions`, plus their imports. Read the external `README.md` too.
 
-Read every `.ts` source file from both packages. Focus on:
-- Extension entry points (`export default function`)
-- Core logic modules (separate files imported by hooks)
-- Tool registrations (`pi.registerTool`)
-- Command registrations (`pi.registerCommand`)
-- Import dependencies (what packages they need)
+### 1b. Compare against pi-me
 
-```bash
-# From external package
-read(/path/to/external/checkpoint.ts)
-read(/path/to/external/permission-core.ts)
-# ... every source file
-
-# From our codebase
-read(/path/to/pi-me/foundation/secrets/secrets.ts)
-read(/path/to/pi-me/session-lifecycle/git-checkpoint/git-checkpoint.ts)
-# ... every source file
-```
-
-### 1c. Read README and package.json
-
-Parse the external package's `README.md` and `package.json` to understand:
-- What extensions are included (from `pi.extensions` array)
-- Dependencies needed
-- How to install/use
-
----
-
-## Phase 2: Analysis & Comparison
-
-### 2a. Build a Functionality Matrix
-
-Create a comparison table mapping each external extension to the pi-me equivalent:
+For each external extension, find the pi-me equivalent (if any). Write an analysis to `docs/adopt-<name>-plan.md` with:
 
 ```markdown
-| External Extension | pi-me Equivalent | Overlap Assessment |
+## Comparison Matrix
+
+| External Extension | pi-me Equivalent | Verdict |
 |---|---|---|
-| `checkpoint` | `git-checkpoint` | Both do git checkpoints. External version is more sophisticated (captures tracked+staged+untracked, persists as git refs, full restore UI) |
-| `lsp` | (none) | Unique — adopt as-is |
+| `checkpoint` | `git-checkpoint-new` | Replace: external version is richer |
+| `lsp` | (none) | Adopt as-is |
+| `permission` | `foundation/permission/` | Merge: combine tier system with safety nets |
 | ... | ... | ... |
-```
 
-### 2b. Categorize Each Extension
+## Strategy
 
-- **Direct overlap** — Both packages have similar functionality. Analyze which is more capable.
-- **Unique to external** — No pi-me equivalent. Adopt.
-- **Unique to pi-me** — Keep.
+- **Unique to external** → Adopt as-is
+- **External better** → Replace pi-me version
+- **pi-me better** → Skip
+- **Complementary** → Merge into unified module
 
-### 2c. Analyze Optimization Opportunities
+## Optimization Opportunities
 
-For overlapping functionality, look for:
-- Redundant implementations (e.g., custom argument parsing when a dependency like `shell-quote` is available)
-- Inefficient operations (e.g., spawning child processes when `fs.readFileSync` would work)
-- Duplicate code (two similar implementations of the same function)
-- Inline type definitions that duplicate framework types
-
-For adopted extensions, look for:
-- Configurable hardcoded values (timeouts, batch sizes, thresholds)
+- Redundant implementations (custom parsers where a dep exists)
+- Inefficient operations (spawning processes when sync fs would work)
 - Large files that could be split
-- Unused patterns or dead code
+- Hardcoded values that should be configurable
+```
 
----
-
-## Phase 3: Write the Adoption Plan
-
-### 3a. Create Branch and Plan Document
+### 1c. Create a branch
 
 ```bash
-cd /path/to/pi-me
-git init  # if not already a git repo
 git checkout -b adopt-<plugin-name>
-mkdir -p docs
 ```
-
-Write a comprehensive plan to `docs/adopt-<plugin-name>-plan.md` covering:
-
-1. **Executive Summary** — What is being adopted and why
-2. **Functionality Comparison Matrix** — Table of all extensions
-3. **Optimization Analysis** — Per-extension opportunities
-4. **Refactoring Plan** — Phases with file mapping
-5. **File Structure After Adoption** — Directory tree diagram
-6. **Extension Count Summary** — Before/after
-7. **Risk Assessment** — Severity ratings with mitigations
-8. **Migration Steps** — Ordered checklist
-9. **Key Optimization Wins** — Table of improvements
-10. **Questions for Discussion** — Open items needing decisions
-
-### 3b. Decide Overlap Strategy
-
-For overlapping functionality:
-
-| Situation | Strategy |
-|---|---|
-| External is much better | Replace pi-me version entirely |
-| Different design philosophies | Merge the best of both |
-| pi-me is better | Keep pi-me version, don't adopt |
-| Complementary (solve different sub-problems) | Merge into unified system |
-
-For the pi-hooks adoption, we made these decisions:
-- **checkpoint**: Replace pi-me's minimal `git stash` wrapper with pi-hooks' full git-ref checkpoint
-- **permission**: Merge pi-hooks' tier system with pi-me's safety nets (dangerous patterns + protected paths) into a unified 3-layer permission system
-- **lsp, ralph-loop, repeat, token-rate**: Adopt as-is (no pi-me equivalent)
 
 ---
 
-## Phase 4: Implementation
+## Phase 2: Implement
 
-### 4a. Copy Unique Extensions
+### 2a. Copy unique extensions into the right pi-me layer
 
-Create target directories and copy files:
-
-```bash
-cd /path/to/pi-me
-mkdir -p target-directory/subdirectory/tests
-
-# Copy each file
-cp /path/to/external/ext.ts /path/to/pi-me/target-directory/ext.ts
-```
-
-When copying, place files in the appropriate pi-me category:
-- `foundation/` — Core guards, secrets, permission, LSP, context
-- `session-lifecycle/` — Checkpoints, compaction, naming, metrics
-- `core-tools/` — Web search, todo, calc, ask, ralph-loop
-- `content-tools/` — Notebook, mermaid, github, repeat
-- `authoring/` — Commit helper, skill bootstrap, output artifacts
-
-### 4b. Fix Import Paths
-
-Check that imports work after relocating files. Use `grep` to find broken imports:
+| Layer | Directory | For extensions that... |
+|-------|-----------|----------------------|
+| Foundation | `foundation/` | Guard safety, secrets, permission, LSP, context |
+| Session Lifecycle | `session-lifecycle/` | Hooks at session/turn boundaries |
+| Core Tools | `core-tools/` | General-purpose agent tools |
+| Content Tools | `content-tools/` | File/resource manipulation |
+| Authoring | `authoring/` | AI-assisted content creation |
 
 ```bash
-grep -n "from \"\.\/" /path/to/pi-me/target-directory/*.ts
+cp /path/to/external/ext.ts pi-me/<layer>/ext.ts
 ```
 
-Files that import from sibling modules in the same directory (e.g., `./lsp-core.js`) should work if those modules were also moved to the same directory.
+### 2b. Merge overlapping functionality
 
-### 4c. Apply Optimizations
+When both packages have similar modules, merge into one unified module rather than keeping duplicates:
 
-Execute the optimizations identified in Phase 2c. Use precise edits:
+1. Copy external modules alongside pi-me modules in the same directory
+2. Add imports in the entry point to pull in both sides
+3. Layer the checks (e.g., safety nets → tier classification → bypass)
+4. Delete the old standalone files that were absorbed
+5. Remove old entries from `package.json` → `pi.extensions`
 
-1. **Replace custom parsers with dependency functions:**
-```javascript
-// Before:
-import { spawn } from "child_process";
-function parseArgs(cmd) { /* 20 lines of custom parsing */ }
+### 2c. Apply optimizations
 
-// After:
-import { parse } from "shell-quote";
-function parseArgs(cmd) { return parse(cmd).filter(p => typeof p === "string"); }
-```
+- **Replace custom parsers with dependency functions** (e.g., `shell-quote` for arg parsing)
+- **Replace child process spawns with sync filesystem calls** where possible
+- **Extract types/interfaces into a separate `*-types.ts` file** if a module is large
+- **Pre-compile regex patterns** into module-level caches
 
-2. **Replace child process with sync file reads:**
-```javascript
-// Before:
-function readFirstLine(filePath) {
-  return new Promise((resolve) => {
-    const proc = spawn("head", ["-1", filePath], { stdio: ["ignore", "pipe", "ignore"] });
-    // ...
-  });
-}
+### 2d. Update package.json
 
-// After:
-import { readFileSync } from "fs";
-function readFirstLine(filePath) {
-  try {
-    return Promise.resolve(readFileSync(filePath, "utf-8").split("\n")[0]?.trim() ?? "");
-  } catch { return Promise.resolve(""); }
-}
-```
+Add new dependencies and register new extensions in `pi.extensions`, ordered by layer priority (foundation → lifecycle → tools → content → authoring):
 
-### 4d. Merge Overlapping Functionality
-
-For merges:
-
-1. Copy the external module files into the target directory
-2. Copy pi-me's safety/guard modules alongside them
-3. Modify the entry point to import and integrate both:
-```typescript
-import { safetyPatterns } from "./safety-patterns.js";
-import { protectedPaths, matchesGlob } from "./path-guard.js";
-```
-
-4. Add new check layers before existing logic:
-```typescript
-// Layer 1: Hard safety net (always active)
-const safetyMatches = checkSafetyPatterns(command);
-if (safetyMatches.length > 0) { /* block or confirm */ }
-
-// Layer 2: Existing tier check
-if (state.currentLevel === "bypassed") return undefined;
-// ... tier classification
-```
-
-5. Delete old standalone modules that were merged:
 ```bash
-rm -rf /path/to/pi-me/foundation/permission-gate/
-rm -rf /path/to/pi-me/foundation/protected-paths/
-rm /path/to/pi-me/session-lifecycle/git-checkpoint/git-checkpoint.ts
-rmdir /path/to/pi-me/session-lifecycle/git-checkpoint/ 2>/dev/null
+npm install <new-dep>    # installs and updates package.json + lockfile
 ```
 
-### 4e. Update package.json
+### 2e. Update packages[] config if the package name changed
 
-Add new dependencies and update the extensions list:
+The README and `package.json` `name` field must match how users register it. If scoping changes (e.g., `@scope/pkg` → `pkg`), run:
 
-```json
-{
-  "dependencies": {
-    "shell-quote": "^1.8.3",
-    "vscode-languageserver-protocol": "^3.17.5"
-  },
-  "pi": {
-    "extensions": [
-      "./foundation/secrets/secrets.ts",
-      "./foundation/permission/permission.ts",
-      "./foundation/lsp/lsp-hook.ts",
-      "./foundation/lsp/lsp-tool.ts",
-      ...
-    ]
-  }
-}
+```bash
+git filter-branch --tree-filter \
+  "find . -type f -name '*.json' -o -name '*.md' | xargs sed -i '' 's/@old-scope\/old-name/new-name/g'" \
+  <branch>
 ```
-
-**Load order matters:** Foundation first, then session lifecycle, then core tools, content tools, authoring.
 
 ---
 
-## Phase 5: Testing
+## Phase 3: Verify
 
-### 5a. Install Test Runner
-
-```bash
-cd /path/to/pi-me
-npm install --save-dev tsx
-```
-
-Add a test script to `package.json`:
-```json
-{
-  "scripts": {
-    "test": "tsx --test path/to/tests/*.test.ts ..."
-  }
-}
-```
-
-### 5b. Write Tests for Each Module
-
-Create test files in the same directory as the source files (or a `tests/` subdirectory):
-
-```
-foundation/permission/tests/
-├── safety-patterns.test.ts   # Test dangerous command detection
-├── path-guard.test.ts        # Test protected path matching
-└── permission.test.ts        # Existing tests
-```
-
-**Test categories to cover:**
-
-| Module | What to Test |
-|--------|-------------|
-| Safety patterns | Each dangerous command type matches; safe commands don't false-positive |
-| Path guard | Glob matching (exact, globstar, single-star, dotfiles); protected paths list |
-| Secrets | Plain obfuscation, replace mode, regex mode, deobfuscation, edge cases |
-| Calc | Arithmetic, math functions, validation (blocks unsafe tokens), edge cases |
-| Notebook | Cell read/edit/insert/delete, preview truncation, line splitting |
-| Token rate | TPS calculation, cumulative stats |
-| Agent discovery | Frontmatter parsing, quoted values, broken/missing frontmatter |
-
-**Test patterns:**
-
-Use `node:test` and `node:assert/strict`:
-
-```typescript
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
-
-describe("module-name", () => {
-  describe("feature", () => {
-    it("does something correctly", () => {
-      assert.equal(result, expected);
-    });
-    
-    it("handles edge case", () => {
-      assert.ok(condition);
-    });
-  });
-});
-```
-
-**Run tests frequently:**
-```bash
-npx tsx --test path/to/test1.test.ts path/to/test2.test.ts
-```
-
-### 5c. Fix Test Failures
-
-Common test issues:
-- **Import path errors**: Tests import `.js` but file is `.ts`. Ensure `tsx` is running the tests (not plain `node`).
-- **Wrong assertions**: Actual behavior differs from expected. Fix the test to match reality.
-- **Contradictory assertions**: Same input tested twice with opposite expectations.
-- **Assertion off-by-one**: Length calculations miscounting prefix/suffix chars.
-
----
-
-## Phase 6: Wrap Up
-
-### 6a. Update Skills
-
-Add skill files for new tools so the agent knows about them:
-
-```
-skills/lsp/SKILL.md         # LSP tool usage
-skills/ralph-loop/SKILL.md   # Ralph loop usage
-skills/permission/SKILL.md   # Permission system rules
-```
-
-### 6b. Update .gitignore
-
-Add generated/artifact directories:
-```
-.pi/artifacts/
-```
-
-### 6c. Clean and Commit
+### 3a. Run existing tests first
 
 ```bash
-cd /path/to/pi-me
-git rm -r --cached .pi/artifacts/ 2>/dev/null  # Remove cached artifacts
-git add -A
-git status  # Review changes
-git commit -m "feat: adopt <plugin-name> extensions
-
-Adopted from <source>:
-- Extension 1 (description)
-- Extension 2 (description)
-
-Merged overlapping functionality:
-- ...
-
-Optimizations:
-- ..."
-
-# Final test run
-npx tsx --test all/test/files/*.test.ts
+npm test
 ```
 
-### 6d. Summary Output
+Fix any pre-existing failures before adding new code. All existing tests must pass.
 
-Provide a clean summary:
+### 3b. Write tests for adopted modules
 
-```markdown
-## Branch: adopt-plugin
-## Commits: N
-## Extensions: X → Y (net +Z)
-## Tests: N tests across M files, 0 failures
-## Files changed: ...
+Use `node:test` + `node:assert/strict`. Place test files in a `tests/` subdirectory next to the source. Test categories:
+
+| Concern | What to test |
+|---------|-------------|
+| Correctness | Normal inputs produce expected outputs |
+| Edge cases | Empty, null, boundary values |
+| Safety | Dangerous inputs are rejected; safe inputs pass |
+| False positives | Legitimate inputs aren't mistakenly blocked |
+
+### 3c. Fix failures iteratively
+
+Common issues:
+- **Import `.js` but file is `.ts`** — ensure `tsx` runs the tests
+- **Assertion off-by-one** — length calculations miscounting prefixes/suffixes
+- **Contradictory assertions** — same input tested with inconsistent expectations
+
+### 3d. Final commit
+
+```bash
+npm test                            # all passing
+git status                          # review what changed
+git add <files>                     # be precise — never git add -A
+git commit -m "feat: adopt <plugin> extensions
+
+Added:
+- ext1: description
+- ext2: description
+
+Merged:
+- extA + extB → unified-module
+
+Tests: N new tests, 0 failures"
 ```
 
 ---
 
 ## Rules
 
-1. **Always** read all source files from both packages before making decisions
-2. **Always** create a plan document before touching any code
-3. **Use** precise `edit` operations with exact `oldText` matching — never rewrite entire files
-4. **Copy** files with `cp` then modify with `edit` — don't recreate from memory
-5. **Merge** overlapping functionality into unified modules — don't leave duplicate implementations
-6. **Delete** old modules that were replaced or merged
-7. **Run** tests after every change to catch regressions early
-8. **Commit** with descriptive conventional commit messages
-9. **Never** commit `.pi/artifacts/` — add to `.gitignore`
-10. **Document** new tools with skill files so future agents discover them
+1. **Read** all external source files before touching code
+2. **Write** a plan doc with comparison matrix before implementing
+3. **Copy** files with `cp`, then modify with precise `edit` — never recreate from memory
+4. **Merge** overlapping modules — don't leave duplicates
+5. **Delete** modules that were replaced or absorbed
+6. **Run** `npm test` after every change
+7. **Commit** with conventional commit messages; never `git add -A`
+8. **Document** new tools with `skills/<tool>/SKILL.md` files
 
 ---
 
-## Example: Full pi-hooks → pi-me Adoption
+## Example: pi-hooks → pi-me Adoption
 
-See the implementation on the `adopt-plugin` branch for the complete worked example:
+Reference: `adopt-plugin` branch.
 
-```
-pi-me/
-├── docs/adopt-plugin-plan.md              # Full analysis and plan
-├── foundation/
-│   ├── lsp/                               # Adopted from pi-hooks
-│   │   ├── lsp-core.ts
-│   │   ├── lsp-hook.ts
-│   │   ├── lsp-tool.ts
-│   │   └── tests/
-│   └── permission/                        # Merged: pi-hooks + pi-me
-│       ├── permission.ts                  # 3-layer unified system
-│       ├── permission-core.ts             # Command classification
-│       ├── safety-patterns.ts             # From pi-me permission-gate
-│       ├── path-guard.ts                  # From pi-me protected-paths
-│       └── tests/
-│           ├── safety-patterns.test.ts    # 32 tests
-│           ├── path-guard.test.ts         # 31 tests
-│           └── permission.test.ts         # Existing tests
-├── session-lifecycle/
-│   ├── git-checkpoint-new/                # Replaced with pi-hooks version
-│   │   ├── checkpoint.ts                  # Optimized
-│   │   ├── checkpoint-core.ts             # Optimized (shell-quote, fs.readFileSync)
-│   │   └── tests/
-│   └── token-rate/                        # Adopted from pi-hooks
-│       ├── token-rate.ts
-│       └── token-rate.test.ts             # 9 tests
-├── core-tools/
-│   ├── ralph-loop/                        # Adopted from pi-hooks
-│   │   ├── ralph-loop.ts
-│   │   ├── agents.ts
-│   │   ├── types.d.ts
-│   │   └── agents.test.ts                 # 6 tests
-│   ├── calc.test.ts                       # 36 tests
-├── content-tools/
-│   ├── repeat/                            # Adopted from pi-hooks
-│   │   ├── repeat.ts
-│   │   └── types.d.ts
-│   ├── notebook.test.ts                   # 15 tests
-├── skills/
-│   ├── lsp/SKILL.md
-│   ├── permission/SKILL.md
-│   └── ralph-loop/SKILL.md
-```
+**Strategy decisions:**
+- `checkpoint` → replaced pi-me's `git stash` wrapper with full git-ref checkpoints
+- `permission` → merged tier system + safety nets into unified 3-layer system
+- `lsp`, `ralph-loop`, `repeat`, `token-rate` → adopted as-is (no pi-me equivalent)
 
-**Results:** 22 extensions (up from 17), 144 tests across 8 test files, 0 failures, 3 safety extensions collapsed into 1 unified permission.
+**Result:** 22 extensions, 148 tests across 8 test files, 3 safety modules merged into 1.
