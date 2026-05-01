@@ -99,6 +99,7 @@ Restart pi. All 54 extensions and 23 skills load automatically.
 |-----------|--------|---------|
 | Git Checkpoint | `session-lifecycle/git-checkpoint-new/` | Auto-saves working tree as git refs at each turn start. Enables recovery on session fork. |
 | Auto Compact | `session-lifecycle/auto-compact/` | Triggers context compaction when usage exceeds the configured threshold. |
+| DCP | `session-lifecycle/dcp/` | Dynamic Context Pruning — removes duplicate, superseded, and resolved-error messages. Footer widget shows prune stats. |
 | Session Name | `session-lifecycle/session-name/` | Names sessions from the first user message. |
 | Token Rate | `session-lifecycle/token-rate/` | Displays tokens-per-second output rate in the footer. |
 | Agent Guidance | `session-lifecycle/agent-guidance/` | Injects model-specific guidance files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) based on active provider. |
@@ -246,6 +247,7 @@ pi-me incorporates work from the following open-source pi packages:
 | [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, cost-tracker, flicker-corp, funny-working-message, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar |
 | [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo overlay with branch replay, `/btw` side-question, skill argument substitution, ask-user-question, Warp notifications |
 | [oh-my-pi](https://github.com/can1357/oh-my-pi) | [Can](https://github.com/can1357) | Early ecosystem inspiration |
+| [pi-dcp](https://github.com/zenobi-us/pi-dcp) | [zenobi-us](https://github.com/zenobi-us) | Dynamic Context Pruning — deduplication, superseded writes, error purging, recency protection |
 
 ---
 
