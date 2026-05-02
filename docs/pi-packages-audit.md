@@ -3,6 +3,8 @@
 > Generated: 2026-05-02
 > Source: npm registry search `keywords:pi-package` (1968 total, top 250 analyzed)
 > Branches: `adopt-tools`
+> **Updated:** pi-markdown-preview, pi-studio, feynman, context-mode — all adopted 2026-05-02
+> **See:** [Adoption plan](plans/2026-05-02-adopt-top-5-packages-perf-optimized.md)
 
 ## Legend
 
@@ -37,6 +39,10 @@
 | `pi-mermaid` | 0.3.0 | gurpartap | `content-tools/mermaid.ts` ✅ |
 | `pi-amplike` | 1.3.6 | pasky | handoff, permission, session-lifecycle covered ✅ |
 | `@pi-unipi/ask-user` | 0.1.11 | neuron-mr-white | `core-tools/ask-user-question/` ✅ |
+| `pi-markdown-preview` | 0.9.7 | omacl | `content-tools/pi-markdown-preview/` ✅ |
+| `pi-studio` | 0.6.9 | omacl | `content-tools/pi-studio/` ✅ |
+| `@companion-ai/feynman` | 0.2.40 | GitHub Actions | `content-tools/feynman/` ✅ |
+| `context-mode` | 1.0.103 | mksglu | `content-tools/context-mode/` ✅ |
 | `pi-powerline-footer` | 0.4.20 | nicopreme | `session-lifecycle/tab-status` ⚠️ |
 | `pi-prompt-template-model` | 0.9.3 | nicopreme | `session-lifecycle/preset` ⚠️ |
 | `pi-capitals-context` | 1.5.0 | salem-malibary | `foundation/extra-context-files.ts` ⚠️ |
@@ -86,25 +92,13 @@
 - **Why:** Spec-driven development workflow with structured milestones and phases. Different approach from current plan tools — more structured/spec-first methodology.
 - **Keywords:** planning, spec-driven, milestones, phases
 
-### 7. `pi-markdown-preview` v0.9.7
-- **Publisher:** omacl
-- **Description:** Rendered markdown + LaTeX preview for pi, with terminal, browser, and PDF output
-- **Why:** pi-me doesn't render markdown previews. Includes LaTeX math rendering. Multi-format output (terminal, browser, PDF).
-- **Keywords:** markdown, latex, preview, PDF
+### 7. ~~`pi-markdown-preview`~~ ✅ ADOPTED
+### 8. ~~`pi-studio`~~ ✅ ADOPTED
+### 9. ~~`@companion-ai/feynman`~~ ✅ ADOPTED
 
-### 8. `pi-studio` v0.6.9
-- **Publisher:** omacl
-- **Description:** Two-pane browser workspace for pi with prompt/response editing, annotations, critiques, prompt/response history, and live Markdown/LaTeX/code preview
-- **Why:** Authoring workspace beyond what skill-bootstrap/commit-helper provide. Nice for iterative prompt engineering with live preview.
-- **Keywords:** workspace, editing, annotations, preview
+### 10. ~~`context-mode`~~ ✅ ADOPTED
 
-### 9. `@companion-ai/feynman` v0.2.40
-- **Publisher:** GitHub Actions
-- **Description:** Research-first CLI agent built on Pi and alphaXiv
-- **Why:** Research-oriented workflow. Could be useful for academic/research contexts.
-- **Keywords:** research, academic, arxiv
-
-### 10. `context-mode` v1.0.103
+### 11. `context-mode` v1.0.103
 - **Publisher:** mksglu
 - **Description:** MCP plugin that saves 98% of your context window. Works with Claude Code, Gemini CLI, etc. Sandboxed code execution, FTS5 knowledge base, and intent-driven search.
 - **Why:** Context window optimization via MCP. Could complement pi-me's own `context-window` extension. Also provides sandboxed code execution and knowledge base.
