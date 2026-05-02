@@ -2,7 +2,7 @@
  * Session Style Extension — Emoji + Color branding for pi sessions.
  *
  * Emoji: Auto-assigns or lets you pick an emoji for the status bar.
- *   Modes: "immediate" (random), "delayed" (after N messages), "ai" (LLM picks).
+ *   Modes: "immediate" (random), "delayed" (after N messages).
  *
  * Color: Assigns a distinct ANSI 256-color band to each session's footer,
  *   rotating through a 40-color palette for maximum visual distinction.
@@ -13,7 +13,6 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { complete, type UserMessage } from "@mariozechner/pi-ai";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
@@ -24,9 +23,8 @@ import * as os from "node:os";
 
 interface SessionEmojiConfig {
   enabledByDefault: boolean;
-  autoAssignMode: "immediate" | "delayed" | "ai";
+  autoAssignMode: "immediate" | "delayed";
   autoAssignThreshold: number;
-  contextMessages: number;
   emojiSet: "default" | "animals" | "tech" | "fun" | "custom";
   customEmojis: string[];
 }
@@ -34,8 +32,8 @@ interface SessionEmojiConfig {
 interface EmojiHistoryEntry { sessionId: string; emoji: string; timestamp: number; context: string; }
 
 const DEFAULT_EMOJI_CONFIG: SessionEmojiConfig = {
-  enabledByDefault: true, autoAssignMode: "ai", autoAssignThreshold: 3,
-  contextMessages: 5, emojiSet: "default", customEmojis: [],
+  enabledByDefault: true, autoAssignMode: "immediate", autoAssignThreshold: 3,
+  emojiSet: "default", customEmojis: [],
 };
 
 const EMOJI_SETS: Record<string, string[]> = {
@@ -45,15 +43,7 @@ const EMOJI_SETS: Record<string, string[]> = {
   fun: ["🎉", "🎊", "🎈", "🎁", "🎂", "🍕", "🍩", "🌮", "🎮", "🎲"],
 };
 
-const AI_SELECT_PROMPT = `You are an emoji selector. Given a conversation context and a list of recently used emojis, choose ONE unique emoji that:
-1. Represents the main topic/theme of the conversation
-2. Is NOT in the recently used list
-3. Is relevant and appropriate
-4. Stands alone (no skin tone modifiers)
-Output ONLY the single emoji character, nothing else.`;
 
-const AI_FROM_TEXT_PROMPT = `You are an emoji selector. Given a text description, choose ONE emoji that best represents it.
-Output ONLY the single emoji character, nothing else.`;
 
 // ============================================================================
 // Color — Types & Constants
@@ -243,17 +233,7 @@ export default function (pi: ExtensionAPI) {
     return `${Math.floor(hrs / 24)}d ago`;
   }
 
-  // ── Emoji: AI Selection ──
 
-  async function selectEmojiWithAI(ctx: ExtensionContext, config: SessionEmojiConfig): Promise<string> {
-    const recent = [...getRecentEmojis(ctx)].slice(0, 10);
-    const messages = (ctx as any).messages?.slice(-config.contextMessages) ?? [];
-    const userContent = messages.map((m: any) => `${m.role}: ${typeof m.content === "string" ? m.content.slice(0, 200) : ""}`).join("\n");
-    const userMsg: UserMessage = { role: "user", content: `Context:\n${userContent || "(new conversation)"}\n\nRecently used: ${recent.join(" ") || "none"}` };
-    const res = await complete({ messages: [{ role: "system", content: AI_SELECT_PROMPT }, userMsg], maxTokens: 10, temperature: 0.7 });
-    const emoji = (res?.content?.[0]?.text ?? "").trim();
-    return emoji.length > 0 ? emoji[0] : getEmojiList(config)[0];
-  }
 
   function selectRandomEmoji(ctx: ExtensionContext, config: SessionEmojiConfig): string {
     const emojis = getEmojiList(config);
@@ -268,8 +248,7 @@ export default function (pi: ExtensionAPI) {
     if (emoji.assigned || emoji.selecting) return;
     emoji.selecting = true;
     try {
-      if (config.autoAssignMode === "ai") ctx.ui.setStatus("0-emoji", "🔄");
-      const e = config.autoAssignMode === "ai" ? await selectEmojiWithAI(ctx, config) : selectRandomEmoji(ctx, config);
+      const e = selectRandomEmoji(ctx, config);
       emoji.emoji = e; emoji.assigned = true;
       persistEmoji(ctx, pi, e);
       ctx.ui.setStatus("0-emoji", e);
@@ -327,12 +306,9 @@ export default function (pi: ExtensionAPI) {
       // Interactive: choose from set
       const config = getEmojiConfig(ctx);
       const emojis = getEmojiList(config);
-      const action = await ctx.ui.select("Choose emoji", [...emojis, "🤖 AI pick", "🎲 Random", "❌ Cancel"]);
+      const action = await ctx.ui.select("Choose emoji", [...emojis, "🎲 Random", "❌ Cancel"]);
       if (!action || action === "❌ Cancel") return;
-      if (action === "🤖 AI pick") {
-        const e = await selectEmojiWithAI(ctx, config);
-        setManualEmoji(ctx, e);
-      } else if (action === "🎲 Random") {
+      if (action === "🎲 Random") {
         setManualEmoji(ctx, selectRandomEmoji(ctx, config));
       } else {
         setManualEmoji(ctx, action);
