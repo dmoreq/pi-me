@@ -3,7 +3,7 @@
 > Generated: 2026-05-02
 > Source: npm registry search `keywords:pi-package` (1968 total, top 250 analyzed)
 > Branches: `adopt-tools`
-> **Updated:** pi-markdown-preview, pi-studio, feynman, context-mode — all adopted 2026-05-02
+> **Updated:** +12 more packages adopted 2026-05-02 (pi-processes, pi-link, pi-formatter, memex, pi-thinking-steps, pi-crew, pi-mempalace, pi-edit-session, pi-stash, pi-oracle, greedysearch-pi, super-pi)
 > **See:** [Adoption plan](plans/2026-05-02-adopt-top-5-packages-perf-optimized.md)
 
 ## Legend
@@ -43,6 +43,18 @@
 | `pi-studio` | 0.6.9 | omacl | `content-tools/pi-studio/` ✅ |
 | `@companion-ai/feynman` | 0.2.40 | GitHub Actions | `content-tools/feynman/` ✅ |
 | `context-mode` | 1.0.103 | mksglu | `content-tools/context-mode/` ✅ |
+| `@aliou/pi-processes` | 0.8.1 | aliou | `core-tools/pi-processes/` ✅ |
+| `pi-link` | 0.1.11 | alvivar | `core-tools/pi-link/` ✅ |
+| `pi-formatter` | 1.1.2 | GitHub Actions | `core-tools/pi-formatter/` ✅ |
+| `@touchskyer/memex` | 0.1.32 | touchskyer | `core-tools/memex/` ✅ |
+| `pi-thinking-steps` | 1.0.8 | fluxgear | `core-tools/pi-thinking-steps/` ✅ |
+| `pi-crew` | 0.1.41 | bom0792 | `core-tools/pi-crew/` ✅ |
+| `pi-mempalace-extension` | 0.2.0 | auda29 | `core-tools/pi-mempalace/` ✅ |
+| `pi-edit-session-in-place` | 0.1.8 | fitchmultz | `core-tools/pi-edit-session/` ✅ |
+| `@fitchmultz/pi-stash` | 0.1.9 | fitchmultz | `core-tools/pi-stash/` ✅ |
+| `pi-oracle` | 0.6.13 | fitchmultz | `core-tools/pi-oracle/` ✅ |
+| `@apmantza/greedysearch-pi` | 1.8.5 | apmantza | `core-tools/greedysearch-pi/` ✅ |
+| `@leing2021/super-pi` | 0.23.4 | leing2023 | `core-tools/super-pi/` ✅ |
 | `pi-powerline-footer` | 0.4.20 | nicopreme | `session-lifecycle/tab-status` ⚠️ |
 | `pi-prompt-template-model` | 0.9.3 | nicopreme | `session-lifecycle/preset` ⚠️ |
 | `pi-capitals-context` | 1.5.0 | salem-malibary | `foundation/extra-context-files.ts` ⚠️ |
