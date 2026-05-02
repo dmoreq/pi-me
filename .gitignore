@@ -4,3 +4,4 @@ node_modules/
 .pi/artifacts/
 .worktrees/
 .pi/
+.DS_Store
