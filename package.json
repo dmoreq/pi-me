@@ -38,7 +38,6 @@
       "./core-tools/web-search.ts",
       "./core-tools/todo/index.ts",
       "./core-tools/calc.ts",
-      "./core-tools/ask-user-question/index.ts",
       "./core-tools/ralph-loop/ralph-loop.ts",
       "./core-tools/plan-tracker/plan-tracker.ts",
       "./core-tools/code-actions/index.ts",
@@ -82,7 +81,8 @@
       "./authoring/commit-helper/commit-helper.ts",
       "./authoring/skill-bootstrap/skill-bootstrap.ts",
 
-      "pi-web-providers/dist/index.js"
+      "pi-web-providers/dist/index.js",
+      "pi-dialog"
     ],
     "skills": [
       "./skills"
@@ -112,6 +112,7 @@
     "pi-markdown-preview": "^0.9.7",
 
 
+    "pi-dialog": "github:dmoreq/pi-dialog",
     "pi-web-providers": "^3.0.0",
     "shell-quote": "^1.8.3",
     "wreq-js": "^2.3.0",

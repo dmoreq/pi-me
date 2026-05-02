@@ -1,0 +1,49 @@
+{
+  "name": "@pi-me/shared",
+  "version": "0.1.0",
+  "description": "Shared utilities for pi-me: config loading, notifications, state management, lazy loading",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./ext-state": {
+      "types": "./ext-state.d.ts",
+      "default": "./ext-state.js"
+    },
+    "./lazy-package": {
+      "types": "./lazy-package.d.ts",
+      "default": "./lazy-package.js"
+    },
+    "./pi-config": {
+      "types": "./pi-config.d.ts",
+      "default": "./pi-config.js"
+    },
+    "./register-package": {
+      "types": "./register-package.d.ts",
+      "default": "./register-package.js"
+    },
+    "./notify-utils": {
+      "types": "./notify-utils.d.ts",
+      "default": "./notify-utils.js"
+    },
+    "./types": {
+      "types": "./types.d.ts",
+      "default": "./types.js"
+    }
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1",
+    "zod": "^4.4.1"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@mariozechner/pi-coding-agent": {
+      "optional": true
+    }
+  }
+}

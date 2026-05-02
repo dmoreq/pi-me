@@ -62,7 +62,7 @@ import {
 } from "./permission-core.js";
 import { DEFAULT_SAFETY_PATTERNS, type SafetyPattern } from "./safety-patterns.js";
 import { DEFAULT_PROTECTED_PATHS, matchesGlob, type ProtectedGlob } from "./path-guard.js";
-import { confirmDialog } from "../dialog/index.js";
+import { confirmDialog } from "pi-dialog/dialog/confirm-dialog.ts";
 
 // Re-export types and constants needed by the hook
 export {

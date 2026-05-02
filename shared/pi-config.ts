@@ -1,9 +1,25 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
-import { getAgentDir as _getAgentDir } from "@mariozechner/pi-coding-agent";
-export const getAgentDir = _getAgentDir;
 import { parse, printParseErrorCode, type ParseError } from "jsonc-parser";
 import type { z } from "zod";
+
+// ── Agent directory resolution (no pi SDK dependency) ────────────────────
+//
+// Tries, in order:
+//   1. PI_AGENT_DIR env var
+//   2. ~/.pi/agent (standard pi location)
+//   3. ./agent (fallback for CI/test)
+//
+// If the pi SDK is available at runtime, callers can override with an
+// explicit `folder` parameter.
+
+export function getAgentDir(): string {
+  return (
+    process.env.PI_AGENT_DIR ??
+    path.join(os.homedir(), ".pi", "agent")
+  );
+}
 
 export type LoadConfigOptions<Schema extends z.ZodType> = {
   folder?: string;

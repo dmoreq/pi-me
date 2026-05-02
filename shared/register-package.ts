@@ -10,6 +10,9 @@
  *
  * For packages that also ship skills, pass `skillPaths` and the handler
  * registers them eagerly via `resources_discover`.
+ *
+ * Uses `import type` which is fully erased at compile time (no runtime dep).
+ * Consumers in non-pi environments only need the types available for TS checking.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
