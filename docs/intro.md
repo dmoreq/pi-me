@@ -77,4 +77,4 @@ Twenty-three skills cover the full development lifecycle: brainstorming, plannin
 
 ---
 
-**See also:** [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Core Tools](core-tools.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md) · [Skills](skills.md)
+**See also:** [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Core Tools](core-tools.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md) · [Skills](skills.md) · [Telegram Integration](telegram.md)
