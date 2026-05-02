@@ -133,13 +133,10 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | BTW | `core-tools/btw/` | `/btw <question>` asks the primary model a side question with cloned context. Answer in overlay. |
 | Oracle | `core-tools/oracle.ts` | `/oracle <prompt>` gets a second opinion from another model. |
 | Code Actions | `core-tools/code-actions/` | `/code` picks code snippets from assistant messages to copy, insert, or run. |
-| Speed Reading | `core-tools/speedreading.ts` | `/speedread` RSVP reader with adjustable WPM using the Spritz technique. |
-| Ultrathink | `core-tools/ultrathink.ts` | Rainbow animation triggered by "ultrathink" keyword detection. |
 | File Collector | `core-tools/file-collector/` | Collects file paths and content from tool results based on configurable regex patterns. |
 | Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
 
 | Memory | `core-tools/memory/` | SQLite-backed persistent memory + /mem AGENTS.md instruction saving. Key-value facts, learned lessons, event audit. |
-| Link | `core-tools/link/` | WebSocket inter-terminal communication: share chat, broadcast prompts, coordinate sessions. |
 | Formatter | `core-tools/formatter/` | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
 | Edit Session | `core-tools/edit-session/` | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
 | Stash | `core-tools/stash/` | Draft stash: `Ctrl+Shift+S` to stash editor content, `Ctrl+Shift+R` to restore. |

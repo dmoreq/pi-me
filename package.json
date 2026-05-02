@@ -45,13 +45,10 @@
       "./core-tools/oracle.ts",
       "./core-tools/btw/index.ts",
       "./core-tools/plan-mode.ts",
-      "./core-tools/speedreading.ts",
-      "./core-tools/ultrathink.ts",
       "./core-tools/file-collector/index.ts",
       "./core-tools/sub-pi/index.ts",
       "./core-tools/subagent/index.ts",
       "./core-tools/memory/index.ts",
-      "./core-tools/link/index.ts",
       "./core-tools/formatter/index.ts",
 
       "./core-tools/thinking-steps/index.ts",
