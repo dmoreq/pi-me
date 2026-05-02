@@ -138,7 +138,7 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Memory Mode | `core-tools/memory-mode.ts` | `/mem` saves instructions to `AGENTS.md` project files. |
 | File Collector | `core-tools/file-collector/` | Collects file paths and content from tool results based on configurable regex patterns. |
 | Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
-| Arcade | `core-tools/arcade/` | Five terminal minigames: Spice Invaders, Picman, Ping, Tetris, Platformer. |
+
 | Flicker Corp | `core-tools/flicker-corp.ts` | Terminal display animation effect. |
 | Memory | `core-tools/memory/` | SQLite-backed persistent memory: key-value facts, learned lessons, event audit log. |
 | Link | `core-tools/link/` | WebSocket inter-terminal communication: share chat, broadcast prompts, coordinate sessions. |

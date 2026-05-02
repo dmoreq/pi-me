@@ -41,11 +41,7 @@
       "./core-tools/ralph-loop/ralph-loop.ts",
       "./core-tools/plan-tracker/plan-tracker.ts",
       "./core-tools/code-actions/index.ts",
-      "./core-tools/arcade/spice-invaders.ts",
-      "./core-tools/arcade/picman.ts",
-      "./core-tools/arcade/ping.ts",
-      "./core-tools/arcade/tetris.ts",
-      "./core-tools/arcade/platformer/platformer.ts",
+
       "./core-tools/clipboard.ts",
       "./core-tools/flicker-corp.ts",
       "./core-tools/oracle.ts",
