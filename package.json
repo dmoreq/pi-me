@@ -1,7 +1,7 @@
 {
   "name": "pi-me",
   "version": "0.2.0",
-  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers, ralph-loop",
+  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers, ralph-loop, subagent orchestration, web-fetch",
   "license": "MIT",
   "keywords": [
     "pi-package",
@@ -56,6 +56,7 @@
       "./core-tools/ultrathink.ts",
       "./core-tools/file-collector/index.ts",
       "./core-tools/sub-pi/index.ts",
+      "./core-tools/subagent/extension/index.ts",
       "./content-tools/notebook.ts",
       "./content-tools/mermaid.ts",
       "./content-tools/github.ts",
@@ -63,6 +64,7 @@
       "./content-tools/files-widget/index.ts",
       "./content-tools/raw-paste/index.ts",
       "./content-tools/richard-files/index.ts",
+      "./content-tools/web-fetch/index.ts",
       "./authoring/output-artifacts/output-artifacts.ts",
       "./authoring/commit-helper/commit-helper.ts",
       "./authoring/skill-bootstrap/skill-bootstrap.ts",
@@ -78,9 +80,14 @@
   },
   "dependencies": {
     "bunfig": "^0.15.9",
+    "defuddle": "^0.18.1",
     "jsonc-parser": "^3.3.1",
+    "linkedom": "^0.18.12",
+    "lodash": "^4.18.1",
+    "mime-types": "^3.0.2",
     "pi-web-providers": "^3.0.0",
     "shell-quote": "^1.8.3",
+    "wreq-js": "^2.3.0",
     "zod": "^4.4.1"
   },
   "peerDependencies": {
