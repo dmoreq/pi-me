@@ -3,3 +3,4 @@ node_modules/
 *.log
 .pi/artifacts/
 .worktrees/
+.pi/
