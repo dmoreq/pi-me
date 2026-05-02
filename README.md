@@ -147,7 +147,7 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Pi Edit Session | `core-tools/pi-edit-session/` | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
 | Pi Stash | `core-tools/pi-stash/` | Draft stash: `Ctrl+Shift+S` to stash editor content, `Ctrl+Shift+R` to restore. |
 | Pi Thinking Steps | `core-tools/pi-thinking-steps/` | Adds structured thinking (plan, research, implement, review) before tool calls. |
-| Greedy Search | `core-tools/greedysearch-pi/` | Deep research: iterative search, synthesize findings, produce comprehensive reports. |
+| Greedy Search | `core-tools/pi-greedysearch/` | Deep research: iterative search, synthesize findings, produce comprehensive reports. |
 
 ### Content Tools — File & Resource Utilities
 
