@@ -136,6 +136,6 @@
     "tsx": "^4.21.0"
   },
   "scripts": {
-    "test": "tsx --test \"foundation/**/*.test.ts\" \"session-lifecycle/**/*.test.ts\" \"core-tools/**/*.test.ts\" \"content-tools/**/*.test.ts\" \"authoring/**/*.test.ts\""
+    "test": "tsx --test \"shared/**/*.test.ts\" \"foundation/**/*.test.ts\" \"session-lifecycle/**/*.test.ts\" \"core-tools/**/*.test.ts\" \"content-tools/**/*.test.ts\" \"authoring/**/*.test.ts\""
   }
 }

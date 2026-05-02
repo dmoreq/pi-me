@@ -8,3 +8,4 @@
 export * from "./types";
 export * from "./settings";
 export * from "./notifications";
+export * from "./register-package.js";

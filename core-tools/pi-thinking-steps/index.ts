@@ -2,16 +2,12 @@
  * pi-thinking-steps — Three-mode thinking-step rendering for Pi's TUI.
  * Lazy-loaded on session_start.
  */
+import { registerAdoptedPackage } from "../../shared/register-package.js";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
-export default function (pi: ExtensionAPI) {
-  pi.on("session_start", async (_event, ctx) => {
-    try {
-      const mod = await import("pi-thinking-steps");
-      if (typeof mod.default === "function") await mod.default(pi);
-      ctx.ui.setStatus("pi-thinking-steps", "ready");
-    } catch (err) {
-      console.error("[pi-thinking-steps] Failed:", err);
-    }
+export default (pi: ExtensionAPI) =>
+  registerAdoptedPackage(pi, {
+    importFn: () => import("pi-thinking-steps"),
+    statusKey: "pi-thinking-steps",
+    packageName: "pi-thinking-steps",
   });
-}
