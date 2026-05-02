@@ -57,6 +57,7 @@
       "./core-tools/file-collector/index.ts",
       "./core-tools/sub-pi/index.ts",
       "./core-tools/subagent/extension/index.ts",
+      "./core-tools/pi-memory/index.ts",
       "./content-tools/notebook.ts",
       "./content-tools/mermaid.ts",
       "./content-tools/github.ts",
@@ -79,6 +80,7 @@
     ]
   },
   "dependencies": {
+    "@samfp/pi-memory": "^1.0.2",
     "bunfig": "^0.15.9",
     "defuddle": "^0.18.1",
     "jsonc-parser": "^3.3.1",
