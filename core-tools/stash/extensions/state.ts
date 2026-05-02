@@ -1,5 +1,5 @@
 /**
- * Purpose: Pure helpers for managing the pi-stash draft stack.
+ * Purpose: Pure helpers for managing the stash draft stack.
  * Responsibilities: Validate persisted stash snapshots, cap stack growth, remove drafts by index, and create compact previews.
  * Scope: Stateless draft-stack logic only; no pi runtime or UI access.
  * Usage: Imported by the extension entrypoint and unit tests.
@@ -7,7 +7,7 @@
  */
 
 export const MAX_STASHED_DRAFTS = 10;
-export const STASH_ENTRY_TYPE = "pi-stash";
+export const STASH_ENTRY_TYPE = "stash";
 
 export interface StashState {
 	drafts: string[];

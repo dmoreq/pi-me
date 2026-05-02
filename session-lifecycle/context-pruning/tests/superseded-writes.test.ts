@@ -1,5 +1,5 @@
 /**
- * Tests for DCP Superseded Writes Rule
+ * Tests for Context Pruning Superseded Writes Rule
  */
 
 import { describe, it, before } from "node:test";
@@ -7,9 +7,9 @@ import assert from "node:assert/strict";
 import { registerRule, clearRegistry } from "../registry";
 import { supersededWritesRule } from "../rules/superseded-writes";
 import { applyPruningWorkflow } from "../workflow";
-import type { DcpConfigWithPruneRuleObjects } from "../types";
+import type { PruningConfigWithRuleObjects } from "../types";
 
-const config: DcpConfigWithPruneRuleObjects = {
+const config: PruningConfigWithRuleObjects = {
 	enabled: true,
 	debug: false,
 	rules: [supersededWritesRule],

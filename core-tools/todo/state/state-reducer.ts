@@ -7,7 +7,7 @@ import { detectCycle } from "./task-graph.js";
  * Reducer outcome. Closed tagged union — adding a new action requires extending
  * this union AND the response-envelope's `formatContent` switch (compiler-
  * enforced exhaustive). Mirrors the `Effect` pattern in
- * `packages/rpiv-ask-user-question/state/state-reducer.ts:14-30`.
+ * `pi-dialog/dialog/state/state-reducer.ts:14-30`.
  *
  * `error` carries the message in-band so callers can pattern-match on
  * `op.kind === "error"` without a side-channel boolean.

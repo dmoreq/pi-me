@@ -1,12 +1,12 @@
 /**
- * DCP Recent Command
+ * Context Pruning Recent Command
  * 
  * Adjust the recency threshold (number of recent messages to always keep).
  */
 
-import type { CommandDefinition, DcpConfig } from "../types";
+import type { CommandDefinition, PruningConfig } from "../types";
 
-export function createRecentCommand(config: DcpConfig): CommandDefinition {
+export function createRecentCommand(config: PruningConfig): CommandDefinition {
 	return {
 		description: "Set the number of recent messages to always keep (e.g., /dcp-recent 15)",
 		handler: async (args, ctx) => {
@@ -16,7 +16,7 @@ export function createRecentCommand(config: DcpConfig): CommandDefinition {
 				return;
 			}
 			config.keepRecentCount = count;
-			ctx.ui.notify(`DCP: keeping last ${count} messages`, "info");
+			ctx.ui.notify(`Context Pruning: keeping last ${count} messages`, "info");
 		},
 	};
 }

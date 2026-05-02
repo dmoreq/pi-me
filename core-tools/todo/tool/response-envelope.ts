@@ -74,7 +74,7 @@ export function formatContent(op: Op, state: TaskState): string {
  * reducer's new state. `details` is the persistence + replay snapshot —
  * `state/replay.ts` consumes this exact shape on session lifecycle events.
  *
- * Mirrors `packages/rpiv-ask-user-question/tool/response-envelope.ts:13-47`.
+ * Mirrors `pi-dialog/dialog/tool/response-envelope.ts:13-47`.
  */
 export function buildToolResult(
 	action: TaskAction,

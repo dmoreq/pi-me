@@ -24,7 +24,7 @@ For each external extension, find the pi-me equivalent (if any). Write an analys
 
 | External Extension | pi-me Equivalent | Verdict |
 |---|---|---|
-| `checkpoint` | `git-checkpoint-new` | Replace: external version is richer |
+| `checkpoint` | `git-checkpoint` | Replace: external version is richer |
 | `lsp` | (none) | Adopt as-is |
 | `permission` | `foundation/permission/` | Merge: combine tier system with safety nets |
 | ... | ... | ... |

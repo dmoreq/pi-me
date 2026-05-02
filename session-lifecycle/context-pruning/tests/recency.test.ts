@@ -1,5 +1,5 @@
 /**
- * Tests for DCP Recency Rule
+ * Tests for Context Pruning Recency Rule
  */
 
 import { describe, it, before } from "node:test";
@@ -8,7 +8,7 @@ import { registerRule, clearRegistry } from "../registry";
 import { deduplicationRule, resetSeenHashes } from "../rules/deduplication";
 import { recencyRule } from "../rules/recency";
 import { applyPruningWorkflow } from "../workflow";
-import type { DcpConfigWithPruneRuleObjects } from "../types";
+import type { PruningConfigWithRuleObjects } from "../types";
 
 describe("Recency Rule", () => {
 	before(() => {
@@ -27,7 +27,7 @@ describe("Recency Rule", () => {
 			{ role: "assistant", content: "Old duplicate" }, // would be pruned by dedup
 		] as any;
 
-		const config: DcpConfigWithPruneRuleObjects = {
+		const config: PruningConfigWithRuleObjects = {
 			enabled: true,
 			debug: false,
 			rules: [deduplicationRule, recencyRule],
@@ -50,7 +50,7 @@ describe("Recency Rule", () => {
 			{ role: "assistant", content: "Same content" },
 		] as any;
 
-		const config: DcpConfigWithPruneRuleObjects = {
+		const config: PruningConfigWithRuleObjects = {
 			enabled: true,
 			debug: false,
 			rules: [deduplicationRule, recencyRule],
@@ -69,7 +69,7 @@ describe("Recency Rule", () => {
 			{ role: "assistant", content: "Same output" }, // duplicate of msg 0, NOT protected
 		] as any;
 
-		const config: DcpConfigWithPruneRuleObjects = {
+		const config: PruningConfigWithRuleObjects = {
 			enabled: true,
 			debug: false,
 			rules: [deduplicationRule, recencyRule],

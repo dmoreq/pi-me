@@ -1,5 +1,5 @@
 /**
- * Core type definitions for Pi-DCP
+ * Core type definitions for Context Pruning
  */
 
 import type { AgentMessage, } from "@mariozechner/pi-agent-core";
@@ -58,7 +58,7 @@ export interface PrepareContext {
 	/** Current message index */
 	index: number;
 	/** Extension configuration */
-	config: DcpConfigWithPruneRuleObjects
+	config: PruningConfigWithRuleObjects
 }
 
 /**
@@ -70,7 +70,7 @@ export interface ProcessContext {
 	/** Current message index */
 	index: number;
 	/** Extension configuration */
-	config: DcpConfigWithPruneRuleObjects;
+	config: PruningConfigWithRuleObjects;
 }
 
 /**
@@ -101,7 +101,7 @@ export const isPruneRuleObject = (obj: unknown): obj is PruneRule => {
 /**
  * Extension configuration
  */
-export interface DcpConfig {
+export interface PruningConfig {
 	/** Master enable/disable toggle */
 	enabled?: boolean;
 	/** Enable debug logging */
@@ -111,10 +111,10 @@ export interface DcpConfig {
 	/** Optional log directory override */
 	logDir?: string;
 }
-export type DcpConfigWithPruneRuleObjects = DcpConfig & {
+export type PruningConfigWithRuleObjects = PruningConfig & {
 	rules: PruneRule[];
 };
-export type DcpConfigWithRuleRefs = DcpConfig & {
+export type PruningConfigWithRuleRefs = PruningConfig & {
 	rules: (string | PruneRule)[];
 };
 

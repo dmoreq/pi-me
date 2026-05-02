@@ -1,5 +1,5 @@
 /**
- * DCP Init Command
+ * Context Pruning Init Command
  * 
  * Generate a default dcp.config.ts file in the current directory.
  */

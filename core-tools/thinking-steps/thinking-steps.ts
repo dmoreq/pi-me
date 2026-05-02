@@ -11,7 +11,7 @@
  * Controls: Alt+T to cycle, /thinking-steps <mode|project|global> to set.
  * Persistence: session entries (current session), JSON files (project/global).
  *
- * Lines: ~280 (vs. 2,784 in the original pi-thinking-steps).
+ * Lines: ~280 (vs. 2,784 in the original thinking-steps).
  */
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";

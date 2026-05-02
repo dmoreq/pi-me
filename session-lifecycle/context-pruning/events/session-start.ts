@@ -1,17 +1,17 @@
 
 /**
- * DCP Context Event Handler
+ * Context Pruning Context Event Handler
  * 
  * Handles the 'session_start' event which fires on new sessions.
  * Applies pruning workflow to reduce token usage while preserving coherence.
  */
 
 import type { SessionStartEvent, ExtensionContext, SessionSwitchEvent } from "@mariozechner/pi-coding-agent";
-import type { DcpConfigWithPruneRuleObjects } from "../types";
+import type { PruningConfigWithRuleObjects } from "../types";
 import { getAllRules } from '../registry'
 
 export interface SessionStartEventHandlerOptions {
-  config: DcpConfigWithPruneRuleObjects
+  config: PruningConfigWithRuleObjects
 }
 
 /**
@@ -25,7 +25,7 @@ export function createSessionStartEventHandler(options: SessionStartEventHandler
 
 
   return (event: SessionStartEvent, ctx: ExtensionContext) => {
-    // DCP startup notification removed
+    // Context Pruning startup notification removed
   }
 }
 
@@ -34,6 +34,6 @@ export function createSessionStartEventHandler(options: SessionStartEventHandler
 //   const { config } = options;
 //
 //   return (event: SessionSwitchEvent, ctx: ExtensionContext) => {
-//     ctx.ui.notify(`DCP: Switched to session [${event.reason}]`, "info");
+//     ctx.ui.notify(`Context Pruning: Switched to session [${event.reason}]`, "info");
 //   }
 // }

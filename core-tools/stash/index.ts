@@ -1,5 +1,5 @@
 /**
- * pi-stash — Stash draft messages and restore them later.
+ * stash — Stash draft messages and restore them later.
  * Inlined from @fitchmultz/pi-stash v0.1.9.
  * Lazy-loaded on session_start.
  */

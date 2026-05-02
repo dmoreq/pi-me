@@ -1,5 +1,5 @@
 /**
- * Pi-DCP: Dynamic Context Pruning Extension (for pi-me)
+ * Context Pruning: Dynamic Context Pruning Extension (for pi-me)
  *
  * Zero-config, auto-pruning extension for pi-me.
  * Intelligently removes duplicate/obsolete messages to optimize token usage.
@@ -9,7 +9,7 @@
  * - "session_start" event: shows status on session start
  *
  * Status widget:
- * - Shows "DCP: {pruned}/{total}" in the TUI footer (matches token-rate/tab-status pattern)
+ * - Shows "Context Pruning: {pruned}/{total}" in the TUI footer (matches token-rate/tab-status pattern)
  *
  * Commands:
  * - /dcp-stats    — Show detailed pruning statistics
@@ -63,7 +63,7 @@ export default async function (pi: ExtensionAPI) {
 		enableConsole: false,
 	});
 
-	logger.info("pi-dcp extension loaded", {
+	logger.info("context-pruning extension loaded", {
 		enabled: config.enabled,
 		debug: config.debug,
 		rules: config.rules.length,
@@ -79,10 +79,10 @@ export default async function (pi: ExtensionAPI) {
 		if (!ctx.hasUI) return;
 		const { totalPruned, totalProcessed } = statsTracker;
 		if (totalProcessed === 0) {
-			ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", "DCP: --"));
+			ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", "Context Pruning: --"));
 		} else {
 			const pct = Math.round((totalPruned / totalProcessed) * 100);
-			ctx.ui.setStatus(STATUS_KEY, `DCP: ${totalPruned}/${totalProcessed} (${pct}%)`);
+			ctx.ui.setStatus(STATUS_KEY, `Context Pruning: ${totalPruned}/${totalProcessed} (${pct}%)`);
 		}
 	};
 

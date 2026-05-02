@@ -1,15 +1,15 @@
 /**
- * pi-memory — Persistent memory across sessions.
- * Inlined from @samfp/pi-memory v1.0.2.
+ * memory — Persistent memory across sessions.
+ * Inlined from @samfp/memory v1.0.2.
  *
  * Supports disableAutoInject config via settings.json:
- *   { "piMemory": { "disableAutoInject": true } }
+ *   { "memory": { "disableAutoInject": true } }
  */
 import { getAgentDir } from "@mariozechner/pi-coding-agent";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import piMemory from "./src/index.ts";
+import memory from "./src/index.ts";
 import registerMemoryMode from "../memory-mode.ts";
 
 function isAutoInjectDisabled(): boolean {
@@ -18,7 +18,7 @@ function isAutoInjectDisabled(): boolean {
     if (!existsSync(settingsPath)) return false;
     const raw = readFileSync(settingsPath, "utf-8");
     const settings = JSON.parse(raw);
-    return settings?.piMemory?.disableAutoInject === true;
+    return settings?.memory?.disableAutoInject === true;
   } catch {
     return false;
   }
@@ -26,8 +26,8 @@ function isAutoInjectDisabled(): boolean {
 
 export default function (pi: ExtensionAPI) {
   if (isAutoInjectDisabled()) {
-    // pi-memory is installed but dormant — no context injection.
-    // Enable by setting { "piMemory": { "disableAutoInject": false } }
+    // memory is installed but dormant — no context injection.
+    // Enable by setting { "memory": { "disableAutoInject": false } }
     // in ~/.pi/agent/settings.json
     return;
   }
@@ -37,11 +37,11 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("session_start", async (_event, ctx) => {
     try {
-      piMemory(pi);
-      ctx.ui.setStatus("pi-memory", "ready");
+      memory(pi);
+      ctx.ui.setStatus("memory", "ready");
     } catch (err) {
-      console.error("[pi-memory] Failed to load:", err);
-      ctx.ui.notify("pi-memory failed to load", "error");
+      console.error("[memory] Failed to load:", err);
+      ctx.ui.notify("memory failed to load", "error");
     }
   });
 }

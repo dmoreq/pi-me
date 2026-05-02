@@ -3,7 +3,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import type { DcpConfigWithPruneRuleObjects, DcpConfigWithRuleRefs, PruneRule, DcpConfig } from "./types";
+import type { PruningConfigWithRuleObjects, PruningConfigWithRuleRefs, PruneRule, PruningConfig } from "./types";
 import { isPruneRuleObject } from "./types";
 import { loadConfig as bunfigLoad } from "bunfig";
 import { getRule, getRuleNames } from "./registry";
@@ -11,7 +11,7 @@ import { getRule, getRuleNames } from "./registry";
 /**
  * Default configuration
  */
-const DEFAULT_CONFIG: DcpConfigWithRuleRefs = {
+const DEFAULT_CONFIG: PruningConfigWithRuleRefs = {
 	enabled: true,
 	debug: true,
 	rules: ["deduplication", "superseded-writes", "error-purging", "tool-pairing", "recency"],
@@ -26,15 +26,15 @@ const DEFAULT_CONFIG: DcpConfigWithRuleRefs = {
  * 3. Config file in home directory (~/.dcprc)
  * 4. Default configuration
  */
-export async function loadConfig(pi: ExtensionAPI): Promise<DcpConfigWithPruneRuleObjects> {
+export async function loadConfig(pi: ExtensionAPI): Promise<PruningConfigWithRuleObjects> {
 	// bunfig automatically searches for config files in cwd and home directory
 	// It supports: dcp.config.{ts,js,json,toml,yaml}, .dcprc{,.json,.toml,.yaml}
 	// and package.json with "dcp" key
-	const config = await bunfigLoad<DcpConfigWithRuleRefs>({
-		name: "pi-dcp",
+	const config = await bunfigLoad<PruningConfigWithRuleRefs>({
+		name: "context-pruning",
 		cwd: process.cwd(),
 		defaultConfig: DEFAULT_CONFIG,
-		checkEnv: true, // Allow DCP_ENABLED, DCP_DEBUG, etc.
+		checkEnv: true, // Allow Context Pruning_ENABLED, Context Pruning_DEBUG, etc.
 	});
 
 	// Apply flag overrides (highest priority)
@@ -75,7 +75,7 @@ export async function loadConfig(pi: ExtensionAPI): Promise<DcpConfigWithPruneRu
 
 	// Log invalid rules if debug is enabled
 	if (config.debug && invalidRuleNames.length > 0) {
-		console.warn(`[pi-dcp] Warning: The following configured rules are invalid and will be ignored: ${invalidRuleNames.join(", ")}`);
+		console.warn(`[context-pruning] Warning: The following configured rules are invalid and will be ignored: ${invalidRuleNames.join(", ")}`);
 	}
 
 	return {
@@ -87,7 +87,7 @@ export async function loadConfig(pi: ExtensionAPI): Promise<DcpConfigWithPruneRu
 /**
  * Get default configuration (useful for testing or displaying defaults)
  */
-export function getDefaultConfig(): DcpConfig {
+export function getDefaultConfig(): PruningConfig {
 	return { ...DEFAULT_CONFIG };
 }
 
@@ -101,28 +101,28 @@ export function generateConfigFileContent(options?: { simplified?: boolean }): s
 
 	if (simplified) {
 		return `/**
- * DCP (Dynamic Context Pruning) Configuration
+ * Context Pruning (Dynamic Context Pruning) Configuration
  * 
  * Place this file as:
  * - ./dcp.config.ts (project-specific)
  * - ~/.dcprc (user-wide)
  */
 
-import type { DcpConfig } from "@mariozechner/pi-me/session-lifecycle/context-pruning/types";
+import type { PruningConfig } from "@mariozechner/pi-me/session-lifecycle/context-pruning/types";
 
 export default {
 	enabled: true,
 	debug: false,
 	rules: ["deduplication", "superseded-writes", "error-purging", "tool-pairing", "recency"],
 	keepRecentCount: 10,
-} satisfies DcpConfig;
+} satisfies PruningConfig;
 `;
 	}
 
 	return `/**
- * DCP (Dynamic Context Pruning) Configuration
+ * Context Pruning (Dynamic Context Pruning) Configuration
  * 
- * This file configures the pi-dcp extension for intelligent context pruning.
+ * This file configures the context-pruning extension for intelligent context pruning.
  * 
  * Place this file as:
  * - ./dcp.config.ts (project-specific configuration)
@@ -131,10 +131,10 @@ export default {
  * All fields are optional - defaults will be used for missing values.
  */
 
-import type { DcpConfig } from "@mariozechner/pi-me/session-lifecycle/context-pruning/types";
+import type { PruningConfig } from "@mariozechner/pi-me/session-lifecycle/context-pruning/types";
 
 export default {
-	// Enable/disable DCP entirely
+	// Enable/disable Context Pruning entirely
 	enabled: true,
 
 	// Enable debug logging to see what gets pruned
@@ -157,7 +157,7 @@ export default {
 
 	// Number of recent messages to always keep (for recency rule)
 	keepRecentCount: 10,
-} satisfies DcpConfig;
+} satisfies PruningConfig;
 `;
 }
 

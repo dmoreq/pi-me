@@ -1,17 +1,17 @@
 /**
- * DCP Debug Command
+ * Context Pruning Debug Command
  * 
  * Toggle debug logging to see what gets pruned.
  */
 
-import type { CommandDefinition, DcpConfig } from "../types";
+import type { CommandDefinition, PruningConfig } from "../types";
 
-export function createDebugCommand(config: DcpConfig): CommandDefinition {
+export function createDebugCommand(config: PruningConfig): CommandDefinition {
 	return {
-		description: "Toggle DCP debug logging",
+		description: "Toggle Context Pruning debug logging",
 		handler: async (args, ctx) => {
 			config.debug = !config.debug;
-			ctx.ui.notify(`DCP debug: ${config.debug ? "ON" : "OFF"}`, "info");
+			ctx.ui.notify(`Context Pruning debug: ${config.debug ? "ON" : "OFF"}`, "info");
 		},
 	};
 }

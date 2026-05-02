@@ -5,7 +5,7 @@
  */
 
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import type { DcpConfigWithPruneRuleObjects, MessageWithMetadata } from "./types";
+import type { PruningConfigWithRuleObjects, MessageWithMetadata } from "./types";
 import { createMessageWithMetadata } from "./metadata";
 import { getLogger } from "./logger";
 import { resetSeenHashes } from "./rules/deduplication";
@@ -15,10 +15,10 @@ import type { PruneRule } from "./types";
  * Main workflow: prepare > process > filter
  *
  * @param messages - Original messages from pi
- * @param config - DCP configuration
+ * @param config - Context Pruning configuration
  * @returns Filtered messages with pruned items removed
  */
-export function applyPruningWorkflow(messages: AgentMessage[], config: DcpConfigWithPruneRuleObjects): AgentMessage[] {
+export function applyPruningWorkflow(messages: AgentMessage[], config: PruningConfigWithRuleObjects): AgentMessage[] {
 	if (!config.enabled) {
 		return messages; // Pass through if disabled
 	}
@@ -102,7 +102,7 @@ export function applyPruningWorkflow(messages: AgentMessage[], config: DcpConfig
 /**
  * Log pruning results for debugging
  */
-function logPruningResults(withMetadata: MessageWithMetadata[], finalCount: number, config: DcpConfigWithPruneRuleObjects): void {
+function logPruningResults(withMetadata: MessageWithMetadata[], finalCount: number, config: PruningConfigWithRuleObjects): void {
 	const logger = getLogger();
 	const prunedMessages = withMetadata.filter((m) => m.metadata.shouldPrune);
 	const prunedCount = prunedMessages.length;

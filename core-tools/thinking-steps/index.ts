@@ -1,5 +1,5 @@
 /**
- * pi-thinking-steps — Three-mode thinking-step rendering for Pi's TUI.
+ * thinking-steps — Three-mode thinking-step rendering for Pi's TUI.
  * Simple ~270-line implementation using only pi's public API.
  *
  * Registers event handlers and commands eagerly; mode is restored
@@ -12,6 +12,6 @@ export default function (pi: ExtensionAPI): void {
   try {
     thinkingSteps(pi);
   } catch (err) {
-    console.error("[pi-thinking-steps] Failed to load:", err);
+    console.error("[thinking-steps] Failed to load:", err);
   }
 }

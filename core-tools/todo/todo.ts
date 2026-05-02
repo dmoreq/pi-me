@@ -4,7 +4,7 @@
  * Tool/command identity, schema, types, reducer, store, replay, response
  * envelope, selectors, and view formatters live in the layered modules under
  * `tool/`, `state/`, and `view/`. This file is the package-root registration
- * surface — it mirrors `packages/rpiv-ask-user-question/ask-user-question.ts`
+ * surface — it mirrors `pi-dialog/dialog/ask-user-question.ts`
  * which keeps the tool registration at the package root.
  *
  * Public re-exports below preserve the pre-refactor import surface so that

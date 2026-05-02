@@ -1,17 +1,17 @@
 /**
- * DCP Context Event Handler
+ * Context Pruning Context Event Handler
  * 
  * Handles the 'context' event which fires before each LLM call.
  * Applies pruning workflow to reduce token usage while preserving coherence.
  */
 
 import type { ContextEvent, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import type { DcpConfigWithPruneRuleObjects } from "../types";
+import type { PruningConfigWithRuleObjects } from "../types";
 import type { StatsTracker } from "../types";
 import { applyPruningWorkflow } from "../workflow";
 
 export interface ContextEventHandlerOptions {
-	config: DcpConfigWithPruneRuleObjects;
+	config: PruningConfigWithRuleObjects;
 	statsTracker: StatsTracker;
 }
 
@@ -36,13 +36,13 @@ export function createContextEventHandler(options: ContextEventHandlerOptions) {
 			statsTracker.totalProcessed += originalCount;
 
 			if (prunedCount > 0 && config.debug) {
-				ctx.ui.notify(`[pi-dcp] Pruned ${prunedCount} / ${originalCount} messages`);
+				ctx.ui.notify(`[context-pruning] Pruned ${prunedCount} / ${originalCount} messages`);
 			}
 
 			return { messages: prunedMessages };
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
-			ctx.ui.notify(`[pi-dcp] Error in pruning workflow: ${errorMessage}`, "error");
+			ctx.ui.notify(`[context-pruning] Error in pruning workflow: ${errorMessage}`, "error");
 			// Fail-safe: return original messages on error
 			return { messages: event.messages };
 		}

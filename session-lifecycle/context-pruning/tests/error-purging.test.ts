@@ -1,5 +1,5 @@
 /**
- * Tests for DCP Error Purging Rule
+ * Tests for Context Pruning Error Purging Rule
  */
 
 import { describe, it, before } from "node:test";
@@ -7,9 +7,9 @@ import assert from "node:assert/strict";
 import { registerRule, clearRegistry } from "../registry";
 import { errorPurgingRule } from "../rules/error-purging";
 import { applyPruningWorkflow } from "../workflow";
-import type { DcpConfigWithPruneRuleObjects } from "../types";
+import type { PruningConfigWithRuleObjects } from "../types";
 
-const config: DcpConfigWithPruneRuleObjects = {
+const config: PruningConfigWithRuleObjects = {
 	enabled: true,
 	debug: false,
 	rules: [errorPurgingRule],

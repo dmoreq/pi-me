@@ -65,11 +65,11 @@ function requiresReplaceConfirmation(ctx: ExtensionContext): boolean {
 
 function updateStatus(ctx: ExtensionContext, drafts: readonly string[]): void {
 	if (drafts.length === 0) {
-		ctx.ui.setStatus("pi-stash", undefined);
+		ctx.ui.setStatus("stash", undefined);
 		return;
 	}
 
-	ctx.ui.setStatus("pi-stash", formatStatusText(ctx, `📦 ${countLabel(drafts.length)}`));
+	ctx.ui.setStatus("stash", formatStatusText(ctx, `📦 ${countLabel(drafts.length)}`));
 }
 
 function persistState(pi: ExtensionAPI, drafts: readonly string[]): void {
