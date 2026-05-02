@@ -1,4 +1,5 @@
 ---
+name: skill-bootstrap
 description: Skill bootstrap — the /bootstrap-skill command can generate project skills
 ---
 

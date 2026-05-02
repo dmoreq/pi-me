@@ -1,4 +1,5 @@
 ---
+name: output-artifacts
 description: Artifact storage — truncated tool output can be retrieved with the read tool
 ---
 

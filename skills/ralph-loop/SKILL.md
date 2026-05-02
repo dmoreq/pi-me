@@ -1,4 +1,5 @@
 ---
+name: ralph-loop
 description: Ralph Loop — looped subagent execution with steering controls
 ---
 

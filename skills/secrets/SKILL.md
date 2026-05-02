@@ -1,4 +1,5 @@
 ---
+name: secrets
 description: Secret management — sensitive values are automatically obfuscated before reaching the LLM
 ---
 

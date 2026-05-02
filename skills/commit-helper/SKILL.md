@@ -1,4 +1,5 @@
 ---
+name: commit-helper
 description: Commit message generation — use the commit_message tool for git diffs
 ---
 

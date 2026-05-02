@@ -1,4 +1,5 @@
 ---
+name: permission
 description: Permission control — layered access with safety nets for dangerous commands and protected paths
 ---
 
