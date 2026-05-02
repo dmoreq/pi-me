@@ -4,7 +4,7 @@ A comprehensive extension suite for the [pi coding agent](https://github.com/mar
 safety guards, session lifecycle management, developer tools, content manipulation utilities, and AI-assisted
 authoring helpers — all loaded automatically as a single package.
 
-**77 extensions, 23 skills, 301 tests. MIT licensed.**
+**70 extensions, 25 skills, 290 tests. MIT licensed.**
 
 ---
 
@@ -45,11 +45,12 @@ pi-me/
 ├── content-tools/       File and resource utilities
 ├── authoring/           AI-assisted content creation
 ├── skills/              SKILL.md files guiding agent behavior
-├── shared/              Cross-layer library code
+├── shared/              Cross-layer library code (also published standalone)
+├── themes/              Minimal color themes
 └── docs/                Documentation
 ```
 
-**Detailed reference:** [Architecture Overview](docs/intro.md) · [Extensions](docs/foundation.md) · [Skills](docs/skills.md)
+**Detailed reference:** [Conventions](docs/conventions.md) · [Deep Review](docs/deep-review-report.md) · [Implementation Plan](docs/implementation-plan.md) · [Adopted Plugins](docs/adopted-plugins-inline-review.md)
 
 ---
 
@@ -97,22 +98,25 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 
 | Extension | Source | Purpose |
 |-----------|--------|---------|
-| Git Checkpoint | `session-lifecycle/git-checkpoint-new/` | Auto-saves working tree as git refs at each turn start. Enables recovery on session fork. |
+| Git Checkpoint | `session-lifecycle/git-checkpoint/` | Auto-saves working tree as git refs at each turn start. Enables recovery on session fork. |
 | Auto Compact | `session-lifecycle/auto-compact/` | Triggers context compaction when usage exceeds the configured threshold. |
-| DCP | `session-lifecycle/dcp/` | Dynamic Context Pruning — removes duplicate, superseded, and resolved-error messages. Footer widget shows prune stats. |
+| Context Pruning | `session-lifecycle/context-pruning/` | Dynamic Context Pruning — removes duplicate, superseded, and resolved-error messages. Footer widget shows prune stats. |
 | Session Name | `session-lifecycle/session-name/` | Names sessions from the first user message. |
 | Token Rate | `session-lifecycle/token-rate/` | Displays tokens-per-second output rate in the footer. |
 | Agent Guidance | `session-lifecycle/agent-guidance/` | Injects model-specific guidance files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) based on active provider. |
 | Session Recap | `session-lifecycle/session-recap/` | Shows a one-line session summary on terminal refocus. `/recap` for full recap. |
 | Tab Status | `session-lifecycle/tab-status/` | Terminal tab title with status icons (done, stuck, timed out). |
 | Usage Extension | `session-lifecycle/usage-extension/` | `/usage` for token/cost dashboard; `/cost` for spending reports from session logs. |
-| Notifications | `session-lifecycle/notifications.ts` | Background task completion alerts (beep, focus, speech). Humorous spinner messages via `/fun-working`. |
+| Notifications | `session-lifecycle/notifications.ts` | Background task completion alerts (beep, focus, speech). |
 | Handoff | `session-lifecycle/handoff.ts` | `/handoff <prompt>` generates a focused context summary for a new session. |
 | Session Style | `session-lifecycle/session-style.ts` | AI-picked session emoji + rotating 40-color footer band. `/emoji*` and `/color*` commands. |
-| Compact Config | `session-lifecycle/compact-config.ts` | Per-model compaction thresholds configured via interactive TUI. |
-| Preset | `session-lifecycle/preset/` | Save and switch provider/model/tool presets. `/preset` to cycle. |
+| Compact Config | `session-lifecycle/auto-compact/compact-config.ts` | Per-model compaction thresholds configured via interactive TUI. |
+| Preset | `core-tools/preset/` | Save and switch provider/model/tool presets. `/preset` to cycle. |
 | Skill Args | `session-lifecycle/skill-args/` | `$1`, `$2`, `$ARGUMENTS` substitution in skill bodies for parameterized skills. |
 | Warp Notify | `session-lifecycle/warp-notify/` | Warp terminal OSC 777 structured notifications on lifecycle events. |
+| Funny Messages | `session-lifecycle/funny-messages.ts` | Food/cooking-themed spinner messages toggled via `/fun-working`. |
+| Startup Header | `session-lifecycle/startup-header.ts` | Custom welcome header with ASCII art branding on session start. |
+| Model Filter | `core-tools/model-filter/` | Filters available models by provider or capability. |
 
 ### Core Tools — Agent Tools
 
@@ -121,7 +125,7 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Web Search | `core-tools/web-search.ts` | Exa, Tavily, or Valiyu web search. Set `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY`. |
 | Todo | `core-tools/todo/` | Live overlay task list with 4-state machine, dependency tracking, and branch replay survival. `/todos` to view. |
 | Calc | `core-tools/calc.ts` | Safe arithmetic expression evaluator with Math function whitelist. |
-| Ask User Question | `core-tools/ask-user-question/` | Structured multi-question UI with side-by-side markdown previews and multi-select. |
+| Ask User Question | `pi-dialog` dependency | Structured multi-question UI with side-by-side markdown previews and multi-select. Provided by [pi-dialog](https://github.com/dmoreq/pi-dialog). |
 | Ralph Loop | `core-tools/ralph-loop/` | Subagent loop executor with condition polling, pause/resume, and steering. |
 | Plan Tracker | `core-tools/plan-tracker/` | Inline plan progress widget. `plan_tracker` tool for task status management. |
 | Plan Mode | `core-tools/plan-mode.ts` | File-based plans in `.pi/plans/` with JSON frontmatter, locking, and planning mode toggle. |
@@ -134,8 +138,16 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Memory Mode | `core-tools/memory-mode.ts` | `/mem` saves instructions to `AGENTS.md` project files. |
 | File Collector | `core-tools/file-collector/` | Collects file paths and content from tool results based on configurable regex patterns. |
 | Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
-| Arcade | `core-tools/arcade/` | Five terminal minigames: Spice Invaders, Picman, Ping, Tetris, Mario-Not. |
+| Arcade | `core-tools/arcade/` | Five terminal minigames: Spice Invaders, Picman, Ping, Tetris, Platformer. |
 | Flicker Corp | `core-tools/flicker-corp.ts` | Terminal display animation effect. |
+| Pi Memory | `core-tools/pi-memory/` | SQLite-backed persistent memory: key-value facts, learned lessons, event audit log. |
+| Pi Link | `core-tools/pi-link/` | WebSocket inter-terminal communication: share chat, broadcast prompts, coordinate sessions. |
+| Pi Formatter | `core-tools/pi-formatter/` | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
+| Pi Crew | `core-tools/pi-crew/` | `/team` dispatches specialized sub-agents (reviewer, delegate, orchestrator) for complex tasks. |
+| Pi Edit Session | `core-tools/pi-edit-session/` | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
+| Pi Stash | `core-tools/pi-stash/` | Draft stash: `Ctrl+Shift+S` to stash editor content, `Ctrl+Shift+R` to restore. |
+| Pi Thinking Steps | `core-tools/pi-thinking-steps/` | Adds structured thinking (plan, research, implement, review) before tool calls. |
+| Greedy Search | `core-tools/greedysearch-pi/` | Deep research: iterative search, synthesize findings, produce comprehensive reports. |
 
 ### Content Tools — File & Resource Utilities
 
@@ -148,6 +160,9 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Files Widget | `content-tools/files-widget/` | `/readfiles` TUI file browser with directory tree, diff viewer, and commenting. |
 | Raw Paste | `content-tools/raw-paste/` | `/paste` inserts editable text inline for review before sending. |
 | Richard Files | `content-tools/richard-files/` | `/files` TUI file selector with reveal, quicklook, and editor actions. |
+| Web Fetch | `content-tools/web-fetch/` | HTTP fetcher with multiple browser profiles, JS rendering, and content extraction via linkedom/Defuddle. |
+| Pi Docparser | `content-tools/pi-docparser/` | Document parsing (PDF, Office, spreadsheets, images) via @llamaindex/liteparse. |
+| Pi Markdown Preview | `content-tools/pi-markdown-preview/` | Renders markdown to HTML for browser preview. Requires puppeteer-core. |
 
 ### Authoring — AI-Assisted Creation
 
