@@ -70,6 +70,10 @@
     ],
     "skills": [
       "./skills"
+    ],
+    "themes": [
+      "./themes/minimal.json",
+      "./themes/minimal-light.json"
     ]
   },
   "dependencies": {
