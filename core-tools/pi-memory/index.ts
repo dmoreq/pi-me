@@ -1,15 +1,15 @@
 /**
  * pi-memory — Persistent memory across sessions.
- * Adopted from @samfp/pi-memory v1.0.2.
+ * Inlined from @samfp/pi-memory v1.0.2.
  *
  * Supports disableAutoInject config via settings.json:
  *   { "piMemory": { "disableAutoInject": true } }
  */
-import { registerAdoptedPackage } from "../../shared/register-package.js";
 import { getAgentDir } from "@mariozechner/pi-coding-agent";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import piMemory from "./src/index.ts";
 
 function isAutoInjectDisabled(): boolean {
   try {
@@ -31,9 +31,13 @@ export default function (pi: ExtensionAPI) {
     return;
   }
 
-  registerAdoptedPackage(pi, {
-    importFn: () => import("@samfp/pi-memory"),
-    statusKey: "pi-memory",
-    packageName: "@samfp/pi-memory",
+  pi.on("session_start", async (_event, ctx) => {
+    try {
+      piMemory(pi);
+      ctx.ui.setStatus("pi-memory", "ready");
+    } catch (err) {
+      console.error("[pi-memory] Failed to load:", err);
+      ctx.ui.notify("pi-memory failed to load", "error");
+    }
   });
 }
