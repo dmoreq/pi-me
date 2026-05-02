@@ -5,7 +5,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import type { DcpConfigWithPruneRuleObjects, DcpConfigWithRuleRefs, PruneRule, DcpConfig } from "./types";
 import { isPruneRuleObject } from "./types";
-import { loadConfig as bunfigLoad } from "bunfig/dist/index.js";
+import { loadConfig as bunfigLoad } from "bunfig";
 import { getRule, getRuleNames } from "./registry";
 
 /**
