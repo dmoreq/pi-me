@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getAgentDir } from "@mariozechner/pi-coding-agent";
+import { getAgentDir as _getAgentDir } from "@mariozechner/pi-coding-agent";
+export const getAgentDir = _getAgentDir;
 import { parse, printParseErrorCode, type ParseError } from "jsonc-parser";
 import type { z } from "zod";
 

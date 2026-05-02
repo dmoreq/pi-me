@@ -16,6 +16,8 @@ import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-age
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
+import { loadConfigOrDefault } from "../shared/pi-config.js";
+import { z } from "zod";
 
 // ============================================================================
 // Emoji — Types & Constants
@@ -127,16 +129,40 @@ export default function (pi: ExtensionAPI) {
   let currentCtx: ExtensionContext | null = null;
   let resizeHandler: (() => void) | null = null;
 
-  // ── Config Readers ──
+  // ── Config Readers (using shared zod-validated loader) ──
 
-  function getEmojiConfig(ctx: ExtensionContext): SessionEmojiConfig {
-    const settings = (ctx as any).settingsManager?.getSettings() ?? {};
-    return { ...DEFAULT_EMOJI_CONFIG, ...(settings.sessionEmoji ?? {}) };
+  const EmojiConfigSchema = z.object({
+    enabledByDefault: z.boolean().default(true),
+    autoAssignMode: z.enum(["immediate", "delayed"]).default("immediate"),
+    autoAssignThreshold: z.number().default(3),
+    emojiSet: z.enum(["default", "animals", "tech", "fun", "custom"]).default("default"),
+    customEmojis: z.array(z.string()).default([]),
+  });
+
+  const ColorConfigSchema = z.object({
+    enabledByDefault: z.boolean().default(true),
+    blockChar: z.string().default("\u2581"),
+    blockCount: z.union([z.number(), z.literal("full")]).default("full"),
+  });
+
+  function getEmojiConfig(): SessionEmojiConfig {
+    const raw = loadConfigOrDefault({
+      filename: "settings.json",
+      schema: z.object({ sessionEmoji: EmojiConfigSchema }).partial(),
+      defaults: {},
+    });
+    const fromFile = (raw as any)?.sessionEmoji ?? {};
+    return { ...DEFAULT_EMOJI_CONFIG, ...fromFile };
   }
 
-  function getColorConfig(ctx: ExtensionContext): SessionColorConfig {
-    const settings = (ctx as any).settingsManager?.getSettings() ?? {};
-    return { ...DEFAULT_COLOR_CONFIG, ...(settings.sessionColor ?? {}) };
+  function getColorConfig(): SessionColorConfig {
+    const raw = loadConfigOrDefault({
+      filename: "settings.json",
+      schema: z.object({ sessionColor: ColorConfigSchema }).partial(),
+      defaults: {},
+    });
+    const fromFile = (raw as any)?.sessionColor ?? {};
+    return { ...DEFAULT_COLOR_CONFIG, ...fromFile };
   }
 
   // ── Color: Status Display ──
@@ -167,7 +193,7 @@ export default function (pi: ExtensionAPI) {
 
   function initColor(ctx: ExtensionContext) {
     Object.assign(color, { colorIndex: null, assigned: false, enabledOverride: null, blockCharOverride: null, blockCharIndex: 0 });
-    const config = getColorConfig(ctx);
+    const config = getColorConfig();
     if (!config.enabledByDefault) { ctx.ui.setStatus("0-color-band", ""); return; }
 
     const sid = ctx.sessionManager.getSessionId();
@@ -259,7 +285,7 @@ export default function (pi: ExtensionAPI) {
 
   async function initEmoji(ctx: ExtensionContext) {
     Object.assign(emoji, { emoji: null, messageCount: 0, assigned: false, selecting: false, enabledOverride: null });
-    const config = getEmojiConfig(ctx);
+    const config = getEmojiConfig();
     if (!config.enabledByDefault) { ctx.ui.setStatus("0-emoji", ""); return; }
     const existing = findExistingEmoji(ctx);
     if (existing) { emoji.emoji = existing; emoji.assigned = true; ctx.ui.setStatus("0-emoji", existing); return; }
@@ -268,7 +294,7 @@ export default function (pi: ExtensionAPI) {
   }
 
   async function handleEmojiAgentStart(ctx: ExtensionContext) {
-    const config = getEmojiConfig(ctx);
+    const config = getEmojiConfig();
     const enabled = emoji.enabledOverride ?? config.enabledByDefault;
     if (!enabled || emoji.assigned || config.autoAssignMode === "immediate") return;
     emoji.messageCount++;
@@ -288,7 +314,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand("emoji", {
     description: "Toggle session emoji on/off", handler: async (_, ctx) => {
-      const config = getEmojiConfig(ctx);
+      const config = getEmojiConfig();
       emoji.enabledOverride = !(emoji.enabledOverride ?? config.enabledByDefault);
       if (!emoji.enabledOverride) { ctx.ui.setStatus("0-emoji", ""); ctx.ui.notify("Emoji: OFF", "info"); return; }
       if (!emoji.assigned) await assignEmoji(ctx, config);
@@ -304,7 +330,7 @@ export default function (pi: ExtensionAPI) {
       if (input) { setManualEmoji(ctx, input); return; }
       if (!ctx.hasUI) return;
       // Interactive: choose from set
-      const config = getEmojiConfig(ctx);
+      const config = getEmojiConfig();
       const emojis = getEmojiList(config);
       const action = await ctx.ui.select("Choose emoji", [...emojis, "🎲 Random", "❌ Cancel"]);
       if (!action || action === "❌ Cancel") return;
@@ -320,7 +346,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand("emoji-config", {
     description: "View emoji settings", handler: async (_, ctx) => {
-      const config = getEmojiConfig(ctx);
+      const config = getEmojiConfig();
       const enabled = emoji.enabledOverride ?? config.enabledByDefault;
       ctx.ui.notify(`─── Session Emoji ───\nStatus: ${enabled ? "🎨 ON" : "⬜ OFF"}  │  Current: ${emoji.emoji ?? "(none)"}\nMode: ${config.autoAssignMode}  │  Threshold: ${config.autoAssignThreshold}  │  Set: ${config.emojiSet}`, "info");
       if (!ctx.hasUI) return;
@@ -357,7 +383,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand("color", {
     description: "Toggle session color on/off", handler: async (_, ctx) => {
-      const config = getColorConfig(ctx);
+      const config = getColorConfig();
       color.enabledOverride = !(color.enabledOverride ?? config.enabledByDefault);
       if (!color.enabledOverride) { ctx.ui.setStatus("0-color-band", ""); ctx.ui.notify("Color: OFF", "info"); }
       else { updateColorStatus(ctx, config); ctx.ui.notify(`Color: ON (${color.colorIndex})`, "info"); }
@@ -377,7 +403,7 @@ export default function (pi: ExtensionAPI) {
       }
       color.colorIndex = input; color.assigned = true;
       writeColorState({ lastColorIndex: input, sessionId: ctx.sessionManager.getSessionId(), timestamp: Date.now() });
-      updateColorStatus(ctx, getColorConfig(ctx));
+      updateColorStatus(ctx, getColorConfig());
       ctx.ui.notify(`Color set to index ${input}`, "info");
     },
   });
@@ -390,7 +416,7 @@ export default function (pi: ExtensionAPI) {
       color.colorIndex = (color.colorIndex + 1) % COLOR_PALETTE.length;
       color.assigned = true;
       writeColorState({ lastColorIndex: color.colorIndex, sessionId: ctx.sessionManager.getSessionId(), timestamp: Date.now() });
-      updateColorStatus(ctx, getColorConfig(ctx));
+      updateColorStatus(ctx, getColorConfig());
       ctx.ui.notify(`Color: ${color.colorIndex}`, "info");
     },
   });
@@ -399,7 +425,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand("color-char", {
     description: "Set or cycle block character", handler: async (args, ctx) => {
-      const config = getColorConfig(ctx);
+      const config = getColorConfig();
       const input = (args ?? "").trim();
       if (color.colorIndex === null) { ctx.ui.notify("No color assigned yet", "error"); return; }
       if (input) { color.blockCharOverride = input; updateColorStatus(ctx, config); ctx.ui.notify(`Block char: "${input}"`, "info"); return; }
@@ -415,7 +441,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand("color-config", {
     description: "View color settings", handler: async (_, ctx) => {
-      const config = getColorConfig(ctx);
+      const config = getColorConfig();
       const enabled = color.enabledOverride ?? config.enabledByDefault;
       const persisted = readColorState();
       ctx.ui.notify(`─── Session Color ───\nStatus: ${enabled ? "🎨 ON" : "⬜ OFF"}  │  Index: ${color.colorIndex ?? "(none)"}\nChar: "${color.blockCharOverride ?? config.blockChar}"  │  Palette: ${COLOR_PALETTE.length} colors`, "info");

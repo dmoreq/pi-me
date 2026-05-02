@@ -9,6 +9,8 @@ import * as fs from "node:fs";
 import * as fsPromises from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { loadConfigOrDefault } from "./pi-config.js";
+import { z } from "zod";
 
 const execAsync = promisify(child_process.exec);
 
@@ -540,4 +542,67 @@ export async function notifyOnConfirm(
   }
 
   await Promise.all(tasks);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Config Loading (consolidated from shared/settings.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BackgroundNotifySchema = z.object({
+  thresholdMs: z.number().default(2000),
+  beep: z.boolean().default(true),
+  beepSound: z.string().default("Tink"),
+  bringToFront: z.boolean().default(true),
+  say: z.boolean().default(false),
+  sayMessage: z.string().default("Task completed"),
+});
+
+const DEFAULT_BACKGROUND_NOTIFY: BackgroundNotifyConfig = {
+  thresholdMs: 2000,
+  beep: true,
+  beepSound: "Tink",
+  bringToFront: true,
+  say: false,
+  sayMessage: "Task completed",
+};
+
+/**
+ * Load background-notify configuration from settings.
+ *
+ * Priority:
+ * 1. Runtime overrides (passed directly)
+ * 2. ~/.pi/agent/settings.json backgroundNotify section
+ * 3. DEFAULT_BACKGROUND_NOTIFY
+ *
+ * Replaces the old shared/settings.ts getBackgroundNotifyConfig.
+ */
+export function getBackgroundNotifyConfigSync(
+  overrides?: Partial<BackgroundNotifyConfig>
+): BackgroundNotifyConfig {
+  const raw = loadConfigOrDefault({
+    filename: "settings.json",
+    schema: z.object({ backgroundNotify: BackgroundNotifySchema }).partial(),
+    defaults: {},
+  });
+
+  const fromFile = (raw as any)?.backgroundNotify ?? {};
+  return { ...DEFAULT_BACKGROUND_NOTIFY, ...fromFile, ...overrides };
+}
+
+/**
+ * Async version of getBackgroundNotifyConfigSync.
+ * Accepts optional ctx (ignored — kept for backward compatibility
+ * with old shared/settings.ts signature) and optional overrides.
+ */
+export async function getBackgroundNotifyConfig(
+  ctxOrOverrides?: any,
+  overrides?: Partial<BackgroundNotifyConfig>
+): Promise<BackgroundNotifyConfig> {
+  // Handle both (ctx) and (overrides) and (ctx, overrides) signatures
+  const effectiveOverrides =
+    overrides ??
+    (ctxOrOverrides && !ctxOrOverrides?.settingsManager
+      ? (ctxOrOverrides as Partial<BackgroundNotifyConfig>)
+      : undefined);
+  return getBackgroundNotifyConfigSync(effectiveOverrides);
 }

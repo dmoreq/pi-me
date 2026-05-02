@@ -24,7 +24,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import type { StatsTracker } from "./types";
 import { loadConfig } from "./config";
 import { createContextEventHandler } from "./events/context";
-import { createSessionStartEventHandler } from "./events/sessionStart";
+import { createSessionStartEventHandler } from "./events/session-start";
 import { getLogger, LogLevel } from "./logger";
 
 // Register all built-in rules on import
