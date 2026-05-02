@@ -1,10 +1,8 @@
 /**
- * Notifications Extension — Background alerts + funny working messages.
+ * Notifications Extension — Background alerts on task completion.
  *
- * Background notify: Detects long-running tasks, alerts when terminal is
- * backgrounded (beep, focus, speech, OS notification).
- *
- * Funny messages: Replaces "Working..." spinner label with random humor.
+ * Detects long-running tasks, alerts when terminal is backgrounded
+ * (beep, focus, speech, OS notification).
  *
  * Config (~/.pi/agent/settings.json): "backgroundNotify": { ... }
  */
@@ -22,32 +20,6 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 
 // ============================================================================
-// Funny Messages
-// ============================================================================
-
-const FUNNY = [
-  "Simmering... (esc to interrupt)", "Julienning... (esc to interrupt)",
-  "Braising... (esc to interrupt)", "Reducing... (esc to interrupt)",
-  "Caramelizing... (esc to interrupt)", "Whisking... (esc to interrupt)",
-  "Compiling vibes... (esc to interrupt)", "Refactoring reality... (esc to interrupt)",
-  "Reticulating splines... (esc to interrupt)", "Herding bytes... (esc to interrupt)",
-  "Converting coffee to code... (esc to interrupt)", "Shaving yaks... (esc to interrupt)",
-  "Hugging the cache... (esc to interrupt)", "Almost done™... (esc to interrupt)",
-  "Summoning documentation... (esc to interrupt)", "Counting to infinity... (esc to interrupt)",
-  "Aligning parentheses... (esc to interrupt)", "Spinning up tiny hamsters... (esc to interrupt)",
-  "Kneading... (esc to interrupt)", "Plating... (esc to interrupt)",
-  "Garnishing... (esc to interrupt)", "Zesting... (esc to interrupt)",
-  "Mise en placing... (esc to interrupt)", "Emulsifying... (esc to interrupt)",
-  "Tempering chocolate... (esc to interrupt)", "Folding gently... (esc to interrupt)",
-  "Preheating... (esc to interrupt)", "Basting... (esc to interrupt)",
-  "Blanching... (esc to interrupt)", "Deglazing... (esc to interrupt)",
-];
-
-function pickFunny(): string {
-  return FUNNY[Math.floor(Math.random() * FUNNY.length)] ?? "Working... (esc to interrupt)";
-}
-
-// ============================================================================
 // Types & State
 // ============================================================================
 
@@ -57,7 +29,7 @@ interface SessionState {
   focusOverride: boolean | null;
   sayOverride: boolean | null;
   sayMessageOverride: string | null;
-  funnyOverride: boolean | null;
+
   terminalInfo: TerminalInfo;
   lastToolTime: number | undefined;
   totalActiveTime: number;
@@ -66,7 +38,7 @@ interface SessionState {
 function resetState(state: SessionState): void {
   state.beepOverride = null; state.beepSoundOverride = null;
   state.focusOverride = null; state.sayOverride = null;
-  state.sayMessageOverride = null; state.funnyOverride = null;
+  state.sayMessageOverride = null;
   state.lastToolTime = undefined; state.totalActiveTime = 0;
 }
 
@@ -93,7 +65,7 @@ function extractOptionText(action: string, iconPrefix: string): string | null {
 export default function (pi: ExtensionAPI) {
   const state: SessionState = {
     beepOverride: null, beepSoundOverride: null, focusOverride: null,
-    sayOverride: null, sayMessageOverride: null, funnyOverride: null,
+    sayOverride: null, sayMessageOverride: null,
     terminalInfo: {}, lastToolTime: undefined, totalActiveTime: 0,
   };
 
@@ -160,7 +132,6 @@ export default function (pi: ExtensionAPI) {
         `  ${eff.say ? "🗣️" : "🔇"} Speech: ${eff.say ? "ON" : "OFF"}`,
         `  💬 "${eff.sayMessage}"`,
         `  🎵 ${eff.sound}  ⏱️ ${config.thresholdMs}ms`,
-        `  😂 Funny: ${state.funnyOverride ? "ON" : "OFF"}`,
         "╰─────────────────────╯",
       ];
       ctx.ui.notify(rows.join("\n"), "info");
@@ -187,21 +158,6 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  // ── Command: Funny Messages ──
-
-  pi.registerCommand("fun-working", {
-    description: "Toggle funny working messages",
-    handler: async (_args, ctx) => {
-      state.funnyOverride = !state.funnyOverride;
-      if (!state.funnyOverride) {
-        ctx.ui.setWorkingMessage();
-        ctx.ui.notify("Default working message restored", "info");
-      } else {
-        if (!ctx.isIdle()) ctx.ui.setWorkingMessage(pickFunny());
-        ctx.ui.notify("😂 Funny working messages: ON", "info");
-      }
-    },
-  });
 
   // ── Hooks ──
 
@@ -219,7 +175,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("agent_start", (_event, ctx) => {
     state.lastToolTime = Date.now();
     state.totalActiveTime = 0;
-    if (state.funnyOverride && ctx.hasUI) ctx.ui.setWorkingMessage(pickFunny());
+
   });
 
   pi.on("tool_result", () => {
@@ -228,8 +184,6 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("agent_end", async (_, ctx) => {
-    if (state.funnyOverride && ctx.hasUI) ctx.ui.setWorkingMessage();
-
     if (!state.lastToolTime) return;
     state.totalActiveTime += Date.now() - state.lastToolTime;
     const duration = state.totalActiveTime;
