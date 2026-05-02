@@ -41,8 +41,8 @@ Start by understanding the current project context, then ask questions one at a 
 - Commit the design document to git
 
 **Implementation (if continuing):**
-- Ask: "Ready to set up for implementation?"
-- Use `/skill:using-git-worktrees` to create isolated workspace
+- Use the `ask_user_question` tool to ask if they're ready: header "Next Step", question "Ready to set up for implementation?", two options: "Yes, set up" (description: "Create isolated workspace and write implementation plan") and "Not yet" (description: "Keep brainstorming or save for later")
+- If yes, use `/skill:using-git-worktrees` to create isolated workspace
 - Use `/skill:writing-plans` to create detailed implementation plan
 
 ## Key Principles

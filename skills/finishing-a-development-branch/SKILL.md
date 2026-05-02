@@ -50,17 +50,21 @@ Or ask: "This branch split from main - is that correct?"
 
 ### Step 3: Present Options
 
-Present exactly these 4 options:
+Present exactly these 4 options using the `ask_user_question` tool:
 
 ```
-Implementation complete. What would you like to do?
-
-1. Merge back to <base-branch> locally
-2. Push and create a Pull Request
-3. Keep the branch as-is (I'll handle it later)
-4. Discard this work
-
-Which option?
+Use ask_user_question with:
+- header: "Finish Branch"
+- question: "Implementation complete. What would you like to do?"
+- options:
+   1. label: "Merge back locally"
+      description: "Merge this branch into <base-branch> locally and clean up"
+   2. label: "Push and create PR"
+      description: "Push branch to origin and open a Pull Request"
+   3. label: "Keep branch as-is"
+      description: "Leave everything as-is, handle it later"
+   4. label: "Discard this work"
+      description: "Delete the branch and commits permanently — requires confirmation"
 ```
 
 **Don't add explanation** - keep options concise.

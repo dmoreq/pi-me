@@ -37,15 +37,17 @@ grep -i "worktree.*director" README.md .pi/settings.json AGENTS.md 2>/dev/null
 
 ### 3. Ask User
 
-If no directory exists and no project configuration preference:
+If no directory exists and no project configuration preference, use the `ask_user_question` tool:
 
 ```
-No worktree directory found. Where should I create worktrees?
-
-1. .worktrees/ (project-local, hidden)
-2. ~/worktrees/<project-name>/ (global location)
-
-Which would you prefer?
+Use ask_user_question with:
+- header: "Worktrees"
+- question: "No worktree directory found. Where should I create worktrees?"
+- options:
+   1. label: ".worktrees/ (project-local)"
+      description: "Create .worktrees/ in the project root (hidden, project-local). Recommended."
+   2. label: "~/worktrees/ (global)"
+      description: "Create ~/worktrees/<project-name>/ in your home directory (global location)"
 ```
 
 ## Safety Verification
