@@ -140,14 +140,14 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
 | Arcade | `core-tools/arcade/` | Five terminal minigames: Spice Invaders, Picman, Ping, Tetris, Platformer. |
 | Flicker Corp | `core-tools/flicker-corp.ts` | Terminal display animation effect. |
-| Pi Memory | `core-tools/pi-memory/` | SQLite-backed persistent memory: key-value facts, learned lessons, event audit log. |
-| Pi Link | `core-tools/pi-link/` | WebSocket inter-terminal communication: share chat, broadcast prompts, coordinate sessions. |
-| Pi Formatter | `core-tools/pi-formatter/` | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
-| Pi Crew | `core-tools/pi-crew/` | `/team` dispatches specialized sub-agents (reviewer, delegate, orchestrator) for complex tasks. |
-| Pi Edit Session | `core-tools/pi-edit-session/` | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
-| Pi Stash | `core-tools/pi-stash/` | Draft stash: `Ctrl+Shift+S` to stash editor content, `Ctrl+Shift+R` to restore. |
-| Pi Thinking Steps | `core-tools/pi-thinking-steps/` | Adds structured thinking (plan, research, implement, review) before tool calls. |
-| Greedy Search | `core-tools/pi-greedysearch/` | Deep research: iterative search, synthesize findings, produce comprehensive reports. |
+| Memory | `core-tools/memory/` | SQLite-backed persistent memory: key-value facts, learned lessons, event audit log. |
+| Link | `core-tools/link/` | WebSocket inter-terminal communication: share chat, broadcast prompts, coordinate sessions. |
+| Formatter | `core-tools/formatter/` | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
+| Crew | `core-tools/crew/` | `/team` dispatches specialized sub-agents (reviewer, delegate, orchestrator) for complex tasks. |
+| Edit Session | `core-tools/edit-session/` | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
+| Stash | `core-tools/stash/` | Draft stash: `Ctrl+Shift+S` to stash editor content, `Ctrl+Shift+R` to restore. |
+| Thinking Steps | `core-tools/thinking-steps/` | Adds structured thinking (plan, research, implement, review) before tool calls. |
+| Greedy Search | `core-tools/greedysearch/` | Deep research: iterative search, synthesize findings, produce comprehensive reports. |
 
 ### Content Tools — File & Resource Utilities
 
@@ -159,10 +159,10 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Repeat | `content-tools/repeat/` | `/repeat` replays previous bash/edit/write commands with optional modifications. |
 | Files Widget | `content-tools/files-widget/` | `/readfiles` TUI file browser with directory tree, diff viewer, and commenting. |
 | Raw Paste | `content-tools/raw-paste/` | `/paste` inserts editable text inline for review before sending. |
-| Richard Files | `content-tools/richard-files/` | `/files` TUI file selector with reveal, quicklook, and editor actions. |
+| File Picker | `content-tools/file-picker/` | `/files` TUI file selector with reveal, quicklook, and editor actions. |
 | Web Fetch | `content-tools/web-fetch/` | HTTP fetcher with multiple browser profiles, JS rendering, and content extraction via linkedom/Defuddle. |
-| Pi Docparser | `content-tools/pi-docparser/` | Document parsing (PDF, Office, spreadsheets, images) via @llamaindex/liteparse. |
-| Pi Markdown Preview | `content-tools/pi-markdown-preview/` | Renders markdown to HTML for browser preview. Requires puppeteer-core. |
+| Docparser | `content-tools/docparser/` | Document parsing (PDF, Office, spreadsheets, images) via @llamaindex/liteparse. |
+| Markdown Preview | `content-tools/markdown-preview/` | Renders markdown to HTML for browser preview. Requires puppeteer-core. |
 
 ### Authoring — AI-Assisted Creation
 
