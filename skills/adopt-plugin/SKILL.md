@@ -64,8 +64,58 @@ git checkout -b adopt-<plugin-name>
 | Content Tools | `content-tools/` | File/resource manipulation |
 | Authoring | `authoring/` | AI-assisted content creation |
 
-```bash
-cp /path/to/external/ext.ts pi-me/<layer>/ext.ts
+**Naming rule:** The subdirectory name matches the npm package name as typed in `npm install`. Scoped packages drop the `@scope/` prefix.
+
+| `npm install` | Directory |
+|---|---|
+| `npm install pi-crew` | `core-tools/pi-crew/` |
+| `npm install @touchskyer/memex` | `core-tools/memex/` |
+| `npm install @companion-ai/feynman` | `content-tools/feynman/` |
+
+**All adopted packages get a subdirectory** (even single-file wrappers) — they will eventually need a config, test, or additional wrapper.
+
+Create the wrapper using `registerAdoptedPackage()` from `shared/register-package.ts`:
+
+```typescript
+// <layer>/<pkg-name>/index.ts  — simple case
+import { registerAdoptedPackage } from "../../shared/register-package.js";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+
+export default (pi: ExtensionAPI) =>
+  registerAdoptedPackage(pi, {
+    importFn: () => import("pkg-name"),
+    statusKey: "pkg-name",
+    packageName: "pkg-name",
+  });
+```
+
+If the package ships its own skill files, add `skillPaths`:
+
+```typescript
+// <layer>/<pkg-name>/index.ts  — with skills
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { registerAdoptedPackage } from "../../shared/register-package.js";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+
+const skillsDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..", "..", "..", "node_modules", "pkg-name", "skills"
+);
+
+export default (pi: ExtensionAPI) =>
+  registerAdoptedPackage(pi, {
+    importFn: () => import("pkg-name"),
+    statusKey: "pkg-name",
+    packageName: "pkg-name",
+    skillPaths: [skillsDir],
+  });
+```
+
+If the package's entry point is not the default export (e.g., a sub-path like `pkg/extensions/main.ts`), use that path in `importFn`:
+
+```typescript
+importFn: () => import("pkg-name/extensions/main.ts"),
 ```
 
 ### 2b. Merge overlapping functionality
@@ -87,11 +137,18 @@ When both packages have similar modules, merge into one unified module rather th
 
 ### 2d. Update package.json
 
-Add new dependencies and register new extensions in `pi.extensions`, ordered by layer priority (foundation → lifecycle → tools → content → authoring):
+Install the dependency and register the extension in `pi.extensions`. The extension list is ordered by architecture layer — add the new entry at the end of its layer block (native plugins first, adopted packages last within each layer):
 
 ```bash
-npm install <new-dep>    # installs and updates package.json + lockfile
+npm install <pkg-name>    # installs and updates package.json + lockfile
 ```
+
+Then add to `pi.extensions` in `package.json` at the correct layer position:
+- `foundation/` entries — first
+- `session-lifecycle/` entries — after foundation
+- `core-tools/` entries — native tools first, then adopted packages alphabetically
+- `content-tools/` entries — same pattern
+- `authoring/` entries — last before external dist entries
 
 ### 2e. Update packages[] config if the package name changed
 
@@ -163,6 +220,8 @@ Tests: N new tests, 0 failures"
 6. **Run** `npm test` after every change
 7. **Commit** with conventional commit messages; never `git add -A`
 8. **Document** new tools with `skills/<tool>/SKILL.md` files
+9. **Wrap** every adopted package with `registerAdoptedPackage()` from `shared/register-package.ts` — never hand-write the session_start/import/setStatus/notify boilerplate
+10. **Name** the subdirectory after the npm package name (drop `@scope/` prefix from scoped packages)
 
 ---
 
