@@ -4,7 +4,7 @@
  * Lazy-loaded on session_start.
  */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import editSessionInPlace from "./extensions/edit-session.ts";
+import editSessionInPlace from "./extensions/edit-session-in-place.ts";
 
 export default function (pi: ExtensionAPI): void {
   pi.on("session_start", async (_event, ctx) => {

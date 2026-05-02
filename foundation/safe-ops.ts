@@ -32,7 +32,7 @@ import {
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { confirmDialog } from "./dialog/index.js";
+import { confirmDialog } from "pi-dialog/dialog/confirm-dialog.ts";
 
 // ============================================================================
 // Types

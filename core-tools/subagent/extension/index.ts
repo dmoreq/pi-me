@@ -55,6 +55,7 @@ import {
 	SUBAGENT_CONTROL_MESSAGE_TYPE,
 	type SubagentControlMessageDetails,
 } from "./control-notices.ts";
+import { registerTeamTool } from "./team-tool.ts";
 
 /**
  * Derive subagent session base directory from parent session file.
