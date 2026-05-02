@@ -304,18 +304,18 @@ export default function (pi: ExtensionAPI) {
           }
 
           const rightLines = [
-            ` ${theme.bold("Tips")}`,
-            ` ${theme.fg("dim", "?")}${theme.fg("muted", " for keyboard shortcuts")}`,
-            ` ${theme.fg("dim", "#")}${theme.fg("muted", " for prompt actions")}`,
-            ` ${theme.fg("dim", "/")}${theme.fg("muted", " for commands")}`,
-            ` ${theme.fg("dim", "!")}${theme.fg("muted", " to run bash")}`,
-            ` ${theme.fg("dim", "$")}${theme.fg("muted", " to run python")}`,
+            ` ${theme.bold("Shortcuts")}`,
+            ` ${theme.fg("dim", "?")}${theme.fg("muted", " help")}`,
+            ` ${theme.fg("dim", "#")}${theme.fg("muted", " actions")}`,
+            ` ${theme.fg("dim", "/")}${theme.fg("muted", " commands")}`,
+            ` ${theme.fg("dim", "!")}${theme.fg("muted", " bash")}`,
+            ` ${theme.fg("dim", "$")}${theme.fg("muted", " python")}`,
             separator,
-            ` ${theme.bold("Loaded")}`,
+            ` ${theme.bold("Context")}`,
             `  ${theme.fg("dim", cwdBase)}`,
-            `  ${theme.fg("dim", `${skillsCount} skills`)}`,
+            `  ${theme.fg("dim", `${skillsCount} skill${skillsCount !== 1 ? "s" : ""}`)}`,
             separator,
-            ` ${theme.bold("Recent sessions")}`,
+            ` ${theme.bold("Recent")}`,
             ...sessionLines,
             "",
           ];

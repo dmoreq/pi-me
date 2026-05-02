@@ -65,7 +65,8 @@
       "./content-tools/richard-files/index.ts",
       "./authoring/output-artifacts/output-artifacts.ts",
       "./authoring/commit-helper/commit-helper.ts",
-      "./authoring/skill-bootstrap/skill-bootstrap.ts"
+      "./authoring/skill-bootstrap/skill-bootstrap.ts",
+      "pi-web-providers/dist/index.js"
     ],
     "skills": [
       "./skills"
@@ -74,6 +75,7 @@
   "dependencies": {
     "bunfig": "^0.15.9",
     "jsonc-parser": "^3.3.1",
+    "pi-web-providers": "^3.0.0",
     "shell-quote": "^1.8.3",
     "zod": "^4.4.1"
   },
