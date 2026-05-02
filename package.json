@@ -71,6 +71,7 @@
       "./authoring/output-artifacts/output-artifacts.ts",
       "./authoring/commit-helper/commit-helper.ts",
       "./authoring/skill-bootstrap/skill-bootstrap.ts",
+      "./authoring/plannotator/index.ts",
       "pi-web-providers/dist/index.js"
     ],
     "skills": [
@@ -82,6 +83,7 @@
     ]
   },
   "dependencies": {
+    "@plannotator/pi-extension": "^0.19.6",
     "@samfp/pi-memory": "^1.0.2",
     "bunfig": "^0.15.9",
     "defuddle": "^0.18.1",
