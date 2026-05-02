@@ -10,6 +10,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import piMemory from "./src/index.ts";
+import registerMemoryMode from "../memory-mode.ts";
 
 function isAutoInjectDisabled(): boolean {
   try {
@@ -30,6 +31,9 @@ export default function (pi: ExtensionAPI) {
     // in ~/.pi/agent/settings.json
     return;
   }
+
+  // Register /mem and /remember commands (merged from memory-mode)
+  registerMemoryMode(pi);
 
   pi.on("session_start", async (_event, ctx) => {
     try {

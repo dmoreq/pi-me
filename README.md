@@ -128,24 +128,22 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Ralph Loop | `core-tools/ralph-loop/` | Subagent loop executor with condition polling, pause/resume, and steering. |
 | Plan Tracker | `core-tools/plan-tracker/` | Inline plan progress widget. `plan_tracker` tool for task status management. |
 | Plan Mode | `core-tools/plan-mode.ts` | File-based plans in `.pi/plans/` with JSON frontmatter, locking, and planning mode toggle. |
-| Sub-Pi | `core-tools/sub-pi/` | Subprocess subagent dispatch in single, chain, or parallel modes. Auto-detects `/skill:` references. |
+| Subagent | `core-tools/subagent/` | Full subagent engine: single/chain/parallel dispatch, agents, slash commands, async jobs. Includes `/team` tool. |
+| Sub-Pi | `core-tools/sub-pi/` | Subprocess pi dispatch in single, chain, or parallel modes. Auto-detects `/skill:` references. |
 | BTW | `core-tools/btw/` | `/btw <question>` asks the primary model a side question with cloned context. Answer in overlay. |
 | Oracle | `core-tools/oracle.ts` | `/oracle <prompt>` gets a second opinion from another model. |
 | Code Actions | `core-tools/code-actions/` | `/code` picks code snippets from assistant messages to copy, insert, or run. |
 | Speed Reading | `core-tools/speedreading.ts` | `/speedread` RSVP reader with adjustable WPM using the Spritz technique. |
 | Ultrathink | `core-tools/ultrathink.ts` | Rainbow animation triggered by "ultrathink" keyword detection. |
-| Memory Mode | `core-tools/memory-mode.ts` | `/mem` saves instructions to `AGENTS.md` project files. |
 | File Collector | `core-tools/file-collector/` | Collects file paths and content from tool results based on configurable regex patterns. |
 | Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
 
-| Memory | `core-tools/memory/` | SQLite-backed persistent memory: key-value facts, learned lessons, event audit log. |
+| Memory | `core-tools/memory/` | SQLite-backed persistent memory + /mem AGENTS.md instruction saving. Key-value facts, learned lessons, event audit. |
 | Link | `core-tools/link/` | WebSocket inter-terminal communication: share chat, broadcast prompts, coordinate sessions. |
 | Formatter | `core-tools/formatter/` | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
-| Crew | `core-tools/crew/` | `/team` dispatches specialized sub-agents (reviewer, delegate, orchestrator) for complex tasks. |
 | Edit Session | `core-tools/edit-session/` | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
 | Stash | `core-tools/stash/` | Draft stash: `Ctrl+Shift+S` to stash editor content, `Ctrl+Shift+R` to restore. |
 | Thinking Steps | `core-tools/thinking-steps/` | Adds structured thinking (plan, research, implement, review) before tool calls. |
-| Greedy Search | `core-tools/greedysearch/` | Deep research: iterative search, synthesize findings, produce comprehensive reports. |
 
 ### Content Tools — File & Resource Utilities
 
@@ -159,7 +157,6 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Raw Paste | `content-tools/raw-paste/` | `/paste` inserts editable text inline for review before sending. |
 | File Picker | `content-tools/file-picker/` | `/files` TUI file selector with reveal, quicklook, and editor actions. |
 | Web Fetch | `content-tools/web-fetch/` | HTTP fetcher with multiple browser profiles, JS rendering, and content extraction via linkedom/Defuddle. |
-| Docparser | `content-tools/docparser/` | Document parsing (PDF, Office, spreadsheets, images) via @llamaindex/liteparse. |
 | Markdown Preview | `content-tools/markdown-preview/` | Renders markdown to HTML for browser preview. Requires puppeteer-core. |
 
 ### Authoring — AI-Assisted Creation

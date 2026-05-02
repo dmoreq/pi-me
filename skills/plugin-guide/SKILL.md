@@ -51,7 +51,7 @@ Use this guide to determine which tool, extension, or skill to use for a given t
 | Task | Tool / Extension | Notes |
 |---|---|---|
 | Search web for current info | `web_search` tool | Fastest. Requires `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY` |
-| AI-engine-specific search | greedysearch | Perplexity, Bing Copilot, Google AI (no API keys needed) |
+| AI-engine-specific search | (removed — `web_search` covers this) | Uses Exa/Tavily/Valiyu API |
 | Save/recall session patterns | pi-memory | Automatic, learns passively |
 | Build explicit knowledge graph | memex | Zettelkasten with bidirectional links |
 | Retrieve context when full | context-mode | MCP-based context optimization |
@@ -113,8 +113,6 @@ Use this guide to determine which tool, extension, or skill to use for a given t
 | User notification | `notify` | Beep, speak, bring-to-front |
 
 ## Choosing between similar tools
-
-**`web_search` vs `greedysearch`:** Always try `web_search` first — it's faster, cheaper, and more reliable (Exa/Tavily APIs). Only fall back to `greedysearch` if you need AI-engine-specific results (Perplexity summaries, Bing Copilot citations, Google AI overviews) or if no API key is configured.
 
 **`subagent` vs `sub_pi` vs `ralph_loop`:** Use `subagent` for everything unless you specifically need skill-prefix dispatch (`sub_pi`) or iterative polling loops (`ralph_loop`).
 

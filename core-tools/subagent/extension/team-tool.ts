@@ -13,7 +13,7 @@
  */
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { Type, type TSchema } from "@sinclair/typebox";
-import { discoverAgentsAll, type AgentConfig } from "../subagent/agents/agents.ts";
+import { discoverAgentsAll, type AgentConfig } from "../agents/agents.ts";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

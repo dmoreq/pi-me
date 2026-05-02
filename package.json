@@ -50,16 +50,13 @@
       "./core-tools/file-collector/index.ts",
       "./core-tools/sub-pi/index.ts",
       "./core-tools/subagent/index.ts",
-      "./core-tools/memory-mode.ts",
       "./core-tools/memory/index.ts",
       "./core-tools/link/index.ts",
       "./core-tools/formatter/index.ts",
 
       "./core-tools/thinking-steps/index.ts",
-      "./core-tools/crew/index.ts",
       "./core-tools/edit-session/index.ts",
       "./core-tools/stash/index.ts",
-      "./core-tools/greedysearch/index.ts",
       "./content-tools/notebook.ts",
       "./content-tools/mermaid.ts",
       "./content-tools/github.ts",
@@ -68,7 +65,6 @@
       "./content-tools/raw-paste/index.ts",
       "./content-tools/file-picker/index.ts",
       "./content-tools/web-fetch/index.ts",
-      "./content-tools/docparser/index.ts",
       "./content-tools/markdown-preview/index.ts",
 
       "./authoring/output-artifacts/output-artifacts.ts",
@@ -88,7 +84,6 @@
   },
   "dependencies": {
 
-    "@apmantza/greedysearch-pi": "^1.8.5",
 
 
     "bunfig": "^0.15.9",

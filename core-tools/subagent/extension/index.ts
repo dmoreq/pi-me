@@ -484,6 +484,9 @@ DIAGNOSTICS:
 	}
 	registerSubagentNotify(pi);
 
+	// Register team/crew tool (merged from crew extension)
+	registerTeamTool(pi);
+
 	const existingVisibleControlNotices = globalStore[controlNoticeSeenStoreKey];
 	const visibleControlNotices = existingVisibleControlNotices instanceof Set ? existingVisibleControlNotices as Set<string> : new Set<string>();
 	globalStore[controlNoticeSeenStoreKey] = visibleControlNotices;
