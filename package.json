@@ -58,11 +58,9 @@
       "./core-tools/subagent/extension/index.ts",
       "./core-tools/memory-mode.ts",
       "./core-tools/pi-memory/index.ts",
-      "./core-tools/pi-lens/index.ts",
-      "./core-tools/pi-processes/index.ts",
       "./core-tools/pi-link/index.ts",
       "./core-tools/pi-formatter/index.ts",
-      "./core-tools/memex/index.ts",
+
       "./core-tools/pi-thinking-steps/index.ts",
       "./core-tools/pi-crew/index.ts",
       "./core-tools/pi-edit-session/index.ts",
@@ -94,10 +92,10 @@
     ]
   },
   "dependencies": {
-    "@aliou/pi-processes": "^0.8.1",
+
     "@apmantza/greedysearch-pi": "^1.8.5",
 
-    "@touchskyer/memex": "^0.1.32",
+
     "bunfig": "^0.15.9",
 
     "defuddle": "^0.18.1",
@@ -108,7 +106,7 @@
 
     "pi-docparser": "^1.1.1",
 
-    "pi-lens": "^3.8.34",
+
     "pi-link": "^0.1.11",
     "pi-markdown-preview": "^0.9.7",
 
