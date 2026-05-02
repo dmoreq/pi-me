@@ -114,7 +114,6 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Preset | `core-tools/preset/` | Save and switch provider/model/tool presets. `/preset` to cycle. |
 | Skill Args | `session-lifecycle/skill-args/` | `$1`, `$2`, `$ARGUMENTS` substitution in skill bodies for parameterized skills. |
 | Warp Notify | `session-lifecycle/warp-notify/` | Warp terminal OSC 777 structured notifications on lifecycle events. |
-| Funny Messages | `session-lifecycle/funny-messages.ts` | Food/cooking-themed spinner messages toggled via `/fun-working`. |
 | Startup Header | `session-lifecycle/startup-header.ts` | Custom welcome header with ASCII art branding on session start. |
 | Model Filter | `core-tools/model-filter/` | Filters available models by provider or capability. |
 
@@ -139,7 +138,6 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | File Collector | `core-tools/file-collector/` | Collects file paths and content from tool results based on configurable regex patterns. |
 | Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
 
-| Flicker Corp | `core-tools/flicker-corp.ts` | Terminal display animation effect. |
 | Memory | `core-tools/memory/` | SQLite-backed persistent memory: key-value facts, learned lessons, event audit log. |
 | Link | `core-tools/link/` | WebSocket inter-terminal communication: share chat, broadcast prompts, coordinate sessions. |
 | Formatter | `core-tools/formatter/` | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
@@ -258,7 +256,7 @@ pi-me incorporates work from the following open-source pi packages:
 | [pi-extensions](https://github.com/tmustier/pi-extensions) | [Thomas Mustier](https://github.com/tmustier) | Agent-guidance, session-recap, tab-status, usage-extension, code-actions, arcade, files-widget, raw-paste |
 | [richardgill/pi-extensions](https://github.com/richardgill/pi-extensions) | [Richard Gill](https://github.com/richardgill) | Extra-context-files, file-collector, files, preset, sub-pi, pi-config |
 | [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Background-notify, session-emoji, session-color, safe-git, safe-rm, compact-config |
-| [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, cost-tracker, flicker-corp, funny-working-message, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar |
+| [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, cost-tracker, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar |
 | [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo overlay with branch replay, `/btw` side-question, skill argument substitution, ask-user-question, Warp notifications |
 | [oh-my-pi](https://github.com/can1357/oh-my-pi) | [Can](https://github.com/can1357) | Early ecosystem inspiration |
 | [pi-dcp](https://github.com/zenobi-us/pi-dcp) | [zenobi-us](https://github.com/zenobi-us) | Dynamic Context Pruning — deduplication, superseded writes, error purging, recency protection |

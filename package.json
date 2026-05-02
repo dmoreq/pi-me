@@ -31,7 +31,6 @@
       "./session-lifecycle/tab-status/tab-status.ts",
       "./session-lifecycle/usage-extension/index.ts",
       "./session-lifecycle/skill-args/index.ts",
-      "./session-lifecycle/funny-messages.ts",
       "./session-lifecycle/warp-notify/index.ts",
       "./core-tools/preset/index.ts",
       "./core-tools/model-filter/index.ts",
@@ -43,7 +42,6 @@
       "./core-tools/code-actions/index.ts",
 
       "./core-tools/clipboard.ts",
-      "./core-tools/flicker-corp.ts",
       "./core-tools/oracle.ts",
       "./core-tools/btw/index.ts",
       "./core-tools/plan-mode.ts",
