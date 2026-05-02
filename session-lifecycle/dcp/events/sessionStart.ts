@@ -25,7 +25,7 @@ export function createSessionStartEventHandler(options: SessionStartEventHandler
 
 
   return (event: SessionStartEvent, ctx: ExtensionContext) => {
-    ctx.ui.notify(`DCP: Active with ${config.rules.length} rules \n${config.rules.map(r => `\t- ${r.name}`).join("\n")}`, "info");
+    // DCP startup notification removed
   }
 }
 
