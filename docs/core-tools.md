@@ -15,7 +15,7 @@ external access, and utility operations.
 Searches the web via Brave, SerpAPI, or Kagi. Auto-detects which API key is available. Returns formatted
 results with titles, URLs, and text snippets.
 
-**Configuration:** `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY`
+**Configuration:** `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY`
 
 ### Todo
 

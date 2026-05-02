@@ -118,7 +118,7 @@ Restart pi. All 54 extensions and 23 skills load automatically.
 
 | Extension | Source | Purpose |
 |-----------|--------|---------|
-| Web Search | `core-tools/web-search.ts` | Brave, SerpAPI, or Kagi web search. Set `BRAVE_API_KEY`, `SERPAPI_API_KEY`, or `KAGI_API_KEY`. |
+| Web Search | `core-tools/web-search.ts` | Exa, Tavily, or Valiyu web search. Set `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY`. |
 | Todo | `core-tools/todo/` | Live overlay task list with 4-state machine, dependency tracking, and branch replay survival. `/todos` to view. |
 | Calc | `core-tools/calc.ts` | Safe arithmetic expression evaluator with Math function whitelist. |
 | Ask User Question | `core-tools/ask-user-question/` | Structured multi-question UI with side-by-side markdown previews and multi-select. |
@@ -167,9 +167,9 @@ Restart pi. All 54 extensions and 23 skills load automatically.
 | Variable | Used By | Purpose |
 |----------|---------|---------|
 | `GITHUB_TOKEN` / `GH_TOKEN` | GitHub tool | GitHub API authentication |
-| `BRAVE_API_KEY` | Web Search | Brave Search API |
-| `SERPAPI_API_KEY` | Web Search | SerpAPI (Google backend) |
-| `KAGI_API_KEY` | Web Search | Kagi Search API |
+| `EXA_API_KEY` | Web Search | Exa neural search API (preferred) |
+| `TAVILY_API_KEY` | Web Search | Tavily AI-optimized search API |
+| `VALIYU_API_KEY` | Web Search | Valiyu search API |
 
 ### Permission Levels
 
