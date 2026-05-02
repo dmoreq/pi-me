@@ -11,9 +11,6 @@ describe("web-search backend detection", () => {
     "EXA_API_KEY",
     "TAVILY_API_KEY",
     "VALIYU_API_KEY",
-    "SERPAPI_KEY",
-    "BRAVE_API_KEY",
-    "KAGI_API_KEY",
   ];
 
   afterEach(() => {
@@ -73,8 +70,8 @@ describe("web-search backend detection", () => {
     assert.ok(result.snippet);
   });
 
-  it("Brave/SerpAPI/Kagi keys are ignored (dead backends)", async () => {
-    for (const key of searchKeys.slice(0, 3)) delete process.env[key];
+  it("Brave/SerpAPI/Kagi env vars are ignored (only Exa/Tavily/Valiyu supported)", async () => {
+    // Set dead backend keys — should NOT trigger detection
     process.env.BRAVE_API_KEY = "brave-key";
     process.env.SERPAPI_KEY = "serp-key";
     process.env.KAGI_API_KEY = "kagi-key";

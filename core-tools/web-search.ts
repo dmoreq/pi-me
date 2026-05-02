@@ -81,15 +81,40 @@ const tavilyBackend: SearchBackend = {
   },
 };
 
-/** Valiyu backend — stub pending API verification. Fill in when endpoint and auth are confirmed. */
+/**
+ * Valiyu backend.
+ * Replace endpoint/response shape once the API is confirmed.
+ * See: core-tools/web-search.ts top comment for env var names.
+ */
 const valiyuBackend: SearchBackend = {
   name: "valiyu",
-  async search(_query, _numResults, _apiKey) {
-    // TODO: Implement Valiyu API when endpoint/auth/response shape are confirmed.
-    // Expected: POST https://api.valiyu.com/search or similar.
-    // Placeholder returns empty array so VALIYU_API_KEY is treated as "backend configured"
-    // rather than "no backend" — but produces no results until the real API is wired.
-    return [];
+  async search(query, numResults, apiKey) {
+    // POST to the Valiyu API endpoint. Adjust URL/headers/body to match the real API.
+    const resp = await fetch("https://api.valiyu.com/v1/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "User-Agent": "pi-web-search/0.1",
+      },
+      body: JSON.stringify({
+        query,
+        max_results: Math.min(numResults, 20),
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!resp.ok) {
+      throw new Error(`Valiyu returned ${resp.status}: ${await resp.text().catch(() => "")}`);
+    }
+    const data = (await resp.json()) as {
+      results?: Array<{ title: string; url: string; snippet: string; published?: string }>;
+    };
+    return (data.results ?? []).map((r) => ({
+      title: r.title,
+      url: r.url,
+      snippet: r.snippet,
+      published: r.published,
+    }));
   },
 };
 

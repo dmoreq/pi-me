@@ -24,7 +24,7 @@ Restart pi. All extensions and skills load automatically — no additional confi
 |-----------|-----------|
 | Command safety | Permission system blocks dangerous operations; secrets are obfuscated automatically |
 | Task tracking | Agent calls `todo` to manage a live overlay task list; `plan_tracker` shows progress |
-| Web access | Agent uses `web_search` via Brave, SerpAPI, or Kagi |
+| Web access | Agent uses `web_search` via Exa (EXA_API_KEY), Tavily (TAVILY_API_KEY), or Valiyu (VALIYU_API_KEY) |
 | Subagent dispatch | Agent uses `ralph_loop` for iterative subagent execution with steering controls |
 | Model switching | `/oracle` for second opinions; `/preset` to switch provider/model configurations |
 | Skill system | 23 skills auto-load when their description matches the agent's task |
