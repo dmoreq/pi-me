@@ -1,5 +1,5 @@
 /**
- * /dcp-logs command - View pi-dcp logs
+ * /cp-logs command - View context-pruning logs
  *
  * Shows recent log entries and provides information about log file locations.
  */
@@ -8,8 +8,8 @@ import type { CommandDefinition } from "../types";
 import { getLogger } from "../logger";
 import { readFileSync, existsSync, statSync } from "fs";
 
-export const dcpLogsCommand: CommandDefinition = {
-	description: "View pi-dcp extension logs",
+export const cpLogsCommand: CommandDefinition = {
+	description: "View context-pruning extension logs",
 	handler: async (args, ctx) => {
 		const logger = getLogger();
 		const parsedArgs = typeof args === 'string' ? args.split(/\s+/) : [];
@@ -18,7 +18,7 @@ export const dcpLogsCommand: CommandDefinition = {
 
 		// Get all log files
 		const allLogFiles = logger.getAllLogFiles();
-		
+
 		if (allLogFiles.length === 0) {
 			ctx.ui.notify("No log files found. Logs will be created when extension runs.", "info");
 			return;
@@ -31,7 +31,7 @@ export const dcpLogsCommand: CommandDefinition = {
 		}
 
 		const logFilePath = allLogFiles[fileIndex];
-		
+
 		if (!existsSync(logFilePath)) {
 			ctx.ui.notify(`Log file not found: ${logFilePath}`, "error");
 			return;
@@ -44,12 +44,12 @@ export const dcpLogsCommand: CommandDefinition = {
 		// Read the file
 		const content = readFileSync(logFilePath, "utf8");
 		const lines = content.split("\n").filter(line => line.trim());
-		
+
 		// Get last N lines
 		const recentLines = lines.slice(-linesToShow);
 
 		// Build response
-		let response = `📋 **pi-dcp Logs**\n\n`;
+		let response = `📋 **Context Pruning Logs**\n\n`;
 		response += `**File:** \`${logFilePath}\`\n`;
 		response += `**Size:** ${fileSizeMB} MB\n`;
 		response += `**Total Lines:** ${lines.length}\n`;
@@ -58,7 +58,7 @@ export const dcpLogsCommand: CommandDefinition = {
 		response += "```\n";
 		response += recentLines.join("\n");
 		response += "\n```\n\n";
-		
+
 		// Show available files
 		if (allLogFiles.length > 1) {
 			response += "\n**Available log files:**\n";
@@ -67,7 +67,7 @@ export const dcpLogsCommand: CommandDefinition = {
 				const label = idx === 0 ? "current" : `backup ${idx}`;
 				response += `- ${idx}: ${label} (${size} MB)\n`;
 			});
-			response += "\nUse `/dcp-logs <lines> <file_index>` to view a specific file.";
+			response += "\nUse `/cp-logs <lines> <file_index>` to view a specific file.";
 		}
 
 		ctx.ui.notify(response, "info");

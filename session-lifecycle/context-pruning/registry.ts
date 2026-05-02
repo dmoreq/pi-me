@@ -24,7 +24,7 @@ export function registerRule(rule: PruneRule): void {
 
 	// Warn if duplicate (but allow override)
 	if (ruleRegistry.has(rule.name)) {
-		console.warn(`[pi-dcp] Overriding existing rule: ${rule.name}`);
+		console.warn(`[context-pruning] Overriding existing rule: ${rule.name}`);
 	}
 
 	ruleRegistry.set(rule.name, rule);

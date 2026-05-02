@@ -122,7 +122,7 @@ function logPruningResults(withMetadata: MessageWithMetadata[], finalCount: numb
 }
 
 /**
- * Get pruning statistics (for future /dcp-stats command)
+ * Get pruning statistics (for future /cp-stats command)
  */
 export interface PruningStats {
 	totalMessages: number;

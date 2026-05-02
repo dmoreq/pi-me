@@ -21,15 +21,15 @@ const DEFAULT_CONFIG: PruningConfigWithRuleRefs = {
 /**
  * Load configuration from extension settings, files, or defaults
  * Priority (highest to lowest):
- * 1. CLI flags (--dcp-enabled, --dcp-debug)
- * 2. Config file in current directory (dcp.config.ts, etc.)
- * 3. Config file in home directory (~/.dcprc)
+ * 1. CLI flags (--cp-enabled, --cp-debug)
+ * 2. Config file in current directory (cp.config.ts, etc.)
+ * 3. Config file in home directory (~/.cprc)
  * 4. Default configuration
  */
 export async function loadConfig(pi: ExtensionAPI): Promise<PruningConfigWithRuleObjects> {
 	// bunfig automatically searches for config files in cwd and home directory
-	// It supports: dcp.config.{ts,js,json,toml,yaml}, .dcprc{,.json,.toml,.yaml}
-	// and package.json with "dcp" key
+	// It supports: cp.config.{ts,js,json,toml,yaml}, .cprc{,.json,.toml,.yaml}
+	// and package.json with "cp" key
 	const config = await bunfigLoad<PruningConfigWithRuleRefs>({
 		name: "context-pruning",
 		cwd: process.cwd(),
@@ -38,8 +38,8 @@ export async function loadConfig(pi: ExtensionAPI): Promise<PruningConfigWithRul
 	});
 
 	// Apply flag overrides (highest priority)
-	const enabled = pi.getFlag("--dcp-enabled");
-	const debug = pi.getFlag("--dcp-debug");
+	const enabled = pi.getFlag("--cp-enabled");
+	const debug = pi.getFlag("--cp-debug");
 
 	// Filter out invalid rules
 	const availableRuleNames = getRuleNames();
@@ -94,18 +94,18 @@ export function getDefaultConfig(): PruningConfig {
 
 /**
  * Generate sample configuration file content
- * Used by the init command to create dcp.config.ts
+ * Used by the init command to create cp.config.ts
  */
 export function generateConfigFileContent(options?: { simplified?: boolean }): string {
 	const simplified = options?.simplified ?? false;
 
 	if (simplified) {
 		return `/**
- * Context Pruning (Dynamic Context Pruning) Configuration
+ * Context Pruning Configuration
  * 
  * Place this file as:
- * - ./dcp.config.ts (project-specific)
- * - ~/.dcprc (user-wide)
+ * - ./cp.config.ts (project-specific)
+ * - ~/.cprc (user-wide)
  */
 
 import type { PruningConfig } from "@mariozechner/pi-me/session-lifecycle/context-pruning/types";
@@ -120,13 +120,13 @@ export default {
 	}
 
 	return `/**
- * Context Pruning (Dynamic Context Pruning) Configuration
+ * Context Pruning Configuration
  * 
  * This file configures the context-pruning extension for intelligent context pruning.
  * 
  * Place this file as:
- * - ./dcp.config.ts (project-specific configuration)
- * - ~/.dcprc (user-wide configuration)
+ * - ./cp.config.ts (project-specific configuration)
+ * - ~/.cprc (user-wide configuration)
  * 
  * All fields are optional - defaults will be used for missing values.
  */

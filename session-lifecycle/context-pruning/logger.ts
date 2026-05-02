@@ -1,5 +1,5 @@
 /**
- * Rotated file logger for pi-dcp extension
+ * Rotated file logger for context-pruning extension
  *
  * Provides structured logging to rotating log files with:
  * - Automatic log rotation when size limit reached
@@ -45,9 +45,9 @@ export class Logger {
 	private enableConsole: boolean;
 
 	constructor(config: LoggerConfig = {}) {
-		// Default to ~/.pi/logs/pi-dcp
+		// Default to ~/.pi/logs/context-pruning
 		this.logDir = config.logDir || join(homedir(), ".pi", "logs");
-		this.logFileName = config.logFileName || "pi-dcp.log";
+		this.logFileName = config.logFileName || "context-pruning.log";
 		this.logFilePath = join(this.logDir, this.logFileName);
 		this.maxFileSize = config.maxFileSize || 10 * 1024 * 1024; // 10MB
 		this.maxBackups = config.maxBackups || 5;
@@ -99,7 +99,7 @@ export class Logger {
 			renameSync(this.logFilePath, backupPath);
 		} catch (error) {
 			// If rotation fails, try to continue with current log
-			console.error("[pi-dcp] Failed to rotate logs:", error);
+			console.error("[context-pruning] Failed to rotate logs:", error);
 		}
 	}
 
@@ -121,7 +121,7 @@ export class Logger {
 		// Write to console if enabled
 		if (this.enableConsole) {
 			const consoleMethod = level === LogLevel.ERROR ? console.error : console.log;
-			consoleMethod(`[pi-dcp] ${message}`, context || "");
+			consoleMethod(`[context-pruning] ${message}`, context || "");
 		}
 
 		try {
@@ -134,7 +134,7 @@ export class Logger {
 			appendFileSync(this.logFilePath, formatted, "utf8");
 		} catch (error) {
 			// Fallback to console if file write fails
-			console.error("[pi-dcp] Failed to write to log file:", error);
+			console.error("[context-pruning] Failed to write to log file:", error);
 			console.log(formatted);
 		}
 	}

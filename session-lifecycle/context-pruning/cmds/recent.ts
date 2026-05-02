@@ -8,11 +8,11 @@ import type { CommandDefinition, PruningConfig } from "../types";
 
 export function createRecentCommand(config: PruningConfig): CommandDefinition {
 	return {
-		description: "Set the number of recent messages to always keep (e.g., /dcp-recent 15)",
+		description: "Set the number of recent messages to always keep (e.g., /cp-recent 15)",
 		handler: async (args, ctx) => {
 			const count = parseInt(args || "10", 10);
 			if (isNaN(count) || count < 0) {
-				ctx.ui.notify("Invalid count. Usage: /dcp-recent <number>", "error");
+				ctx.ui.notify("Invalid count. Usage: /cp-recent <number>", "error");
 				return;
 			}
 			config.keepRecentCount = count;

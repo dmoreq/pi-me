@@ -12,12 +12,12 @@
  * - Shows "Context Pruning: {pruned}/{total}" in the TUI footer (matches token-rate/tab-status pattern)
  *
  * Commands:
- * - /dcp-stats    — Show detailed pruning statistics
- * - /dcp-debug    — Toggle debug logging
- * - /dcp-toggle   — Enable/disable pruning
- * - /dcp-recent N — Set recency threshold
- * - /dcp-init     — Generate a config file
- * - /dcp-logs     — View extension logs
+ * - /cp-stats    — Show detailed pruning statistics
+ * - /cp-debug    — Toggle debug logging
+ * - /cp-toggle   — Enable/disable pruning
+ * - /cp-recent N — Set recency threshold
+ * - /cp-init     — Generate a config file
+ * - /cp-logs     — View extension logs
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -41,7 +41,7 @@ import { createDebugCommand } from "./cmds/debug";
 import { createToggleCommand } from "./cmds/toggle";
 import { createRecentCommand } from "./cmds/recent";
 import { createInitCommand } from "./cmds/init";
-import { dcpLogsCommand } from "./cmds/logs";
+import { cpLogsCommand } from "./cmds/logs";
 
 // Register in order they should typically be applied
 registerRule(deduplicationRule);
@@ -52,7 +52,7 @@ registerRule(toolPairingRule);
 // Recency should be LAST to override other decisions
 registerRule(recencyRule);
 
-const STATUS_KEY = "dcp-stats";
+const STATUS_KEY = "cp-stats";
 
 export default async function (pi: ExtensionAPI) {
 	const config = await loadConfig(pi);
@@ -114,12 +114,12 @@ export default async function (pi: ExtensionAPI) {
 	const ruleCount = getAllRules().length;
 
 	// Register commands
-	pi.registerCommand("dcp-stats", createStatsCommand(statsTracker, ruleCount));
-	pi.registerCommand("dcp-debug", createDebugCommand(config));
-	pi.registerCommand("dcp-toggle", createToggleCommand(config));
-	pi.registerCommand("dcp-recent", createRecentCommand(config));
-	pi.registerCommand("dcp-init", createInitCommand());
-	pi.registerCommand("dcp-logs", dcpLogsCommand);
+	pi.registerCommand("cp-stats", createStatsCommand(statsTracker, ruleCount));
+	pi.registerCommand("cp-debug", createDebugCommand(config));
+	pi.registerCommand("cp-toggle", createToggleCommand(config));
+	pi.registerCommand("cp-recent", createRecentCommand(config));
+	pi.registerCommand("cp-init", createInitCommand());
+	pi.registerCommand("cp-logs", cpLogsCommand);
 
 	// Clean up status on shutdown
 	pi.on("session_shutdown", async (_event, ctx) => {
