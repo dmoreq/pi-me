@@ -253,7 +253,7 @@ pi-me incorporates work from the following open-source pi packages:
 | [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, cost-tracker, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar |
 | [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo overlay with branch replay, `/btw` side-question, skill argument substitution, ask-user-question, Warp notifications |
 | [oh-my-pi](https://github.com/can1357/oh-my-pi) | [Can](https://github.com/can1357) | Early ecosystem inspiration |
-| [pi-dcp](https://github.com/zenobi-us/pi-dcp) | [zenobi-us](https://github.com/zenobi-us) | Dynamic Context Pruning — deduplication, superseded writes, error purging, recency protection |
+| pi-dcp (inlined as context-pruning) | [zenobi-us](https://github.com/zenobi-us) | Dynamic Context Pruning — deduplication, superseded writes, error purging, recency protection |
 
 ---
 

@@ -32,7 +32,7 @@ These manage session boundaries and core lifecycle. Removing any would break fun
 
 ---
 
-### 2. context-pruning (DCP)
+### 2. context-pruning
 
 **Files:** `session-lifecycle/context-pruning/` (24 files, 2,137 lines, 4 test files)
 
@@ -46,7 +46,7 @@ These manage session boundaries and core lifecycle. Removing any would break fun
 | **Tool pairing** | Ensures tool_call + tool_result pairs stay intact (removes orphans) |
 | **Recency** | Protects the last N messages from pruning |
 
-**Why it's critical:** Without pruning, context fills up with noise (duplicate outputs, stale errors, overwritten file versions). The agent loses ability to work effectively as the session grows. DCP is the automated solution to context pollution.
+**Why it's critical:** Without pruning, context fills up with noise (duplicate outputs, stale errors, overwritten file versions). The agent loses ability to work effectively as the session grows. context-pruning is the automated solution to context pollution.
 
 ---
 
@@ -62,7 +62,7 @@ These manage session boundaries and core lifecycle. Removing any would break fun
 
 **Config:** Threshold and message count configurable via `compact-config`.
 
-**Relationship with context-pruning:** Complementary. DCP prunes individual messages. Auto-compact summarizes the remaining context into a compressed version. Both reduce token usage.
+**Relationship with context-pruning:** Complementary. context-pruning prunes individual messages. Auto-compact summarizes the remaining context into a compressed version. Both reduce token usage.
 
 **Why it's valuable:** Without auto-compact, long sessions hit context limits and the agent loses history. Manual compaction via `/compact` is possible but easy to forget.
 
