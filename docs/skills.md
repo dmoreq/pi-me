@@ -74,7 +74,7 @@ the full development lifecycle.
 | preset | ✓ | — | `/preset` | `preset.jsonc` |
 | skill-args | ✓ | — | — | — |
 | warp-notify | ✓ | — | — | Warp terminal |
-| web-search | — | ✓ | — | `BRAVE_API_KEY` etc. |
+| web-search | — | ✓ | — | `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY` |
 | todo | ✓ | ✓ | `/todos` | — |
 | calc | — | ✓ | — | — |
 | ask-user-question | — | ✓ | — | — |

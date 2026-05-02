@@ -49,12 +49,12 @@
 | `@touchskyer/memex` | 0.1.32 | touchskyer | `core-tools/memex/` ✅ |
 | `pi-thinking-steps` | 1.0.8 | fluxgear | `core-tools/pi-thinking-steps/` ✅ |
 | `pi-crew` | 0.1.41 | bom0792 | `core-tools/pi-crew/` ✅ |
-| `pi-mempalace-extension` | 0.2.0 | auda29 | `core-tools/pi-mempalace/` ✅ |
+| `pi-mempalace-extension` | 0.2.0 | auda29 | `core-tools/pi-mempalace/` ❌ REMOVED |
 | `pi-edit-session-in-place` | 0.1.8 | fitchmultz | `core-tools/pi-edit-session/` ✅ |
 | `@fitchmultz/pi-stash` | 0.1.9 | fitchmultz | `core-tools/pi-stash/` ✅ |
-| `pi-oracle` | 0.6.13 | fitchmultz | `core-tools/pi-oracle/` ✅ |
+| `pi-oracle` | 0.6.13 | fitchmultz | `core-tools/pi-oracle/` ❌ REMOVED |
 | `@apmantza/greedysearch-pi` | 1.8.5 | apmantza | `core-tools/greedysearch-pi/` ✅ |
-| `@leing2021/super-pi` | 0.23.4 | leing2023 | `core-tools/super-pi/` ✅ |
+| `@leing2021/super-pi` | 0.23.4 | leing2023 | `core-tools/super-pi/` ❌ REMOVED |
 | `pi-powerline-footer` | 0.4.20 | nicopreme | `session-lifecycle/tab-status` ⚠️ |
 | `pi-prompt-template-model` | 0.9.3 | nicopreme | `session-lifecycle/preset` ⚠️ |
 | `pi-capitals-context` | 1.5.0 | salem-malibary | `foundation/extra-context-files.ts` ⚠️ |
@@ -132,7 +132,7 @@
 | `@touchskyer/memex` | 0.1.32 | touchskyer | Zettelkasten-based agent memory | Alternative to pi-memory |
 | `pi-thinking-steps` | 1.0.8 | fluxgear | Renders thinking steps in TUI | Visual polish |
 | `pi-crew` | 0.1.41 | bom0792 | Coordinated AI teams, workflows, worktrees | Alternative subagent approach |
-| `pi-mempalace-extension` | 0.2.0 | auda29 | Memory palace integration | Niche memory technique |
+| `pi-mempalace-extension` | ~~0.2.0~~ | ~~auda29~~ | ~~Memory palace integration~~ | ❌ REMOVED — superseded by memex |
 | `whatsapp-pi` | 1.0.43 | castelloes | WhatsApp integration | Chat integration |
 | `@0xkobold/pi-gateway` | 0.6.0 | moikapy | Hermes-style messaging gateway | Multi-platform agent |
 | `pi-schedule-prompt` | 0.2.0 | tintinweb | Cron-like scheduled prompts | Automation |
@@ -144,10 +144,10 @@
 | `@spences10/pi-lsp` | 0.0.9 | spences10 | LSP diagnostics, hover, definition, references | Lighter alternative to pi-lens |
 | `pi-local-agents-only` | 0.1.13 | fitchmultz | Strip global AGENTS.md/CLAUDE.md per project | Scope control |
 | `@alexanderfortin/pi-loaded-tools` | 0.4.4 | GitHub Actions | List loaded tools with source provenance | Debugging |
-| `pi-oracle` | 0.6.13 | fitchmultz | ChatGPT web-oracle with browser auth | Web-based AI oracle |
+| `pi-oracle` | ~~0.6.13~~ | ~~fitchmultz~~ | ~~ChatGPT web-oracle with browser auth~~ | ❌ REMOVED — superseded by native oracle.ts |
 | `@apmantza/greedysearch-pi` | 1.8.5 | apmantza | Multi-engine AI search via browser automation | No API keys needed |
 | `oh-pi` | 0.1.85 | telagod | One-click pi setup (oh-my-zsh for pi) | For new users only |
-| `@leing2021/super-pi` | 0.23.4 | leing2023 | Compound Engineering package | Workflow collection |
+| `@leing2021/super-pi` | ~~0.23.4~~ | ~~leing2023~~ | ~~Compound Engineering package~~ | ❌ REMOVED — subagent + ralph-loop cover iterative workflows |
 
 ---
 

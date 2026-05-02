@@ -184,13 +184,6 @@ Five terminal minigames:
 
 Animated terminal display effect with high-speed scrolling and "glitch" artifacts.
 
-### Resistance
-
-**Source:** `core-tools/resistance.ts`
-**Trigger:** Hook (`session_start`, `session_shutdown`) · Command (`/resistance`)
-
-Footer display with a typewriter reveal effect and periodic glitch animations.
-
 ---
 
 **See also:** [Architecture Overview](intro.md) · [Foundation](foundation.md) · [Session Lifecycle](session-lifecycle.md) · [Content Tools](content-tools.md) · [Authoring](authoring.md) · [Skills](skills.md)

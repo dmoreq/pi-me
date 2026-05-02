@@ -4,7 +4,7 @@ A comprehensive extension suite for the [pi coding agent](https://github.com/mar
 safety guards, session lifecycle management, developer tools, content manipulation utilities, and AI-assisted
 authoring helpers — all loaded automatically as a single package.
 
-**54 extensions, 23 skills, 202 tests. MIT licensed.**
+**77 extensions, 23 skills, 301 tests. MIT licensed.**
 
 ---
 
@@ -71,7 +71,7 @@ Add to `~/.pi/agent/settings.json`:
 }
 ```
 
-Restart pi. All 54 extensions and 23 skills load automatically.
+Restart pi. All 77 extensions and 23 skills load automatically.
 
 ### Prerequisites
 
@@ -136,7 +136,6 @@ Restart pi. All 54 extensions and 23 skills load automatically.
 | Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
 | Arcade | `core-tools/arcade/` | Five terminal minigames: Spice Invaders, Picman, Ping, Tetris, Mario-Not. |
 | Flicker Corp | `core-tools/flicker-corp.ts` | Terminal display animation effect. |
-| Resistance | `core-tools/resistance.ts` | Battlestar Galactica footer quote with typewriter reveal. |
 
 ### Content Tools — File & Resource Utilities
 
