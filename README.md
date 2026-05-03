@@ -200,23 +200,6 @@ description: Use when...
 
 ---
 
-## Adopted Packages
-
-pi-me incorporates work from the open-source pi ecosystem:
-
-| Package | Author | Contributions |
-|---------|--------|---------------|
-| [superpowers](https://github.com/obra/superpowers) | [Jesse Vincent](https://github.com/obra) | Workflow skills, plan-tracker |
-| [pi-hooks](https://github.com/prateekmedia/pi-hooks) | [Prateek](https://github.com/prateekmedia) | Permission, checkpoint, ralph-loop, repeat |
-| [pi-extensions](https://github.com/tmustier/pi-extensions) | [Thomas Mustier](https://github.com/tmustier) | Session-recap, usage-extension, code-actions, files-widget |
-| [richardgill/pi-extensions](https://github.com/richardgill/pi-extensions) | [Richard Gill](https://github.com/richardgill) | File-collector, preset, sub-pi, pi-config |
-| [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Background-notify, session-emoji, compact-config |
-| [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, handoff, memory-mode, plan-mode, oracle |
-| [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo, skill args, handoff, warp-notify |
-| [pi-lens](https://github.com/dmoreq/pi-lens) | [quy.doan](https://github.com/dmoreq) | Read-guard, secrets scanner, ast-grep tools, code-review, autofix, similarity |
-
----
-
 ## License
 
 MIT

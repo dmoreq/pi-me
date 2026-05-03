@@ -1,7 +1,7 @@
 {
   "name": "pi-me",
   "version": "0.2.0",
-  "description": "Essential pi extensions: foundation guards, session lifecycle, developer tools, content tools, authoring helpers, ralph-loop, subagent orchestration, web-fetch",
+  "description": "Comprehensive extension suite for the pi coding agent: safety guards, session lifecycle, developer tools, content utilities, subagent orchestration, and authoring helpers — with profile-based loading"}]},
   "license": "MIT",
   "keywords": [
     "pi-package",
