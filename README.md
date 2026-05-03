@@ -91,7 +91,6 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Permission | `foundation/permission/` | Tiered command safety: minimal → bypassed. Blocks dangerous patterns, prompts for high-risk operations. |
 | Context Window | `foundation/context-window/` | Footer widget showing context usage percentage. Warns at 70%, alerts at 90%. |
 | Safe Operations | `foundation/safe-ops.ts` | Intercepts dangerous git/gh commands for approval. Replaces `rm` with `trash` on macOS. |
-| Status Widget | `foundation/status-widget.ts` | Live provider status indicators (Anthropic, OpenAI, GitHub) in the footer. |
 | Extra Context Files | `foundation/extra-context-files.ts` | Injects `AGENTS.local.md` and provider-specific guidance files into context automatically. |
 
 ### Session Lifecycle — State & Branding

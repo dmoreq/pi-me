@@ -13,7 +13,6 @@
       "./foundation/secrets/secrets.ts",
       "./foundation/permission/permission.ts",
       "./foundation/context-window/context-window.ts",
-      "./foundation/status-widget.ts",
       "./foundation/safe-ops.ts",
       "./foundation/extra-context-files.ts",
       "./session-lifecycle/handoff.ts",

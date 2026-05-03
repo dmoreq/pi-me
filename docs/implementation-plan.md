@@ -160,7 +160,6 @@ mv core-tools/arcade/mario-not core-tools/arcade/platformer
 
 **Current non-compliant files:**
 - `foundation/safe-ops.ts` — already kebab-case, OK
-- `foundation/status-widget.ts` — already kebab-case, OK
 - `foundation/extra-context-files.ts` — already kebab-case, OK
 
 **Check for any final stragglers:**

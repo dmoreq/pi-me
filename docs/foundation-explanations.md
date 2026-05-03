@@ -64,21 +64,6 @@ Context: ████████░░ 78%
 
 ---
 
-### 4. status-widget
-
-**Files:** `foundation/status-widget.ts` (~200 lines)
-
-**What it does:** Live provider status indicators in the footer. For each configured provider (Anthropic, OpenAI, GitHub, etc.) it shows:
-
-- Green dot: connected
-- Yellow dot: degraded
-- Red dot: error
-- Grey dot: not configured
-
-**Why it's useful:** Gives immediate visual feedback on which AI providers are available and healthy. If the provider goes down, you see it immediately rather than getting mysterious failures.
-
----
-
 ### 5. safe-ops
 
 **Files:** `foundation/safe-ops.ts` (~400 lines)
@@ -102,7 +87,7 @@ Context: ████████░░ 78%
 
 ---
 
-### 6. extra-context-files
+### 5. extra-context-files
 
 **Files:** `foundation/extra-context-files.ts` (~150 lines)
 
@@ -128,8 +113,7 @@ Files are loaded in this priority order. The first existing file matching the cu
 | 1 | **secrets** | ~500 | 1 | Credential obfuscation |
 | 2 | **permission** | ~1,500 | 4 | Command safety tiers + path protection |
 | 3 | **context-window** | ~150 | 0 | Context usage footer bar |
-| 4 | **status-widget** | ~200 | 0 | Provider status indicators |
-| 5 | **safe-ops** | ~400 | 0 | Git/gh/rm safety + background notify |
-| 6 | **extra-context-files** | ~150 | 0 | Auto-inject project AGENTS.md |
+| 4 | **safe-ops** | ~400 | 0 | Git/gh/rm safety + background notify |
+| 5 | **extra-context-files** | ~150 | 0 | Auto-inject project AGENTS.md |
 
-All 6 are Tier 1 (Agent-Critical or Foundation). The entire `foundation/` directory is always-on security and diagnostics — nothing here is optional.
+All 5 are Tier 1 (Agent-Critical or Foundation). The entire `foundation/` directory is always-on security and diagnostics — nothing here is optional.
