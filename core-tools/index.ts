@@ -2,7 +2,8 @@
  * core-tools — Umbrella entry point.
  *
  * Profile: dev loads subset A; full loads subset A + subset B.
- * Subset A: todo, plan-mode, plan-tracker, memory, formatter, thinking-steps,
+ * Subset A: task-orchestration (replaces btw-task, todo, plan-tracker),
+ *           plan-mode, memory, formatter, thinking-steps,
  *           edit-session, clipboard, preset, code-actions, read-guard.
  * Subset B: sub-pi, subagent, ralph-loop, web-search, file-collector,
  *           ast-grep, code-review, autofix.
@@ -17,10 +18,8 @@ import { readProfile } from "../shared/profile.js";
 
 // ── Subset A — dev + full ────────────────────────────────────────────────
 
-import btwTask from "./btw-task/index.ts";
-import todo from "./todo/index.ts";
+import taskOrchestration from "./task-orchestration/src/index.ts";
 import planMode from "./plan-mode.ts";
-import planTracker from "./plan-tracker/plan-tracker.ts";
 import memory from "./memory/index.ts";
 import formatter from "./formatter/extensions/index.ts";
 import thinkingSteps from "./thinking-steps/thinking-steps.ts";
@@ -116,10 +115,8 @@ export default function (pi: ExtensionAPI) {
 	if (profile === "minimal") return;
 
 	// Subset A — dev + full
-	btwTask(pi);
-	todo(pi);
+	taskOrchestration(pi);
 	planMode(pi);
-	planTracker(pi);
 	memory(pi);
 	formatter(pi);
 	thinkingSteps(pi);
