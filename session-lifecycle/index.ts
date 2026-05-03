@@ -2,7 +2,8 @@
  * session-lifecycle — Umbrella entry point.
  *
  * Profile: dev / full (skipped for "minimal").
- * Imports: handoff, checkpoint, auto-compact, context-pruning, session-recap, usage-extension.
+ * Imports: handoff, checkpoint, auto-compact, context-pruning, session-recap, usage-extension,
+ *          welcome-overlay.
  * Inlines: session-name (51 lines), skill-args (~100 lines).
  */
 
@@ -17,6 +18,7 @@ import autoCompact from "./auto-compact/index.ts";
 import contextPruning from "./context-pruning/index.ts";
 import sessionRecap from "./session-recap/index.ts";
 import usageExtension from "./usage-extension/index.ts";
+import welcomeOverlay from "./welcome-overlay/index.ts";
 
 // ── Inlined: session-name ────────────────────────────────────────────────
 
@@ -226,5 +228,6 @@ export default function (pi: ExtensionAPI) {
 	registerSessionName(pi);
 	sessionRecap(pi);
 	usageExtension(pi);
+	welcomeOverlay(pi);
 	registerArgsHandler(pi);
 }
