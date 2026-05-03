@@ -68,7 +68,7 @@ export class ReadGuard {
 		// New file writes are always allowed
 		if (!existsSync(filePath)) return { action: "allow" };
 
-		// Manual exemptions (set via /read-guard-allow)
+		// Manual exemptions (set via /trust-me)
 		if (this.exemptions.has(filePath)) {
 			this.exemptions.delete(filePath);
 			return { action: "allow" };
@@ -83,8 +83,9 @@ export class ReadGuard {
 			return {
 				action: "block",
 				reason:
-					`🔴 Edit without prior read — \`${filePath}\` has not been read in this session.\n` +
-					`Read the file first, or run \`/read-guard-allow ${filePath}\` to override.`,
+					`I'd love to help edit \`${filePath}\`, but I haven't read it yet! 😊\n` +
+					`Could you use \`read\` to show me the file first?\n` +
+					`Or if you're confident, run \`/trust-me ${filePath}\` to skip this check.`,
 			};
 		}
 
@@ -93,8 +94,8 @@ export class ReadGuard {
 			return {
 				action: "block",
 				reason:
-					`🔴 File modified since read — \`${filePath}\` changed on disk after your last read.\n` +
-					`Re-read the file to sync your mental model.`,
+					`Looks like \`${filePath}\` was updated since I last saw it! 🔄\n` +
+					`Mind if I re-read it before making changes? Don't want to step on anyone's toes!`,
 			};
 		}
 
@@ -108,9 +109,8 @@ export class ReadGuard {
 			return {
 				action: "block",
 				reason:
-					`🔴 Edit outside read range — you read \`${filePath}\` lines ${lastRead.offset}–${lastEnd}, ` +
-					`but the edit touches lines ${touchedLines[0]}–${touchedLines[1]}.\n` +
-					`Read the relevant section first.`,
+					`I've only peeked at lines ${lastRead.offset}–${lastEnd} of \`${filePath}\` so far, but this edit touches lines ${touchedLines[0]}–${touchedLines[1]}. 👀\n` +
+					`Could you show me that part so I can work with the full context?`,
 			};
 		}
 

@@ -13,20 +13,20 @@ import { ReadGuard } from "./guard.ts";
 export default function (pi: ExtensionAPI) {
 	const guard = new ReadGuard();
 
-	// ── Command: /read-guard-allow ──────────────────────────────────────
+	// ── Command: /trust-me ─────────────────────────────────────────────
 
-	pi.registerCommand("read-guard-allow", {
+	pi.registerCommand("trust-me", {
 		description:
-			"Allow one edit to a file without a prior read. Usage: /read-guard-allow <path>",
+			"Skip the read-before-edit guard for one edit to a file. Usage: /trust-me <path>",
 		handler: async (_args, ctx) => {
 			const rawTarget = Array.isArray(_args) ? _args[0] : String(_args ?? "");
 			if (!rawTarget) {
-				ctx.ui.notify("Usage: /read-guard-allow <path>", "warning");
+				ctx.ui.notify("Just tell me the file path, like: `/trust-me some/file.ts` 😊", "info");
 				return;
 			}
 			const targetPath = resolveFilePath(rawTarget, ctx.cwd);
 			guard.addExemption(targetPath);
-			ctx.ui.notify(`Read guard override armed for: ${targetPath}`, "info");
+			ctx.ui.notify(`👍 Got it! I'll skip the read check for \`${targetPath}\` — just this once!`, "info");
 		},
 	});
 

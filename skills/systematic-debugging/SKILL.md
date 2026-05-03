@@ -3,7 +3,7 @@ name: systematic-debugging
 description: Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
 ---
 
-> **Related skills:** Write a failing test for the bug with `/skill:test-driven-development`. Verify the fix with `/skill:verification-before-completion`.
+> **Related skills:** Write a failing test for the bug with `/skill:test-driven-development`. Close the loop with `/skill:development-workflow` (Verification + Review phases).
 
 # Systematic Debugging
 
@@ -287,7 +287,7 @@ These techniques are part of systematic debugging and available in this director
 
 **Related skills:**
 - **`/skill:test-driven-development`** - For creating failing test case (Phase 4, Step 1)
-- **`/skill:verification-before-completion`** - Verify fix worked before claiming success
+- **`/skill:development-workflow`** - Use the Verification phase to confirm the fix before claiming success
 
 ## Real-World Impact
 

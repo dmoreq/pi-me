@@ -40,7 +40,7 @@ describe("ReadGuard", () => {
 			try {
 				const verdict = guard.checkEdit(fp, [1, 3]);
 				assert.equal(verdict.action, "block");
-				assert(verdict.reason?.includes("without prior read"));
+				assert(verdict.reason?.includes("haven't read"));
 			} finally {
 				removeTempFile(fp);
 			}
@@ -71,7 +71,7 @@ describe("ReadGuard", () => {
 
 				const verdict = guard.checkEdit(fp, [1, 2]);
 				assert.equal(verdict.action, "block");
-				assert(verdict.reason?.includes("modified since read"));
+				assert(verdict.reason?.includes("updated since"));
 			} finally {
 				removeTempFile(fp);
 			}
@@ -87,7 +87,7 @@ describe("ReadGuard", () => {
 
 				const verdict = guard.checkEdit(fp, [10, 15]); // Edit lines 10-15
 				assert.equal(verdict.action, "block");
-				assert(verdict.reason?.includes("outside read range"));
+				assert(verdict.reason?.includes("only peeked at lines"));
 			} finally {
 				removeTempFile(fp);
 			}

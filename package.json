@@ -15,7 +15,6 @@
       "./core-tools/index.ts",
       "./content-tools/index.ts",
       "./authoring/index.ts",
-      "./welcome-screen/index.ts",
       "pi-web-providers/dist/index.js",
       "pi-dialog"
     ],
@@ -28,26 +27,17 @@
     ]
   },
   "dependencies": {
-
-
-
     "bunfig": "^0.15.9",
-
     "defuddle": "^0.18.1",
-    "lodash": "^4.18.1",
     "jsonc-parser": "^3.3.1",
     "linkedom": "^0.18.12",
+    "lodash": "^4.18.1",
     "mime-types": "^3.0.2",
-
+    "pi-dialog": "github:dmoreq/pi-dialog",
     "pi-docparser": "^1.1.1",
-
-
     "pi-link": "^0.1.11",
     "pi-markdown-preview": "^0.9.7",
-
-
-    "pi-dialog": "github:dmoreq/pi-dialog",
-    "pi-web-providers": "^3.0.0",
+    "pi-web-providers": "^2.4.2",
     "shell-quote": "^1.8.3",
     "wreq-js": "^2.3.0",
     "zod": "^4.4.1"
