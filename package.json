@@ -1,7 +1,7 @@
 {
   "name": "pi-me",
   "version": "0.2.0",
-  "description": "Comprehensive extension suite for the pi coding agent: safety guards, session lifecycle, developer tools, content utilities, subagent orchestration, and authoring helpers — with profile-based loading"}]},
+  "description": "Comprehensive extension suite for the pi coding agent: safety guards, session lifecycle, developer tools, content utilities, subagent orchestration, and authoring helpers — with profile-based loading",
   "license": "MIT",
   "keywords": [
     "pi-package",
