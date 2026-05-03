@@ -1,6 +1,8 @@
 /**
- * Shared types for notification utilities
+ * Shared types for pi-me modules
  */
+
+export type Profile = "minimal" | "dev" | "full";
 
 export interface BackgroundNotifyConfig {
   thresholdMs: number;
