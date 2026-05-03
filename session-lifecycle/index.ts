@@ -8,6 +8,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { getTelemetry } from "pi-telemetry";
 import { readProfile } from "../shared/profile.js";
 
 // ── Imported extensions ──────────────────────────────────────────────────
@@ -220,6 +221,17 @@ function registerArgsHandler(pi: ExtensionAPI): void {
 export default function (pi: ExtensionAPI) {
 	const profile = readProfile();
 	if (profile === "minimal") return;
+
+	const t = getTelemetry();
+	if (t) {
+		t.register({
+			name: "session-lifecycle",
+			version: "0.2.0",
+			description: "Session lifecycle: handoff, checkpoint, auto-compact, context-pruning, session-recap, usage, welcome",
+			events: ["session_start", "session_shutdown", "session_before_*"] as string[],
+		});
+		t.heartbeat("session-lifecycle");
+	}
 
 	handoff(pi);
 	checkpoint(pi);

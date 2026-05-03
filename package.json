@@ -10,12 +10,12 @@
   ],
   "pi": {
     "extensions": [
+      "pi-telemetry",
       "./foundation/index.ts",
       "./session-lifecycle/index.ts",
       "./core-tools/index.ts",
       "./content-tools/index.ts",
       "./authoring/index.ts",
-      "pi-telemetry",
       "pi-web-providers/dist/index.js",
       "pi-dialog"
     ],
