@@ -15,6 +15,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import { readProfile } from "../shared/profile.js";
+import { getTelemetry } from "pi-telemetry";
 
 // ── Subset A — dev + full ────────────────────────────────────────────────
 
@@ -113,6 +114,18 @@ function clipboardExtension(pi: ExtensionAPI): void {
 export default function (pi: ExtensionAPI) {
 	const profile = readProfile();
 	if (profile === "minimal") return;
+
+	// Register core-tools package with telemetry
+	const t = getTelemetry();
+	if (t) {
+		t.register({
+			name: "core-tools",
+			version: "0.2.0",
+			description: "Pi-me core tool suite: task orchestration, planning, memory, editing, code review, subagent, and more",
+			tools: ["read", "edit", "write", "bash", "search", "copy_to_clipboard"],
+			events: ["session_start", "tool_call", "message_end", "session_shutdown"],
+		});
+	}
 
 	// Subset A — dev + full
 	taskOrchestration(pi);

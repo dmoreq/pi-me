@@ -9,9 +9,27 @@ import { existsSync } from "node:fs";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { resolveFilePath } from "../../shared/path-utils.js";
 import { ReadGuard } from "./guard.ts";
+import { getTelemetry } from "pi-telemetry";
 
 export default function (pi: ExtensionAPI) {
 	const guard = new ReadGuard();
+
+	// Register with telemetry
+	const t = getTelemetry();
+	if (t) {
+		t.register({
+			name: "read-guard",
+			version: "0.2.0",
+			description: "Read-before-edit guard — blocks edits on unread files",
+			tools: ["read", "edit"],
+			events: ["tool_call", "session_start"],
+		});
+		t.notify("Read-guard active", {
+			package: "read-guard",
+			severity: "info",
+			badge: { text: "v0.2.0", variant: "info" },
+		});
+	}
 
 	// ── Command: /trust-me ─────────────────────────────────────────────
 
