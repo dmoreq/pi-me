@@ -15,7 +15,7 @@ import type { AgentProgress, AsyncStatus, Details, DisplayItem, ErrorInfo, Singl
 
 const statusCache = new Map<string, { mtime: number; status: AsyncStatus }>();
 
-function getErrorMessage(error: unknown): string {
+export function getErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
@@ -24,11 +24,33 @@ export function resolveChildCwd(baseCwd: string, childCwd: string | undefined): 
 	return path.isAbsolute(childCwd) ? childCwd : path.resolve(baseCwd, childCwd);
 }
 
-function isNotFoundError(error: unknown): boolean {
+export function isNotFoundError(error: unknown): boolean {
 	return typeof error === "object"
 		&& error !== null
 		&& "code" in error
 		&& (error as NodeJS.ErrnoException).code === "ENOENT";
+}
+
+/**
+ * Read and parse a JSON file with proper error handling
+ */
+export function readJsonFile<T>(filePath: string, description: string): T {
+	let content: string;
+	try {
+		content = fs.readFileSync(filePath, "utf-8");
+	} catch (error) {
+		throw new Error(`Failed to read ${description} '${filePath}': ${getErrorMessage(error)}`, {
+			cause: error instanceof Error ? error : undefined,
+		});
+	}
+
+	try {
+		return JSON.parse(content) as T;
+	} catch (error) {
+		throw new Error(`Failed to parse ${description} '${filePath}': ${getErrorMessage(error)}`, {
+			cause: error instanceof Error ? error : undefined,
+		});
+	}
 }
 
 /**

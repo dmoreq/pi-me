@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { formatDuration, formatTokens, shortenPath } from "../../shared/formatters.ts";
 import { type ActivityState, type AsyncParallelGroupStatus, type AsyncStatus, type SubagentRunMode, type TokenUsage } from "../../shared/types.ts";
-import { readStatus } from "../../shared/utils.ts";
+import { readStatus, getErrorMessage, isNotFoundError } from "../../shared/utils.ts";
 import { flatToLogicalStepIndex, normalizeParallelGroups } from "./parallel-groups.ts";
 import { reconcileAsyncRun } from "./stale-run-reconciler.ts";
 
@@ -72,16 +72,7 @@ export interface AsyncRunOverlayOptions {
 	sessionId?: string;
 }
 
-function getErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
-}
 
-function isNotFoundError(error: unknown): boolean {
-	return typeof error === "object"
-		&& error !== null
-		&& "code" in error
-		&& (error as NodeJS.ErrnoException).code === "ENOENT";
-}
 
 function isAsyncRunDir(root: string, entry: string): boolean {
 	const entryPath = path.join(root, entry);

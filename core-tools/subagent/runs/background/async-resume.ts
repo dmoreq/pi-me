@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { ASYNC_DIR, RESULTS_DIR, type AsyncStatus } from "../../shared/types.ts";
 import { resolveSubagentIntercomTarget } from "../../intercom/intercom-bridge.ts";
+import { getErrorMessage, isNotFoundError } from "../../shared/utils.ts";
 import { reconcileAsyncRun } from "./stale-run-reconciler.ts";
 
 export interface AsyncResumeParams {
@@ -46,10 +47,6 @@ export interface AsyncRunLocation {
 	asyncDir: string | null;
 	resultPath: string | null;
 	resolvedId?: string;
-}
-
-function getErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
 }
 
 function ensureObject(value: unknown, source: string): Record<string, unknown> {

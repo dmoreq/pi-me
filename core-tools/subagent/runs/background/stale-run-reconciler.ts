@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { writeAtomicJson } from "../../shared/atomic-json.ts";
 import { RESULTS_DIR, type AsyncParallelGroupStatus, type AsyncStatus, type SubagentRunMode } from "../../shared/types.ts";
 import { normalizeParallelGroups } from "./parallel-groups.ts";
+import { getErrorMessage, isNotFoundError } from "../../shared/utils.ts";
 
 export type PidLiveness = "alive" | "dead" | "unknown";
 
@@ -34,17 +35,6 @@ interface ReconcileAsyncRunResult {
 	repaired: boolean;
 	resultPath?: string;
 	message?: string;
-}
-
-function getErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
-}
-
-function isNotFoundError(error: unknown): boolean {
-	return typeof error === "object"
-		&& error !== null
-		&& "code" in error
-		&& (error as NodeJS.ErrnoException).code === "ENOENT";
 }
 
 function appendJsonl(filePath: string, payload: object): void {
