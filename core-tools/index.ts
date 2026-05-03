@@ -3,8 +3,9 @@
  *
  * Profile: dev loads subset A; full loads subset A + subset B.
  * Subset A: todo, plan-mode, plan-tracker, memory, formatter, thinking-steps,
- *           edit-session, clipboard, preset, code-actions.
- * Subset B: sub-pi, subagent, ralph-loop, web-search, file-collector.
+ *           edit-session, clipboard, preset, code-actions, read-guard.
+ * Subset B: sub-pi, subagent, ralph-loop, web-search, file-collector,
+ *           ast-grep, code-review, autofix.
  *
  * Imports real implementation files directly (wrappers deleted in Phase 1.5).
  * Clipboard inlined (~94 lines, OSC52 tool).
@@ -25,6 +26,7 @@ import thinkingSteps from "./thinking-steps/thinking-steps.ts";
 import editSession from "./edit-session/extensions/edit-session-in-place.ts";
 import preset from "./preset/index.ts";
 import codeActions from "./code-actions/index.ts";
+import readGuard from "./read-guard/index.ts";
 
 // ── Subset B — full only ─────────────────────────────────────────────────
 
@@ -33,6 +35,9 @@ import subagent from "./subagent/extension/index.ts";
 import ralphLoop from "./ralph-loop/ralph-loop.ts";
 import webSearch from "./web-search.ts";
 import fileCollector from "./file-collector/index.ts";
+import astGrepTools from "./ast-grep-tool/index.ts";
+import codeReview from "./code-review/index.ts";
+import autofix from "./autofix/index.ts";
 
 // ── Inlined: clipboard ───────────────────────────────────────────────────
 
@@ -120,6 +125,7 @@ export default function (pi: ExtensionAPI) {
 	clipboardExtension(pi);
 	preset(pi);
 	codeActions(pi);
+	readGuard(pi);
 
 	// Subset B — full only
 	if (profile === "full") {
@@ -128,5 +134,8 @@ export default function (pi: ExtensionAPI) {
 		ralphLoop(pi);
 		webSearch(pi);
 		fileCollector(pi);
+		astGrepTools(pi);
+		codeReview(pi);
+		autofix(pi);
 	}
 }

@@ -1,37 +1,73 @@
 # pi-me
 
-A comprehensive extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). Provides
-safety guards, session lifecycle management, developer tools, content manipulation utilities, and AI-assisted
-authoring helpers — all loaded automatically as a single package.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-417%20passing-brightgreen)]()
 
-**70 extensions, 25 skills, 290 tests. MIT licensed.**
+A comprehensive extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). Provides safety guards, session lifecycle management, developer tools, content manipulation utilities, and AI-assisted authoring helpers.
 
----
-
-## Quick Start
-
-```bash
-pi install https://github.com/dmoreq/pi-me
-```
-
-Restart pi. All extensions and skills load automatically — no additional configuration required.
+**7 extensions, 25 skills, 417+ tests. MIT licensed.**
 
 ---
 
-## What You Get
+## Features
 
-| Capability | Mechanism |
-|-----------|-----------|
-| Command safety | Permission system blocks dangerous operations; secrets are obfuscated automatically |
-| Task tracking | Agent calls `todo` to manage a live overlay task list; `plan_tracker` shows progress |
-| Web access | Agent uses `web_search` via Exa (EXA_API_KEY), Tavily (TAVILY_API_KEY), or Valiyu (VALIYU_API_KEY) |
-| Subagent dispatch | Agent uses `ralph_loop` for iterative subagent execution with steering controls |
-| Model switching | `/oracle` for second opinions; `/preset` to switch provider/model configurations |
-| Skill system | 23 skills auto-load when their description matches the agent's task |
-| Cost visibility | `/usage` for token/cost dashboard; `/cost` for spending reports |
-| Session branding | `/emoji*` and `/color*` for visual session identifiers |
-| Side questions | `/btw` for one-off questions without polluting conversation context |
-| Structured input | `ask_user_question` tool for multi-question user prompts with previews |
+### Foundation — Safety & Diagnostics (always on)
+| Feature | Purpose |
+|---------|---------|
+| **Secrets Obfuscation** | Scans tool output and context for credentials, auto-obfuscates. YAML-configured. |
+| **Secrets Scanner** | Blocks writes containing API keys, tokens, and private keys. |
+| **Permission System** | 5-tier command safety (minimal → bypassed). Blocks dangerous patterns. |
+| **Context Window** | Footer widget showing context usage %. Warns at 70%, alerts at 90%. |
+| **Safe Operations** | Intercepts dangerous git/gh commands. Replaces `rm` with `trash` on macOS. |
+
+### Session Lifecycle — State & Branding
+| Feature | Purpose |
+|---------|---------|
+| **Git Checkpoint** | Auto-saves working tree as git refs at each turn start. Enables session fork recovery. |
+| **Auto Compact** | Triggers context compaction when usage exceeds threshold. Per-model thresholds via TUI. |
+| **Context Pruning** | Removes duplicate, superseded, and resolved-error messages dynamically. |
+| **Session Naming** | Auto-names sessions from the first user message. |
+| **Session Recap** | One-line session summary on terminal refocus. `/recap` for full recap. |
+| **Usage Dashboard** | `/usage` for token/cost dashboard; `/cost` for spending reports. |
+| **Handoff** | `/handoff <prompt>` generates a focused context summary for a new session. |
+| **Skill Args** | `$1`, `$2`, `$ARGUMENTS` substitution in skill bodies for parameterized skills. |
+
+### Core Tools — Agent Tools
+| Feature | Purpose |
+|---------|---------|
+| **Read-Before-Edit Guard** | Blocks edits to files the agent hasn't read. Prevents blind overwrites. |
+| **Auto-Fix Pipeline** | Runs Biome/ESLint/Ruff `--fix` after write/edit. |
+| **Web Search** | Exa, Tavily, or Valiyu backend. Set `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY`. |
+| **Todo** | Live overlay task list with 4-state machine, dependency tracking, branch replay. |
+| **Ralph Loop** | Subagent loop executor with condition polling, pause/resume, steering. |
+| **Plan Tracker** | Inline plan progress widget with task status management. |
+| **Plan Mode** | File-based plans in `.pi/plans/` with JSON frontmatter, locking. |
+| **Subagent** | Full engine: single/chain/parallel dispatch, async jobs, slash commands, team tool. |
+| **Sub-Pi** | Subprocess pi dispatch in single, chain, or parallel modes. |
+| **Memory** | SQLite-backed persistent memory: key-value facts, lessons, event audit. |
+| **Formatter** | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
+| **AST-grep Tools** | Registered `ast_grep_search` and `ast_grep_replace` tools for structural code search. |
+| **Code Review** | `/code-review` runs full codebase assessment: complexity, TODO inventory, TDI score. |
+| **Edit Session** | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
+| **Clipboard** | Copies text to clipboard via OSC52 escape sequences. |
+| **Preset** | Save and switch provider/model/tool presets. `/preset` to cycle. |
+| **Code Actions** | `/code` picks code snippets from assistant messages. |
+| **Thinking Steps** | Structured thinking (plan, research, implement, review) before tool calls. |
+
+### Content Tools — File & Resource Utilities
+| Feature | Purpose |
+|---------|---------|
+| **GitHub** | GitHub API: search code, create issues/PRs, read files. Requires `GITHUB_TOKEN`. |
+| **Repeat** | `/repeat` replays previous bash/edit/write commands with modifications. |
+| **Files Widget** | `/readfiles` TUI file browser with tree, diff viewer, commenting. |
+| **File Picker** | `/files` TUI file selector with reveal, quicklook, editor actions. |
+| **Web Fetch** | HTTP fetcher with browser profiles, JS rendering, content extraction. |
+
+### Authoring — AI-Assisted Creation
+| Feature | Purpose |
+|---------|---------|
+| **Commit Helper** | Generates conventional commit messages from git diffs. `/commit` command. |
+| **Skill Bootstrap** | `/bootstrap-skill` auto-detects project type and generates `SKILL.md`. |
 
 ---
 
@@ -39,32 +75,28 @@ Restart pi. All extensions and skills load automatically — no additional confi
 
 ```
 pi-me/
-├── foundation/          Always-on guards and diagnostics
-├── session-lifecycle/   Session boundaries, state, branding
-├── core-tools/          General-purpose agent tools
-├── content-tools/       File and resource utilities
-├── authoring/           AI-assisted content creation
-├── skills/              SKILL.md files guiding agent behavior
-├── shared/              Cross-layer library code (also published standalone)
-├── themes/              Minimal color themes
-└── docs/                Documentation
+├── foundation/         Always-on guards: secrets, permission, safe-ops, context-window
+├── session-lifecycle/  Session boundaries: checkpoint, compact, pruning, recap, usage
+├── core-tools/         Agent tools: todo, plans, subagent, memory, format, search, review
+├── content-tools/      File & resource utilities: github, fetch, files, repeat
+├── authoring/          AI-assisted creation: commit, skill-bootstrap
+├── skills/             SKILL.md files guiding agent behavior
+├── shared/             Cross-layer utilities: config, profile, path utils
+├── themes/             Minimal color themes
+└── docs/               Documentation and plans
 ```
 
-**Detailed reference:** [Conventions](docs/conventions.md) · [Deep Review](docs/deep-review-report.md) · [Implementation Plan](docs/implementation-plan.md) · [Adopted Plugins](docs/adopted-plugins-inline-review.md)
+**Profile system:** Use `"profile": "minimal" | "dev" | "full"` in `~/.pi/agent/settings.json` to control which extensions load. Defaults to `"full"` for existing installs.
 
 ---
 
 ## Installation
 
-### Via pi CLI
-
 ```bash
 pi install https://github.com/dmoreq/pi-me
 ```
 
-### Via settings.json
-
-Add to `~/.pi/agent/settings.json`:
+Or add to `~/.pi/agent/settings.json`:
 
 ```json
 {
@@ -72,96 +104,11 @@ Add to `~/.pi/agent/settings.json`:
 }
 ```
 
-Restart pi. All 77 extensions and 23 skills load automatically.
+Restart pi. All extensions and skills load automatically.
 
 ### Prerequisites
-
 - [pi coding agent](https://github.com/mariozechner/pi-coding-agent) installed
 - Node.js ≥ 18
-
----
-
-## Extension Reference
-
-### Foundation — Safety & Diagnostics
-
-| Extension | Source | Purpose |
-|-----------|--------|---------|
-| Secrets | `foundation/secrets/` | Scans tool output and context for credentials, obfuscates automatically. Configured via `secrets.yml`. |
-| Permission | `foundation/permission/` | Tiered command safety: minimal → bypassed. Blocks dangerous patterns, prompts for high-risk operations. |
-| Context Window | `foundation/context-window/` | Footer widget showing context usage percentage. Warns at 70%, alerts at 90%. |
-| Safe Operations | `foundation/safe-ops.ts` | Intercepts dangerous git/gh commands for approval. Replaces `rm` with `trash` on macOS. |
-| Extra Context Files | *(moved to `@pi/smart-context`)* | Injects `AGENTS.local.md` and provider-specific guidance files into context automatically. Provided by [pi-smart-context](https://github.com/dmoreq/pi-smart-context). |
-
-### Session Lifecycle — State & Branding
-
-| Extension | Source | Purpose |
-|-----------|--------|---------|
-| Git Checkpoint | `session-lifecycle/git-checkpoint/` | Auto-saves working tree as git refs at each turn start. Enables recovery on session fork. |
-| Auto Compact | `session-lifecycle/auto-compact/` | Triggers context compaction when usage exceeds the configured threshold. |
-| Context Pruning | `session-lifecycle/context-pruning/` | Dynamic Context Pruning — removes duplicate, superseded, and resolved-error messages. Footer widget shows prune stats. |
-| Session Name | `session-lifecycle/session-name/` | Names sessions from the first user message. |
-| Token Rate | `session-lifecycle/token-rate/` | Displays tokens-per-second output rate in the footer. |
-| Agent Guidance | *(moved to `@pi/smart-context`)* | Injects model-specific guidance files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) based on active provider. Provided by [pi-smart-context](https://github.com/dmoreq/pi-smart-context). |
-| Session Recap | `session-lifecycle/session-recap/` | Shows a one-line session summary on terminal refocus. `/recap` for full recap. |
-| Tab Status | `session-lifecycle/tab-status/` | Terminal tab title with status icons (done, stuck, timed out). |
-| Usage Extension | `session-lifecycle/usage-extension/` | `/usage` for token/cost dashboard; `/cost` for spending reports from session logs. |
-| Notifications | `session-lifecycle/notifications.ts` | Background task completion alerts (beep, focus, speech). |
-| Handoff | `session-lifecycle/handoff.ts` | `/handoff <prompt>` generates a focused context summary for a new session. |
-| Session Style | `session-lifecycle/session-style.ts` | AI-picked session emoji + rotating 40-color footer band. `/emoji*` and `/color*` commands. |
-| Compact Config | `session-lifecycle/auto-compact/compact-config.ts` | Per-model compaction thresholds configured via interactive TUI. |
-| Preset | `core-tools/preset/` | Save and switch provider/model/tool presets. `/preset` to cycle. |
-| Skill Args | `session-lifecycle/skill-args/` | `$1`, `$2`, `$ARGUMENTS` substitution in skill bodies for parameterized skills. |
-| Warp Notify | `session-lifecycle/warp-notify/` | Warp terminal OSC 777 structured notifications on lifecycle events. |
-| Startup Header | `session-lifecycle/startup-header.ts` | Custom welcome header with ASCII art branding on session start. |
-| Model Filter | `core-tools/model-filter/` | Filters available models by provider or capability. |
-
-### Core Tools — Agent Tools
-
-| Extension | Source | Purpose |
-|-----------|--------|---------|
-| Web Search | `core-tools/web-search.ts` | Exa, Tavily, or Valiyu web search. Set `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY`. |
-| Todo | `core-tools/todo/` | Live overlay task list with 4-state machine, dependency tracking, and branch replay survival. `/todos` to view. |
-| Calc | `core-tools/calc.ts` | Safe arithmetic expression evaluator with Math function whitelist. |
-| Ask User Question | `pi-dialog` dependency | Structured multi-question UI with side-by-side markdown previews and multi-select. Provided by [pi-dialog](https://github.com/dmoreq/pi-dialog). |
-| Ralph Loop | `core-tools/ralph-loop/` | Subagent loop executor with condition polling, pause/resume, and steering. |
-| Plan Tracker | `core-tools/plan-tracker/` | Inline plan progress widget. `plan_tracker` tool for task status management. |
-| Plan Mode | `core-tools/plan-mode.ts` | File-based plans in `.pi/plans/` with JSON frontmatter, locking, and planning mode toggle. |
-| Subagent | `core-tools/subagent/` | Full subagent engine: single/chain/parallel dispatch, agents, slash commands, async jobs. Includes `/team` tool. |
-| Sub-Pi | `core-tools/sub-pi/` | Subprocess pi dispatch in single, chain, or parallel modes. Auto-detects `/skill:` references. |
-| BTW | `core-tools/btw/` | `/btw <question>` asks the primary model a side question with cloned context. Answer in overlay. |
-| Oracle | `core-tools/oracle.ts` | `/oracle <prompt>` gets a second opinion from another model. |
-| Code Actions | `core-tools/code-actions/` | `/code` picks code snippets from assistant messages to copy, insert, or run. |
-| File Collector | `core-tools/file-collector/` | Collects file paths and content from tool results based on configurable regex patterns. |
-| Clipboard | `core-tools/clipboard.ts` | Copies text to clipboard via OSC52 escape sequences. |
-
-| Memory | `core-tools/memory/` | SQLite-backed persistent memory + /mem AGENTS.md instruction saving. Key-value facts, learned lessons, event audit. |
-| Formatter | `core-tools/formatter/` | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
-| Edit Session | `core-tools/edit-session/` | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
-| Stash | `core-tools/stash/` | Draft stash: `Ctrl+Shift+S` to stash editor content, `Ctrl+Shift+R` to restore. |
-| Thinking Steps | `core-tools/thinking-steps/` | Adds structured thinking (plan, research, implement, review) before tool calls. |
-
-### Content Tools — File & Resource Utilities
-
-| Extension | Source | Purpose |
-|-----------|--------|---------|
-| Notebook | `content-tools/notebook.ts` | Cell-level editor for Jupyter `.ipynb` files: read, edit, insert, delete. |
-| Mermaid | `content-tools/mermaid.ts` | Renders Mermaid diagrams to SVG/PNG via `mmdc` CLI. |
-| GitHub | `content-tools/github.ts` | GitHub API: search code, create issues/PRs, read files. Requires `GITHUB_TOKEN`. |
-| Repeat | `content-tools/repeat/` | `/repeat` replays previous bash/edit/write commands with optional modifications. |
-| Files Widget | `content-tools/files-widget/` | `/readfiles` TUI file browser with directory tree, diff viewer, and commenting. |
-| Raw Paste | `content-tools/raw-paste/` | `/paste` inserts editable text inline for review before sending. |
-| File Picker | `content-tools/file-picker/` | `/files` TUI file selector with reveal, quicklook, and editor actions. |
-| Web Fetch | `content-tools/web-fetch/` | HTTP fetcher with multiple browser profiles, JS rendering, and content extraction via linkedom/Defuddle. |
-| Markdown Preview | `content-tools/markdown-preview/` | Renders markdown to HTML for browser preview. Requires puppeteer-core. |
-
-### Authoring — AI-Assisted Creation
-
-| Extension | Source | Purpose |
-|-----------|--------|---------|
-| Output Artifacts | `authoring/output-artifacts/` | Saves truncated tool outputs (>8KB) to `.pi/artifacts/` with `artifact://` retrieval URLs. |
-| Commit Helper | `authoring/commit-helper/` | Generates conventional commit messages from git diffs via LLM analysis. `/commit` command. |
-| Skill Bootstrap | `authoring/skill-bootstrap/` | `/bootstrap-skill` auto-detects project type and generates `SKILL.md`. |
 
 ---
 
@@ -169,11 +116,11 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 
 ### Environment Variables
 
-| Variable | Used By | Purpose |
+| Variable | Feature | Purpose |
 |----------|---------|---------|
 | `GITHUB_TOKEN` / `GH_TOKEN` | GitHub tool | GitHub API authentication |
-| `EXA_API_KEY` | Web Search | Exa neural search API (preferred) |
-| `TAVILY_API_KEY` | Web Search | Tavily AI-optimized search API |
+| `EXA_API_KEY` | Web Search | Exa neural search (preferred) |
+| `TAVILY_API_KEY` | Web Search | Tavily AI-optimized search |
 | `VALIYU_API_KEY` | Web Search | Valiyu search API |
 
 ### Permission Levels
@@ -186,7 +133,22 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | `high` | Full operations except dangerous commands |
 | `bypassed` | All operations, no checks |
 
-Use `/permission` to change the level. Use `/permission-mode ask` or `/permission-mode block` to control violation handling.
+Use `/permission` to change level. Use `/permission-mode ask` or `/permission-mode block` for violation handling.
+
+### Profile Configuration
+
+```json
+// ~/.pi/agent/settings.json
+{
+  "profile": "dev"
+}
+```
+
+| Profile | Extensions Loaded |
+|---------|------------------|
+| `minimal` | foundation only |
+| `dev` | foundation + session-lifecycle + core-tools (subset A) |
+| `full` | everything |
 
 ### Secrets
 
@@ -213,7 +175,7 @@ Create `~/.pi/agent/secrets.yml` (global) or `.pi/secrets.yml` (project-local):
 npm test
 ```
 
-202 tests across all layers. Coverage: permission classification, secret obfuscation, calculator safety, ralph-loop agent loading, notebook editing, token rate tracking, git checkpoint creation/restore.
+417+ tests across all layers. Tests are run with Node.js test runner via `tsx`.
 
 ### Adding an Extension
 
@@ -228,31 +190,30 @@ npm test
 ```markdown
 ---
 name: my-skill
-description: When to use this skill
+description: Use when...
 ---
 
 # Skill content
 ```
 
-2. The `skills/` directory is registered automatically — no additional manifest changes needed.
+2. The `skills/` directory is registered automatically — no manifest changes needed.
 
 ---
 
-## Credits
+## Adopted Packages
 
-pi-me incorporates work from the following open-source pi packages:
+pi-me incorporates work from the open-source pi ecosystem:
 
 | Package | Author | Contributions |
 |---------|--------|---------------|
-| [superpowers](https://github.com/obra/superpowers) | [Jesse Vincent](https://github.com/obra) | Workflow skills (brainstorming, writing-plans, executing-plans, TDD, debugging, code review, git-worktrees) and plan-tracker |
-| [pi-hooks](https://github.com/prateekmedia/pi-hooks) | [Prateek](https://github.com/prateekmedia) | Permission system, git-checkpoint, token-rate, ralph-loop, repeat |
-| [pi-extensions](https://github.com/tmustier/pi-extensions) | [Thomas Mustier](https://github.com/tmustier) | Agent-guidance, session-recap, tab-status, usage-extension, code-actions, arcade, files-widget, raw-paste |
-| [richardgill/pi-extensions](https://github.com/richardgill/pi-extensions) | [Richard Gill](https://github.com/richardgill) | Extra-context-files, file-collector, files, preset, sub-pi, pi-config |
-| [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Background-notify, session-emoji, session-color, safe-git, safe-rm, compact-config |
-| [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, cost-tracker, handoff, loop, memory-mode, oracle, plan-mode, resistance, speedreading, status-widget, ultrathink, usage-bar |
-| [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo overlay with branch replay, `/btw` side-question, skill argument substitution, ask-user-question, Warp notifications |
-| [oh-my-pi](https://github.com/can1357/oh-my-pi) | [Can](https://github.com/can1357) | Early ecosystem inspiration |
-| pi-dcp (inlined as context-pruning) | [zenobi-us](https://github.com/zenobi-us) | Dynamic Context Pruning — deduplication, superseded writes, error purging, recency protection |
+| [superpowers](https://github.com/obra/superpowers) | [Jesse Vincent](https://github.com/obra) | Workflow skills, plan-tracker |
+| [pi-hooks](https://github.com/prateekmedia/pi-hooks) | [Prateek](https://github.com/prateekmedia) | Permission, checkpoint, ralph-loop, repeat |
+| [pi-extensions](https://github.com/tmustier/pi-extensions) | [Thomas Mustier](https://github.com/tmustier) | Session-recap, usage-extension, code-actions, files-widget |
+| [richardgill/pi-extensions](https://github.com/richardgill/pi-extensions) | [Richard Gill](https://github.com/richardgill) | File-collector, preset, sub-pi, pi-config |
+| [rhubarb-pi](https://github.com/qualisero/rhubarb-pi) | [Dave](https://github.com/qualisero) | Background-notify, session-emoji, compact-config |
+| [shitty-extensions](https://github.com/hjanuschka/shitty-extensions) | [hjanuschka](https://github.com/hjanuschka) | Clipboard, handoff, memory-mode, plan-mode, oracle |
+| [rpiv-mono](https://github.com/juicesharp/rpiv-mono) | [juicesharp](https://github.com/juicesharp) | Todo, skill args, handoff, warp-notify |
+| [pi-lens](https://github.com/dmoreq/pi-lens) | [quy.doan](https://github.com/dmoreq) | Read-guard, secrets scanner, ast-grep tools, code-review, autofix, similarity |
 
 ---
 
