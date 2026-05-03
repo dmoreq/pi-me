@@ -91,7 +91,7 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Permission | `foundation/permission/` | Tiered command safety: minimal → bypassed. Blocks dangerous patterns, prompts for high-risk operations. |
 | Context Window | `foundation/context-window/` | Footer widget showing context usage percentage. Warns at 70%, alerts at 90%. |
 | Safe Operations | `foundation/safe-ops.ts` | Intercepts dangerous git/gh commands for approval. Replaces `rm` with `trash` on macOS. |
-| Extra Context Files | `foundation/extra-context-files.ts` | Injects `AGENTS.local.md` and provider-specific guidance files into context automatically. |
+| Extra Context Files | *(moved to `@pi/smart-context`)* | Injects `AGENTS.local.md` and provider-specific guidance files into context automatically. Provided by [pi-smart-context](https://github.com/dmoreq/pi-smart-context). |
 
 ### Session Lifecycle — State & Branding
 
@@ -102,7 +102,7 @@ Restart pi. All 77 extensions and 23 skills load automatically.
 | Context Pruning | `session-lifecycle/context-pruning/` | Dynamic Context Pruning — removes duplicate, superseded, and resolved-error messages. Footer widget shows prune stats. |
 | Session Name | `session-lifecycle/session-name/` | Names sessions from the first user message. |
 | Token Rate | `session-lifecycle/token-rate/` | Displays tokens-per-second output rate in the footer. |
-| Agent Guidance | `session-lifecycle/agent-guidance/` | Injects model-specific guidance files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) based on active provider. |
+| Agent Guidance | *(moved to `@pi/smart-context`)* | Injects model-specific guidance files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) based on active provider. Provided by [pi-smart-context](https://github.com/dmoreq/pi-smart-context). |
 | Session Recap | `session-lifecycle/session-recap/` | Shows a one-line session summary on terminal refocus. `/recap` for full recap. |
 | Tab Status | `session-lifecycle/tab-status/` | Terminal tab title with status icons (done, stuck, timed out). |
 | Usage Extension | `session-lifecycle/usage-extension/` | `/usage` for token/cost dashboard; `/cost` for spending reports from session logs. |
