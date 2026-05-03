@@ -41,7 +41,7 @@ function registerSessionName(pi: ExtensionAPI) {
 		const existingName = pi.getSessionName();
 		if (existingName && ctx.hasUI) {
 			firstMessageSeen = true;
-			ctx.ui.setStatus("session-name", `Session: ${existingName}`);
+			ctx.ui.setStatus("session-name", ctx.ui.theme.fg("dim", `💬  Session: ${existingName}`));
 		}
 	});
 
@@ -54,7 +54,7 @@ function registerSessionName(pi: ExtensionAPI) {
 		pi.setSessionName(name);
 
 		if (ctx.hasUI) {
-			ctx.ui.setStatus("session-name", `Session: ${name}`);
+			ctx.ui.setStatus("session-name", ctx.ui.theme.fg("dim", `💬  Session: ${name}`));
 		}
 
 		return { action: "continue" };
@@ -62,7 +62,7 @@ function registerSessionName(pi: ExtensionAPI) {
 
 	pi.on("session_shutdown", async (_event, ctx) => {
 		firstMessageSeen = false;
-		if (ctx.hasUI) ctx.ui.setStatus("session-name", "");
+		if (ctx.hasUI) ctx.ui.setStatus("session-name", undefined);
 	});
 }
 

@@ -112,8 +112,7 @@ const LEVEL_COLORS: Record<PermissionLevel, string> = {
 
 function getStatusText(level: PermissionLevel): string {
   const info = LEVEL_INFO[level];
-  const color = LEVEL_COLORS[level];
-  return `${BOLD}${color}${info.label}${RESET} ${DIM}- ${info.desc}${RESET}`;
+  return `🛡️  ${info.label} — ${info.desc}`;
 }
 
 // ============================================================================
@@ -198,7 +197,7 @@ function setLevel(
     saveGlobalPermission(level);
   }
   if (ctx.ui?.setStatus) {
-    ctx.ui.setStatus("authority", getStatusText(level));
+    ctx.ui.setStatus("authority", ctx.ui.theme.fg("dim", getStatusText(level)));
   }
 }
 
@@ -425,7 +424,7 @@ export function handleSessionStart(state: PermissionState, ctx: any): void {
 
   if (ctx.hasUI) {
     if (ctx.ui?.setStatus) {
-      ctx.ui.setStatus("authority", getStatusText(state.currentLevel));
+      ctx.ui.setStatus("authority", ctx.ui.theme.fg("dim", getStatusText(state.currentLevel)));
     }
     if (state.currentLevel === "bypassed") {
       ctx.ui.notify("⚠️ Permission bypassed - all checks disabled!", "warning");
@@ -463,21 +462,21 @@ export async function handleBashToolCall(
     if (!hasInteractiveUI(ctx)) {
       return {
         block: true,
-        reason: `Safety violation blocked (${categories}).\nCommand: ${command}\nReasons:\n${matchDetails}`,
+        reason: `Stopped by safety rules (${categories}).\nCommand: ${command}\nReasons:\n${matchDetails}`,
       };
     }
 
     if (state.permissionMode === "block") {
       return {
         block: true,
-        reason: `Blocked by safety net (${categories}). Command: ${command}\nUse /permission-mode ask to enable confirmations.`,
+        reason: `Stopped by safety rules (${categories}). Command: ${command}\nUse /permission-mode ask to enable confirmations.`,
       };
     }
 
     playPermissionSound();
     const choice = await confirmDialog(
       ctx,
-      `⚠️ Safety violation: ${categories}\n  ${command}\n\n${matchDetails}`,
+      `⚠️  Safety rules: ${categories}\n  ${command}\n\n${matchDetails}`,
       [
         { label: "Block",      description: "Skip this command (recommended)" },
         { label: "Allow once", description: "Run this command despite the safety warning" },
@@ -486,7 +485,7 @@ export async function handleBashToolCall(
     );
 
     if (choice !== "Allow once") {
-      return { block: true, reason: "Blocked by safety net" };
+      return { block: true, reason: "Stopped by safety rules" };
     }
     // Fall through to tier check
   }
@@ -507,7 +506,7 @@ export async function handleBashToolCall(
     if (state.permissionMode === "block") {
       return {
         block: true,
-        reason: `Blocked by permission mode (block). Dangerous command: ${command}\nUse /permission-mode ask to enable confirmations.`,
+        reason: `Not allowed (mode: block). Dangerous: ${command}\nUse /permission-mode ask to enable confirmations.`,
       };
     }
 
@@ -541,14 +540,14 @@ export async function handleBashToolCall(
   if (!hasInteractiveUI(ctx)) {
     return {
       block: true,
-      reason: `Blocked by permission (${state.currentLevel}). Command: ${command}\nAllowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}\nUser can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
+      reason: `Not allowed at current level (${state.currentLevel}). Command: ${command}\nAllowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}\nUser can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     };
   }
 
   if (state.permissionMode === "block") {
     return {
       block: true,
-      reason: `Blocked by permission (${state.currentLevel}, mode: block). Command: ${command}\nRequires ${requiredInfo.label}. Allowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}\nUse /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
+      reason: `Not allowed (level: ${state.currentLevel}, mode: block). Command: ${command}\nRequires ${requiredInfo.label}. Allowed: ${LEVEL_ALLOWED_DESC[state.currentLevel]}\nUse /permission ${requiredLevel} or /permission-mode ask.`,
     };
   }
 
@@ -650,7 +649,7 @@ export async function handleWriteToolCall(
   if (!hasInteractiveUI(ctx)) {
     return {
       block: true,
-      reason: `Blocked by permission (${state.currentLevel}). ${action}: ${filePath}
+      reason: `Not allowed (level: ${state.currentLevel}). ${action}: ${filePath}
 Allowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}
 User can re-run with: PI_PERMISSION_LEVEL=low pi -p "..."`
     };
@@ -659,7 +658,7 @@ User can re-run with: PI_PERMISSION_LEVEL=low pi -p "..."`
   if (state.permissionMode === "block") {
     return {
       block: true,
-      reason: `Blocked by permission (${state.currentLevel}, mode: block). ${action}: ${filePath}
+      reason: `Not allowed (level: ${state.currentLevel}, mode: block). ${action}: ${filePath}
 Requires Low. Allowed at this level: ${LEVEL_ALLOWED_DESC[state.currentLevel]}
 Use /permission low or /permission-mode ask to enable prompts.`
     };

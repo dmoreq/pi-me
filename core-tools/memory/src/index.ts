@@ -180,8 +180,8 @@ export default function (pi: ExtensionAPI) {
 
       const stats = store.stats();
       if (stats.semantic + stats.lessons > 0) {
-        ctx.ui.setStatus("pi-memory", `Memory: ${stats.semantic} facts, ${stats.lessons} lessons`);
-        setTimeout(() => ctx.ui.setStatus("pi-memory", ""), 5000);
+        ctx.ui.setStatus("pi-memory", ctx.ui.theme.fg("dim", `🧠  Memory: ${stats.semantic} facts, ${stats.lessons} lessons`));
+        setTimeout(() => ctx.ui.setStatus("pi-memory", undefined), 5000);
       }
     } catch (err: any) {
       ctx.ui.notify(`pi-memory: failed to open store: ${err.message}`, "warning");
@@ -223,13 +223,13 @@ export default function (pi: ExtensionAPI) {
     if (!store) return;
 
     if (pendingUserMessages.length >= 3) {
-      ctx.ui.setStatus("pi-memory", "🧠 Consolidating memory...");
+      ctx.ui.setStatus("pi-memory", ctx.ui.theme.fg ? ctx.ui.theme.fg("dim", "🧠  Consolidating memory…") : "🧠  Consolidating memory…");
       try {
         await consolidateSession();
       } catch {
         // Best-effort
       }
-      ctx.ui.setStatus("pi-memory", "");
+      ctx.ui.setStatus("pi-memory", undefined);
     }
 
     // Reset for the next session
@@ -242,7 +242,7 @@ export default function (pi: ExtensionAPI) {
 
     // Immediate visual feedback — user sees this as soon as C-c C-c fires
     if (cachedCtx) {
-      cachedCtx.ui.setStatus("pi-memory", "🧠 Consolidating memory...");
+      cachedCtx.ui.setStatus("pi-memory", cachedCtx.ui.theme.fg ? cachedCtx.ui.theme.fg("dim", "🧠  Consolidating memory…") : "🧠  Consolidating memory…");
     }
 
     // Consolidate if we have enough conversation

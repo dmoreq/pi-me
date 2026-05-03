@@ -114,7 +114,7 @@ export default function thinkingSteps(pi: ExtensionAPI): void {
     if (persist) pi.appendEntry(CUSTOM_ENTRY_TYPE, { mode: m });
     ctx.ui.setHiddenThinkingLabel(buildLabel(m, thinkingText));
     ctx.ui.setStatus("thinking-steps",
-      `${ctx.ui.theme.fg("muted", "thinking:")} ${ctx.ui.theme.fg("accent", m)}`);
+      ctx.ui.theme.fg("dim", `🧠  Steps: ${m}`));
   }
 
   function cycle(): ThinkingMode {

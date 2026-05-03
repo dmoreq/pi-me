@@ -94,8 +94,17 @@ export function registerTodoTool(pi: ExtensionAPI): void {
 
 export function registerTodosCommand(pi: ExtensionAPI): void {
 	pi.registerCommand(COMMAND_NAME, {
-		description: "Show all todos on the current branch, grouped by status",
-		handler: async (_args, ctx) => {
+		description: "Show all todos, or clear them with 'todos clear'",
+		handler: async (args, ctx) => {
+			// Subcommand: /todos clear
+			if (args?.trim().toLowerCase() === "clear") {
+				const result = applyTaskMutation(getState(), "clear", {});
+				commitState(result.state);
+				replaceState(result.state);
+				const count = result.op.kind === "clear" ? result.op.count : 0;
+				ctx.ui.notify(`🧹 Cleared ${count} todo${count !== 1 ? "s" : ""}`, "info");
+				return;
+			}
 			if (!ctx.hasUI) {
 				ctx.ui.notify(ERR_REQUIRES_INTERACTIVE, "error");
 				return;

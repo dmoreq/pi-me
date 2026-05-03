@@ -373,7 +373,7 @@ export default function (pi: ExtensionAPI) {
 
 		const showStatus = opts.reason !== "resume" && opts.reason !== "focus";
 		if (showStatus && ctx.hasUI)
-			ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", "✦ drafting recap…"));
+			ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", "✦  Recap: drafting…"));
 
 		try {
 			const recap = await generateRecap(transcript, ctx, modelOverride(), controller.signal);

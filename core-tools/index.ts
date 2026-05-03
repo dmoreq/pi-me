@@ -17,6 +17,7 @@ import { readProfile } from "../shared/profile.js";
 
 // ── Subset A — dev + full ────────────────────────────────────────────────
 
+import btwTask from "./btw-task/index.ts";
 import todo from "./todo/index.ts";
 import planMode from "./plan-mode.ts";
 import planTracker from "./plan-tracker/plan-tracker.ts";
@@ -115,6 +116,7 @@ export default function (pi: ExtensionAPI) {
 	if (profile === "minimal") return;
 
 	// Subset A — dev + full
+	btwTask(pi);
 	todo(pi);
 	planMode(pi);
 	planTracker(pi);

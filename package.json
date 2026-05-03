@@ -15,6 +15,7 @@
       "./core-tools/index.ts",
       "./content-tools/index.ts",
       "./authoring/index.ts",
+      "./welcome-screen/index.ts",
       "pi-web-providers/dist/index.js",
       "pi-dialog"
     ],

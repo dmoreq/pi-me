@@ -79,10 +79,10 @@ export default async function (pi: ExtensionAPI) {
 		if (!ctx.hasUI) return;
 		const { totalPruned, totalProcessed } = statsTracker;
 		if (totalProcessed === 0) {
-			ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", "Context Pruning: --"));
+			ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", "✂️  Pruning: --"));
 		} else {
 			const pct = Math.round((totalPruned / totalProcessed) * 100);
-			ctx.ui.setStatus(STATUS_KEY, `Context Pruning: ${totalPruned}/${totalProcessed} (${pct}%)`);
+			ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", `✂️  Pruning: ${totalPruned}/${totalProcessed} (${pct}%)`));
 		}
 	};
 

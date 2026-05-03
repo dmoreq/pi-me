@@ -60,7 +60,7 @@ export function createContextWindow(options: ContextWindowOptions = {}): (pi: Ex
 			]);
 
 			if (level !== "info") {
-				ctx.ui.setStatus("context-warn", `Context: ${pct}% used`);
+				ctx.ui.setStatus("context-warn", ctx.ui.theme.fg("dim", `📊  Context: ${pct}%`));
 				if (level === "error") {
 					ctx.ui.notify(
 						`Context at ${pct}% — consider compacting with /compact`,
@@ -79,7 +79,7 @@ export function createContextWindow(options: ContextWindowOptions = {}): (pi: Ex
 		pi.on("session_shutdown", async (_event, ctx) => {
 			if (ctx.hasUI) {
 				ctx.ui.setWidget("context", []);
-				ctx.ui.setStatus("context-warn", "");
+				ctx.ui.setStatus("context-warn", undefined);
 			}
 		});
 	};
