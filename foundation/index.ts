@@ -3,32 +3,33 @@
  *
  * Always loaded (all profiles include foundation).
  * Registers: secrets, permission (3-layer guard: safety + tiers + safe-ops),
- *            context-window (will be renamed to context-monitor in Phase 2).
+ *            context-monitor (merged context-window + usage-extension).
  *
  * v0.4.0: Merged safe-ops.ts into permission/ as SafeOpsLayer (Layer 3).
+ * v0.5.0: Merged context-window + usage-extension → context-monitor.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
 import secrets from "./secrets/secrets.ts";
 import permission from "./permission/permission.ts";
-import contextWindow from "./context-window/context-window.ts";
+import contextMonitor from "./context-monitor/context-monitor.ts";
 
 export default function (pi: ExtensionAPI) {
 	const t = getTelemetry();
 	if (t) {
 		t.register({
 			name: "foundation",
-			version: "0.3.0",
-			description: "Safety guards: secrets, permission (3-layer), context-window",
+			version: "0.5.0",
+			description: "Safety guards: secrets, permission (3-layer), context-monitor",
 			tools: ["read", "edit", "write", "bash"],
 			events: ["tool_call", "input", "session_start", "session_shutdown"],
 		});
 		t.heartbeat("foundation");
 	}
 
-	// secrets is async — fire-and-forget, same as when it was a standalone entry
+	// secrets is async — fire-and-forget
 	void secrets(pi);
 	permission(pi);
-	contextWindow(pi);
+	contextMonitor(pi);
 }
