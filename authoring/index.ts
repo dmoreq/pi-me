@@ -2,14 +2,15 @@
  * authoring — Umbrella entry point.
  *
  * Profile: full only.
- * Imports: commit-helper, skill-bootstrap.
+ * Imports: commit-helper.
+ *
+ * v0.5.0: Removed skill-bootstrap (merged into core-tools/memory as project-context scanner).
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
 import { readProfile } from "../shared/profile.js";
 import commitHelper from "./commit-helper/commit-helper.ts";
-import skillBootstrap from "./skill-bootstrap/skill-bootstrap.ts";
 
 export default function (pi: ExtensionAPI) {
 	const profile = readProfile();
@@ -19,13 +20,12 @@ export default function (pi: ExtensionAPI) {
 	if (t) {
 		t.register({
 			name: "authoring",
-			version: "0.2.0",
-			description: "Authoring helpers: commit-helper, skill-bootstrap",
+			version: "0.5.0",
+			description: "Authoring helpers: commit-helper only (skill-bootstrap merged into memory)",
 			tools: ["commit_message"],
 		});
 		t.heartbeat("authoring");
 	}
 
 	commitHelper(pi);
-	skillBootstrap(pi);
 }

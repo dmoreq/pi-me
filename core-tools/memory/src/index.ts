@@ -24,6 +24,7 @@ import { homedir } from "node:os";
 import { readFileSync } from "node:fs";
 import { MemoryStore } from "./store.ts";
 import { buildContextBlock, type InjectorConfig } from "./injector.ts";
+import { scanProject, ingestProjectContext } from "./project-context.ts";
 
 type ToolResult = AgentToolResult<unknown>;
 function ok(text: string): ToolResult { return { content: [{ type: "text", text }], details: {} }; }
@@ -176,6 +177,17 @@ export default function (pi: ExtensionAPI) {
         }
       } catch {
         // Session may not have entries yet (brand-new session)
+      }
+
+      // Auto-scan project context and store as semantic facts
+      try {
+        const projectInfo = await scanProject(sessionCwd);
+        const ingested = ingestProjectContext(store, projectInfo);
+        if (ingested > 0) {
+          console.error(`[memory] Ingested ${ingested} project context facts for ${projectInfo.name}`);
+        }
+      } catch {
+        // Non-fatal — project scanning is best-effort
       }
 
       const stats = store.stats();
