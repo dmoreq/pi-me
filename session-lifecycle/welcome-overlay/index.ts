@@ -74,9 +74,9 @@ function setWelcomeHeader(ctx: { hasUI: boolean; ui: any }) {
 		// Build the welcome banner once and cache it
 		const piBlue = (text: string) => theme.fg("accent", text);
 		const dim = (text: string) => theme.fg("dim", text);
-		const green = (text: string) => theme.fg("green", text);
-		const yellow = (text: string) => theme.fg("yellow", text);
-		const cyan = (text: string) => theme.fg("cyan", text);
+		const green = (text: string) => theme.fg("success", text);
+		const yellow = (text: string) => theme.fg("warning", text);
+		const cyan = (text: string) => theme.fg("accent", text);
 		const muted = (text: string) => theme.fg("muted", text);
 
 		const block = "█";
