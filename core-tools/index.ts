@@ -5,12 +5,12 @@
  * Subset A: task-orchestration, planning, memory, formatter,
  *           thinking-steps, clipboard, code-quality, code-actions,
  *           file-intelligence, read-guard, subprocess-orchestrator.
- * Subset B: sub-pi (DEPRECATED), subagent (DEPRECATED), ralph-loop (DEPRECATED),
- *           web-search (DEPRECATED), file-collector, ast-grep, code-review, autofix.
+ * Subset B: file-collector, ast-grep, code-review, autofix.
  *
  * v0.4.0: Removed preset, edit-session (dead extensions from v0.3.0)
  * v0.6.0: Deprecated subagent, sub-pi, sub-pi-skill, ralph-loop, web-search
- *          → Merged into subprocess-orchestrator (subset A) and web-tools (content-tools)
+ * v0.7.0: Removed subagent, sub-pi, sub-pi-skill, ralph-loop, web-search
+ *          → All consolidated into subprocess-orchestrator (subset A) and web-tools (content-tools)
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -33,10 +33,6 @@ import { registerClipboard } from "./clipboard.ts";
 
 // ── Subset B — full only ─────────────────────────────────────────────────
 
-import subPi from "./sub-pi/index.ts";
-import subagent from "./subagent/extension/index.ts";
-import ralphLoop from "./ralph-loop/ralph-loop.ts";
-import webSearch from "./web-search.ts";
 import fileCollector from "./file-collector/index.ts";
 import astGrepTools from "./ast-grep-tool/index.ts";
 import codeReview from "./code-review/index.ts";
@@ -52,14 +48,14 @@ export default function (pi: ExtensionAPI) {
 	if (t) {
 		t.register({
 			name: "core-tools",
-			version: "0.3.0",
-			description: "Pi-me core tool suite: task orchestration, planning, memory, editing, code review, subagent, and more",
-			tools: ["read", "edit", "write", "bash", "search", "copy_to_clipboard"],
+			version: "0.7.0",
+			description: "Pi-me core tool suite: task orchestration, planning, memory, formatting, code quality, file intelligence, code review, subprocess orchestration, and more",
+			tools: ["read", "edit", "write", "bash", "search", "copy_to_clipboard", "subprocess"],
 			events: ["session_start", "tool_call", "message_end", "session_shutdown"],
 		});
 	}
 
-	// Subset A — dev + full (v0.4.0: cleaned up, removed dead extensions)
+	// Subset A — dev + full
 	taskOrchestration(pi);
 	planMode(pi);
 	memory(pi);
@@ -72,12 +68,8 @@ export default function (pi: ExtensionAPI) {
 	registerClipboard(pi);
 	subprocessOrchestrator(pi);
 
-	// Subset B — full only (additional web tools & advanced features)
+	// Subset B — full only (v0.7.0: removed deprecated subagent/sub-pi/ralph/web-search)
 	if (profile === "full") {
-		subPi(pi);
-		subagent(pi);
-		ralphLoop(pi);
-		webSearch(pi);
 		fileCollector(pi);
 		astGrepTools(pi);
 		codeReview(pi);
