@@ -5,8 +5,8 @@
  * Registers: context-intel, checkpoint, welcome, skill-args.
  *
  * v0.5.0: Removed usage-extension (moved to foundation/context-monitor).
- *         Removed context-pruning (will be merged into context-intel as plugins).
- *         Removed session-name (will be merged into welcome/).
+ *         Removed context-pruning (now a plugin inside context-intel).
+ *         Merged welcome-overlay + session-name into welcome/ module.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -15,13 +15,12 @@ import { readProfile } from "../shared/profile.js";
 
 import { ContextIntelExtension } from "./context-intel";
 import checkpoint from "./git-checkpoint/checkpoint.ts";
-import welcomeOverlay from "./welcome-overlay/index.ts";
-import { registerSessionName } from "./session-name.ts";
+import welcome from "./welcome/welcome.ts";
 import { registerArgsHandler } from "./skill-args.ts";
 
 // Re-export for external consumers (backwards-compat)
 export { parseCommandArgs, substituteArgs, handleInput, invalidateSkillIndex } from "./skill-args.ts";
-export { sessionNameFromMessage } from "./session-name.ts";
+export { sessionNameFromMessage } from "./welcome/welcome.ts";
 
 export default function (pi: ExtensionAPI) {
 	const profile = readProfile();
@@ -38,12 +37,11 @@ export default function (pi: ExtensionAPI) {
 		t.heartbeat("session-lifecycle");
 	}
 
-	// ContextIntelExtension v0.5.0 handles handoff, auto-compact, session recap,
-	// AND context-pruning + read-awareness as built-in plugins.
+	// ContextIntelExtension v0.5.0: handoff, auto-compact, session recap,
+	// plus context-pruning + read-awareness as built-in plugins.
 	new ContextIntelExtension(pi).register();
 
 	checkpoint(pi);
-	registerSessionName(pi);
-	welcomeOverlay(pi);
+	welcome(pi); // merged: welcome-overlay + session-name
 	registerArgsHandler(pi);
 }
