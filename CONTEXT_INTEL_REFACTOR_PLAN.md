@@ -1,643 +1,512 @@
-# Context Intelligence v2 — Refactor Plan
+# Context Intelligence Refactor Plan — DRY / OOP / SOLID Compliance Pass
 
-## Rationale
+## Problem Statement
 
-Currently 4 modules live independently across `session-lifecycle/` and `core-tools/`:
+Context Intelligence (`session-lifecycle/context-intel/`) was built as a consolidation of 5 legacy modules. While the consolidation was successful, the internal architecture has several DRY/OOP/SOLID violations that accumulated during the merge:
 
-| Module | Location | Purpose | Lines |
-|---|---|---|---|
-| **Context Intel** | `session-lifecycle/context-intel/` | Handoff, recap, auto-compact suggestions | ~200 |
-| **Context Pruning** | `session-lifecycle/context-pruning/` | Message dedup, error purging, recency | ~1,500 |
-| **Context Window** | `foundation/context-window/` | Token usage monitor widget | ~80 |
-| **Memory** | `core-tools/memory/` | Persistent cross-session memory (SQLite) | ~1,700 |
-| **Usage Dashboard** | `session-lifecycle/usage-extension/` | Token/cost stats dashboard | ~1,200 |
+### Violations Found
 
-**Problems:**
-1. They all track conversation activity but in silos — redundant hooks, overlapping concerns
-2. Context Pruning has its own file logger, config system, and registry — reinventing wheels
-3. Context Intel only *suggests* actions (`/recap`, `/handoff`) without autonomously executing them
-4. Memory stores facts but never feeds them into pruning decisions (e.g., "I always work in this file")
-5. No unified telemetry — each module fires its own notifications without coordination
-6. Usage dashboard is purely manual (`/usage` command) — never proactively surfaces cost/context info
-7. ~4,700 total LOC that can be consolidated into ~2,500 with proper architecture
+#### 1. DRY — Duplicate type definitions across layers
+- `PruningMeta` in `types.ts` is essentially the same shape as messages returned by the pipeline — both carry `role`, `content`, `tool_call_id`. They're used interchangeably but have separate type paths.
+- `SessionStats` in `types.ts` duplicates fields that `ContextMonitor` calculates internally — no shared interface.
+- `MemoryConfig` has `autoConsolidate` + `autoConsolidateMinMessages` — `AutomationConfig` has `autoCompactThreshold` — different naming for the same pattern (threshold configs).
+
+#### 2. SRP Violation — `ContextMonitor` is a god class
+- Tracks: message count, turn count, tool calls, bash calls, touched files, token usage, last recap time, session ID, cwd
+- `getCompactSuggestion()`, `getRecapEligible()`, `getContextUsageRatio()` — three different threshold checks in one class
+- Should be split into: `SessionCounter` (counts), `TokenTracker` (usage), `ThresholdMonitor` (triggers)
+
+#### 3. OCP Violation — Automation triggers are hardcoded
+- `TRIGGERS` array in `auto-advisor.ts` is a const array. Adding a new trigger means editing the file.
+- `TelemetryAutomation` static methods are hardcoded. Adding a new trigger means adding a new static method.
+- Should use the same registry pattern as pruning rules.
+
+#### 4. LSP — Auto-modules have inconsistent constructors
+- `AutoCompactor(config, monitor, pruning)` — 3 constructor params
+- `AutoRecapper(config, monitor, memory)` — 3 constructor params
+- `AutoConsolidator(config, memory)` — 2 constructor params
+- `AutoAdvisor()` — 0 constructor params
+- Some take `config`, some take `monitor`, some take `pruning`. `AutoAdvisor` takes nothing.
+- Should share a common `AutomationContext` object.
+
+#### 5. ISP — PipelineResult exposes unused analyze stage
+- `PipelineResult` in `types.ts` has `format: RunnerResult[]`, `fix: RunnerResult[]`, `analyze: RunnerResult[]`
+- `analyze` is never implemented. Every consumer ignores it.
+- Should be removed.
+
+#### 6. DIP — Core depends on concrete implementations
+- `ContextIntelExtension` directly instantiates `ContextMonitor`, `MemoryOrchestrator`, `WorkflowEngine`, all auto-modules in its constructor
+- No dependency injection, no interfaces for testing
+- Should depend on interfaces (monitor, memory, pipeline, automation)
+
+#### 7. Magic numbers everywhere
+- `keepRecentCount: 10` — hardcoded default
+- `autoCompactThreshold: 80` — hardcoded default
+- `TRIGGERS` cooldowns: `300_000`, `120_000` — magic numbers without explanation
+- `hasFTS5` flag in store — no config option to disable FTS5
+
+#### 8. Inconsistent naming
+- `PruningMeta` uses `metadata` (object), but rules return `string` arrays
+- `PruneRule.check()` returns `{ prune: boolean; reason?: string; metadata?: PruningMeta }` — optional metadata is rarely used
+- Mix of `snake_case` (db columns) and `camelCase` (TS interfaces) — acceptable but inconsistent for `last_accessed` vs `updatedAt`
 
 ---
 
-## Architecture: Context Intelligence v2
+## Proposed Architecture
 
+### Before (current)
 ```
-session-lifecycle/context-intel-v2/
-├── index.ts                  ← Entry point, extension registration
-├── types.ts                  ← All interfaces
-├── config.ts                 ← Unified config loader (replaces 3 config systems)
-│
+ContextIntelExtension
+├── ContextMonitor (god class, 7 responsibilities)
+├── WorkflowEngine (pruning)
+├── MemoryOrchestrator
+├── AutoCompactor ← hardcoded constructor
+├── AutoRecapper   ← hardcoded constructor
+├── AutoConsolidator ← hardcoded constructor
+├── AutoAdvisor   ← hardcoded triggers array
+└── TelemetryAutomation ← hardcoded static methods
+```
+
+### After
+```
+ContextIntelExtension
+├── di/Container.ts                 ← Dependency injection container
 ├── core/
-│   ├── context-monitor.ts    ← Token usage + message counting (replaces context-window)
-│   ├── transcript-builder.ts ← Kept from v1, minor cleanup
-│   ├── prompt-builder.ts     ← Kept from v1, expanded for new features
-│   └── session-stats.ts      ← Session stats collection (replaces usage-dashboard core)
-│
+│   ├── SessionCounter.ts           ← message/turn/tool counts
+│   ├── TokenTracker.ts             ← token usage & ratio
+│   ├── ThresholdMonitor.ts         ← threshold checks (80% compact, 50msgs deep)
+│   └── StatsCollector.ts           ← log scanning (unchanged)
 ├── pruning/
-│   ├── workflow.ts           ← prepare → process → filter pipeline (kept)
-│   ├── rules/
-│   │   ├── deduplication.ts  ← Kept
-│   │   ├── recency.ts        ← Kept
-│   │   ├── superseded-writes.ts ← Kept
-│   │   ├── error-purging.ts  ← Kept
-│   │   └── tool-pairing.ts   ← Kept
-│   └── types.ts              ← Pruning-specific types
-│
+│   ├── WorkflowEngine.ts           ← unchanged
+│   └── rules/                      ← unchanged
 ├── memory/
-│   ├── store.ts              ← SQLite store (kept from core-tools/memory/src/store.ts)
-│   ├── consolidator.ts       ← LLM-based extraction (kept from core-tools/memory/src/consolidator.ts)
-│   ├── injector.ts           ← Context block builder (kept from core-tools/memory/src/injector.ts)
-│   └── bootstrap.ts          ← Kept from core-tools/memory/src/bootstrap.ts
-│
+│   ├── MemoryStore.ts              ← unchanged
+│   ├── MemoryConsolidator.ts       ← unchanged
+│   ├── MemoryInjector.ts           ← unchanged
+│   └── MemoryOrchestrator.ts       ← unchanged
 ├── automation/
-│   ├── triggers.ts           ← 9 telemetry automation triggers (consolidated)
-│   ├── auto-compactor.ts     ← Auto-execute context compaction
-│   ├── auto-recapper.ts      ← Auto-generate session recaps at boundaries
-│   ├── auto-consolidator.ts  ← Auto-run memory consolidation
-│   └── auto-advisor.ts       ← Smart suggestions based on unified signals
-│
-├── ui/
-│   ├── context-widget.ts     ← Token usage bar (replaces context-window)
-│   ├── usage-component.ts    ← /usage dashboard component (kept from usage-extension)
-│   ├── cost-tracker.ts       ← /cost component (kept from usage-extension)
-│   ├── pruning-status.ts     ← Pruning stats status bar
-│   └── memory-status.ts      ← Memory stats status bar
-│
-├── commands/
-│   ├── handoff.ts            ← /handoff command (kept)
-│   ├── recap.ts              ← /recap command (kept)
-│   ├── compact.ts            ← /compact command (kept)
-│   ├── mem.ts                ← /mem command (kept from memory-mode.ts)
-│   ├── memory-consolidate.ts ← /memory-consolidate (kept)
-│   ├── usage.ts              ← /usage command (kept)
-│   ├── cost.ts               ← /cost command (kept)
-│   └── cp-stats.ts           ← /cp-stats (kept, now under /ctx)
-│
-└── tests/
-    ├── context-monitor.test.ts
-    ├── workflow.test.ts
-    ├── auto-compactor.test.ts
-    ├── auto-recapper.test.ts
-    └── integration.test.ts
+│   ├── registry.ts                 ← NEW: registry pattern (like pruning rules)
+│   ├── triggers.ts                 ← refactored: dynamic, registered via registry
+│   ├── AutoCompactor.ts            ← takes AutomationContext
+│   ├── AutoRecapper.ts             ← takes AutomationContext
+│   ├── AutoConsolidator.ts         ← takes AutomationContext
+│   └── AutoAdvisor.ts              ← takes AutomationContext
+├── types.ts                        ← cleaned: no PruningMeta, no analyze in PipelineResult
+├── config.ts                       ← unchanged
+└── index.ts                        ← uses Container, dep injection
 ```
-
-**Total target: ~2,500 LOC** (down from ~4,700)
 
 ---
 
-## Phase 1: Foundation — Unified Types & Config
+## Step-by-Step Implementation (8 steps)
 
-### 1.1 Create `session-lifecycle/context-intel-v2/types.ts`
+### Step 1: Extract `core/SessionCounter.ts` from `ContextMonitor`
+
+**Current**: `ContextMonitor` holds 12 fields + 8 methods for counting + 4 methods for threshold checks.
+
+**Move out**:
+- `messageCount`, `turnCount`, `toolCallCount`, `bashCallCount`, `touchedFiles`
+- `recordMessage()`, `recordTurn()`, `recordToolCall()`, `recordFileWrite()`
+- `getStats()` → only the count fields
+
+**New class**:
+```typescript
+export class SessionCounter {
+  messageCount = 0;
+  turnCount = 0;
+  toolCallCount = 0;
+  bashCallCount = 0;
+  touchedFiles = new Set<string>();
+
+  recordMessage(): void { this.messageCount++; }
+  recordTurn(): void { this.turnCount++; }
+  recordToolCall(name: string): void {
+    this.toolCallCount++;
+    if (name === "bash") this.bashCallCount++;
+  }
+  recordFileWrite(path: string): void { this.touchedFiles.add(path); }
+  reset(): void { /* zero all */ }
+  snapshot(): SessionCountSnapshot { /* returns current values */ }
+}
+```
+
+---
+
+### Step 2: Extract `core/TokenTracker.ts` from `ContextMonitor`
+
+**Move out**:
+- `tokenUsage: TokenUsage | null`
+- `updateTokenUsage()`, `getContextUsageRatio()`
+
+**New class**:
+```typescript
+export class TokenTracker {
+  private usage: TokenUsage | null = null;
+
+  update(usage: TokenUsage): void { this.usage = usage; }
+  getRatio(): number | null { /* usage.total / usage.contextWindow */ }
+  getPercentage(): number | null { /* ratio * 100 */ }
+  getDisplay(): string { /* "45% (12K/128K)" */ }
+}
+```
+
+---
+
+### Step 3: Extract `core/ThresholdMonitor.ts` from `ContextMonitor`
+
+**Move out**:
+- `lastRecapAt`, `sessionId`, `cwd`
+- `markRecap()`, `getRecapEligible()`, `getCompactSuggestion()`
+
+**New class**:
+```typescript
+export class ThresholdMonitor {
+  lastRecapAt = 0;
+  lastCompactAt = 0;
+  config: { compactThreshold: number; recapMinMessages: number };
+
+  constructor(config: { compactThreshold: number; recapMinMessages: number }) {
+    this.config = config;
+  }
+
+  isCompactNeeded(ratio: number): boolean {
+    return ratio >= this.config.compactThreshold / 100
+      && Date.now() - this.lastCompactAt > 60_000; // 1min cooldown
+  }
+
+  isRecapEligible(messageCount: number): boolean {
+    return messageCount >= this.config.recapMinMessages
+      && Date.now() - this.lastRecapAt > 600_000; // 10min cooldown
+  }
+
+  markCompact(): void { this.lastCompactAt = Date.now(); }
+  markRecap(): void { this.lastRecapAt = Date.now(); }
+}
+```
+
+---
+
+### Step 4: Create `di/Container.ts` (Dependency Injection)
+
+**New file** — replaces the god constructor in `index.ts`:
 
 ```typescript
-// Core entity
-export interface ContextSession {
-  id: string;
-  cwd: string;
-  startedAt: number;
-  messageCount: number;
-  tokenUsage: TokenUsage;
-  prunedCount: number;
+export class ContextIntelContainer {
+  readonly config: ContextIntelConfig;
+  readonly counter: SessionCounter;
+  readonly tokenTracker: TokenTracker;
+  readonly threshold: ThresholdMonitor;
+  readonly pruning: WorkflowEngine;
+  readonly memory: MemoryOrchestrator;
+  readonly automation: AutomationRegistry;
+  readonly advisor: AutoAdvisor;
+
+  constructor(config: ContextIntelConfig) {
+    this.config = config;
+    this.counter = new SessionCounter();
+    this.tokenTracker = new TokenTracker();
+    this.threshold = new ThresholdMonitor({
+      compactThreshold: config.automation.autoCompactThreshold,
+      recapMinMessages: config.automation.autoRecapMaxMessageCount ?? 20,
+    });
+    this.pruning = new WorkflowEngine(config.pruning);
+    this.memory = new MemoryOrchestrator(config.memory);
+    this.automation = new AutomationRegistry({
+      compactor: new AutoCompactor(this),
+      recapper: new AutoRecapper(this),
+      consolidator: new AutoConsolidator(this),
+    });
+    this.advisor = new AutoAdvisor(this);
+
+    // Register default advice triggers
+    this.advisor.register(adviceTriggers.contextDepth);
+    this.advisor.register(adviceTriggers.highActivity);
+    this.advisor.register(adviceTriggers.manyFiles);
+    this.advisor.register(adviceTriggers.bashHeavy);
+  }
+}
+```
+
+**`AutomationContext`** — shared context object for all auto-modules:
+```typescript
+export interface AutomationContext {
+  readonly config: ContextIntelConfig;
+  readonly counter: SessionCounter;
+  readonly tokenTracker: TokenTracker;
+  readonly threshold: ThresholdMonitor;
+  readonly pruning: WorkflowEngine;
+  readonly memory: MemoryOrchestrator;
+}
+```
+
+**All 4 auto-modules** now take `AutomationContext` instead of individual deps:
+```typescript
+// Before:
+new AutoCompactor(config, monitor, pruning)
+new AutoRecapper(config, monitor, memory)
+new AutoConsolidator(config, memory)
+new AutoAdvisor()
+
+// After:
+new AutoCompactor(ctx)
+new AutoRecapper(ctx)
+new AutoConsolidator(ctx)
+new AutoAdvisor(ctx)
+```
+
+---
+
+### Step 5: Create `automation/registry.ts` + Refactor `automation/triggers.ts`
+
+**Current**: `TelemetryAutomation` has 12 hardcoded static methods. `AutoAdvisor` has a hardcoded `TRIGGERS` array.
+
+**New pattern** — registry with registration:
+```typescript
+// automation/registry.ts
+export interface AutomationHandler {
+  readonly id: string;
+  readonly cooldownMs: number;
+  check(ctx: AutomationContext): string | null; // null = don't fire, string = advice
 }
 
-export interface TokenUsage {
-  total: number;
-  input: number;
-  output: number;
-  cacheRead: number;
-  cacheWrite: number;
-  contextWindow: number;
-}
+export class AutomationRegistry {
+  private handlers = new Map<string, AutomationHandler>();
+  private lastFired = new Map<string, number>();
 
-// Pruning
-export interface PruningConfig {
-  enabled: boolean;
-  keepRecentCount: number;
-  rules: string[];
-}
+  register(handler: AutomationHandler): void {
+    this.handlers.set(handler.id, handler);
+  }
 
-// Memory
-export interface MemoryConfig {
-  dbPath: string;
-  lessonInjection: "all" | "selective";
-  autoConsolidate: boolean;
-  autoConsolidateMinMessages: number;
-}
+  async runAll(ctx: AutomationContext, pi: ExtensionAPI): Promise<void> {
+    for (const [id, handler] of this.handlers) {
+      const last = this.lastFired.get(id) ?? 0;
+      if (Date.now() - last < handler.cooldownMs) continue;
 
-// Automation
-export interface AutomationConfig {
-  autoCompactThreshold: number;      // % of context window
-  autoCompactEnabled: boolean;
-  autoRecapEnabled: boolean;
-  autoConsolidateEnabled: boolean;
-  autoAdviseEnabled: boolean;
+      const advice = handler.check(ctx);
+      if (advice) {
+        getTelemetry()?.notify(advice, {
+          package: "context-intel",
+          badge: { text: id, variant: "info" },
+        });
+        this.lastFired.set(id, Date.now());
+      }
+    }
+  }
 }
+```
 
-// Unified config
-export interface ContextIntelConfig {
-  enabled: boolean;
-  pruning: PruningConfig;
-  memory: MemoryConfig;
-  automation: AutomationConfig;
-}
-
-export const DEFAULT_CONFIG: ContextIntelConfig = {
-  enabled: true,
-  pruning: {
-    enabled: true,
-    keepRecentCount: 10,
-    rules: ["deduplication", "superseded-writes", "error-purging", "tool-pairing", "recency"],
-  },
-  memory: {
-    dbPath: "~/.pi/context-intel/memory.db",
-    lessonInjection: "selective",
-    autoConsolidate: true,
-    autoConsolidateMinMessages: 3,
-  },
-  automation: {
-    autoCompactThreshold: 80,
-    autoCompactEnabled: true,
-    autoRecapEnabled: true,
-    autoConsolidateEnabled: true,
-    autoAdviseEnabled: true,
-  },
+**`TelemetryAutomation` refactored** — from static methods to registered handlers:
+```typescript
+// automation/triggers.ts
+export const contextDepthHandler: AutomationHandler = {
+  id: "deep-context",
+  cooldownMs: 300_000,
+  check: (ctx) => ctx.counter.messageCount > 50
+    ? `Context is deep (${ctx.counter.messageCount} messages)`
+    : null,
 };
 ```
 
-### 1.2 Create `session-lifecycle/context-intel-v2/config.ts`
+**12 triggers → 12 registered handlers**. Adding a new trigger is:
+```typescript
+advisor.register({ id: "my-trigger", cooldownMs: 60_000, check: (ctx) => ... });
+```
+No file edits needed.
 
-Replace **3 separate config systems** (bunfig for pruning, JSON settings for memory, inline for context-window) with one:
+---
+
+### Step 6: Clean `types.ts`
+
+**Changes**:
+
+1. **Remove `PruningMeta`** — unused. Rules return `{ prune, reason }` objects, not `PruningMeta`. The type was copied from the old `context-pruning` but never used by any rule.
+
+2. **Remove `analyze` from `PipelineResult`** — never implemented. Every consumer ignores it.
 
 ```typescript
-// Single config loader using existing shared/pi-config.ts pattern (Zod + JSONC)
-import { loadConfigOrDefault } from "../../shared/pi-config.js";
-import { z } from "zod";
-import type { ContextIntelConfig } from "./types.js";
-import { DEFAULT_CONFIG } from "./types.js";
+// Before:
+export interface PipelineResult {
+  filePath: string;
+  format: RunnerResult[];   // used
+  fix: RunnerResult[];      // used
+  analyze: RunnerResult[];  // NEVER USED
+  duration: number;
+}
 
-const ConfigSchema = z.object({
-  enabled: z.boolean().optional(),
-  pruning: z.object({
-    enabled: z.boolean().optional(),
-    keepRecentCount: z.number().int().positive().optional(),
-    rules: z.array(z.string()).optional(),
-  }).optional(),
-  memory: z.object({
-    dbPath: z.string().optional(),
-    lessonInjection: z.enum(["all", "selective"]).optional(),
-    autoConsolidate: z.boolean().optional(),
-    autoConsolidateMinMessages: z.number().int().positive().optional(),
-  }).optional(),
-  automation: z.object({
-    autoCompactThreshold: z.number().min(0).max(100).optional(),
-    autoCompactEnabled: z.boolean().optional(),
-    autoRecapEnabled: z.boolean().optional(),
-    autoConsolidateEnabled: z.boolean().optional(),
-    autoAdviseEnabled: z.boolean().optional(),
-  }).optional(),
-});
-
-export function loadContextIntelConfig(): ContextIntelConfig {
-  return loadConfigOrDefault({
-    filename: "context-intel.jsonc",
-    schema: ConfigSchema,
-    defaults: DEFAULT_CONFIG,
-  });
+// After:
+export interface PipelineResult {
+  filePath: string;
+  format: RunnerResult[];
+  fix: RunnerResult[];
+  duration: number;
 }
 ```
 
-**Removes dependency on `bunfig` for pruning config** — uses the existing `shared/pi-config.ts` Zod+JSONC pattern that's already proven for `file-collector` and `file-picker`.
-
-### 1.3 Create `session-lifecycle/context-intel-v2/index.ts`
-
-The unified entry point — replaces all 5 separate registrations:
-
+3. **Add `SessionCountSnapshot`** — return type for `SessionCounter.snapshot()`:
 ```typescript
-/**
- * Context Intelligence v2 — Unified context management.
- *
- * Consolidates:
- *   - context-intel      (handoff, recap, auto-compact suggestions)
- *   - context-pruning    (message dedup, error purging)
- *   - context-window     (token usage widget)
- *   - memory             (persistent SQLite memory)
- *   - usage-dashboard    (token/cost stats)
- *
- * SOLID:
- *   - S: Each sub-module has one job (pruning, memory, automation, UI)
- *   - O: New rules/triggers added via registry, not by editing core
- *   - L: All automation triggers implement AutoTrigger interface
- *   - I: Focused interfaces per concern (PruneRule, MemoryStore, AutoTrigger)
- *   - D: Core depends on interfaces (ConfigReader, MessageStore, TelemetryBus)
- *
- * Automation (replaces manual commands):
- *   - Auto-compact: prune at 80% context threshold instead of suggesting it
- *   - Auto-recap: generate summary at session boundaries automatically
- *   - Auto-consolidate: extract memory facts when ≥3 user messages accumulated
- *   - Auto-advise: surface telemetry-backed suggestions at natural moments
- */
+export interface SessionCountSnapshot {
+  messageCount: number;
+  turnCount: number;
+  toolCallCount: number;
+  bashCallCount: number;
+  touchedFiles: string[];
+}
+```
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
-import { registerPackage } from "../../shared/telemetry-helpers.ts";
-import { loadContextIntelConfig } from "./config.ts";
-import type { ContextIntelConfig, ContextSession } from "./types.ts";
-import { ContextMonitor } from "./core/context-monitor.ts";
-import { MemoryOrchestrator } from "./memory/bootstrap.ts";
-import { WorkflowEngine } from "./pruning/workflow.ts";
-import { AutoCompactor } from "./automation/auto-compactor.ts";
-import { AutoRecapper } from "./automation/auto-recapper.ts";
-import { AutoConsolidator } from "./automation/auto-consolidator.ts";
-import { AutoAdvisor } from "./automation/auto-advisor.ts";
+4. **Add `AutomationContext`** interface (see Step 4).
 
-export class ContextIntelV2Extension extends ExtensionLifecycle {
-  readonly name = "context-intel-v2";
-  readonly version = "0.1.0";
-  protected readonly description = "Unified context management: pruning, memory, automation, dashboard";
-  protected readonly tools = ["memory_search", "memory_remember", "memory_forget", "memory_lessons", "memory_stats"];
-  protected readonly events = [
-    "session_start", "session_shutdown", "session_before_switch",
-    "turn_end", "agent_end", "before_agent_start", "context", "tool_result",
-  ];
+5. **Normalize naming**: `PruningMeta` → remove. `last_accessed` → keep as-is (maps to SQLite column).
 
-  private config: ContextIntelConfig;
-  private session: ContextSession | null = null;
-  private monitor: ContextMonitor;
-  private memory: MemoryOrchestrator;
-  private pruning: WorkflowEngine;
-  private autoCompactor: AutoCompactor;
-  private autoRecapper: AutoRecapper;
-  private autoConsolidator: AutoConsolidator;
-  private autoAdvisor: AutoAdvisor;
+---
+
+### Step 7: Refactor `index.ts` (Main Extension)
+
+**Current**: Constructor creates everything inline:
+```typescript
+constructor(pi: ExtensionAPI) {
+  super(pi);
+  this.config = loadContextIntelConfig();
+  this.monitor = new ContextMonitor();
+  this.memory = new MemoryOrchestrator(this.config.memory);
+  this.pruning = new WorkflowEngine(this.config.pruning);
+  this.autoCompactor = new AutoCompactor(...);
+  this.autoRecapper = new AutoRecapper(...);
+  this.autoConsolidator = new AutoConsolidator(...);
+  this.autoAdvisor = new AutoAdvisor();
+}
+```
+
+**After**: Uses Container:
+```typescript
+export class ContextIntelExtension extends ExtensionLifecycle {
+  readonly name = "context-intel";
+  readonly version = "0.9.0";
+
+  private container: ContextIntelContainer;
 
   constructor(pi: ExtensionAPI) {
     super(pi);
-    this.config = loadContextIntelConfig();
-    this.monitor = new ContextMonitor();
-    this.memory = new MemoryOrchestrator(this.config.memory);
-    this.pruning = new WorkflowEngine(this.config.pruning);
-    this.autoCompactor = new AutoCompactor(this.config.automation, this.monitor);
-    this.autoRecapper = new AutoRecapper();
-    this.autoConsolidator = new AutoConsolidator(this.config.memory, this.memory);
-    this.autoAdvisor = new AutoAdvisor();
+    const config = loadContextIntelConfig();
+    this.container = new ContextIntelContainer(config);
   }
 
-  async onSessionStart(event: any, ctx: any) { /* ... */ }
-  async onSessionShutdown() { /* auto-consolidate memory, save stats */ }
-  async onSessionBeforeSwitch() { /* auto-recap, auto-consolidate */ }
-  async onTurnEnd() { /* update monitor, check auto-compact threshold */ }
-  async onAgentEnd(event: any, ctx: any) { /* count tool calls, check triggers */ }
-  async onBeforeAgentStart(event: any, ctx: any) { /* inject memory context */ }
-  async onContext(event: any, ctx: any) { /* run pruning pipeline */ }
-  async onToolResult(event: any, ctx: any) { /* update stats, track files */ }
+  async onTurnEnd(_event: any, ctx: any): Promise<void> {
+    const { counter, tokenTracker, threshold, pruning, automation } = this.container;
 
-  // Register all commands and register all tools
-  register(): void {
-    super.register(); // wire lifecycle hooks
-    this.registerMemoryTools();
-    this.registerCommands();
-    this.registerWidgets();
-    this.registerAutomationHooks();
+    counter.recordTurn();
+
+    // Update token tracking
+    const usage = ctx.getContextUsage?.();
+    if (usage?.tokens) {
+      tokenTracker.update({ total: usage.tokens, ... });
+      updateContextWidget(ctx, tokenTracker.getRatio(), usage.tokens, usage.contextWindow);
+    }
+
+    // Check auto-compact via threshold
+    const ratio = tokenTracker.getRatio();
+    if (ratio !== null && threshold.isCompactNeeded(ratio)) {
+      await this.autoCompactor.checkAndCompact(ctx);
+      threshold.markCompact();
+    }
   }
-}
 
-export default function (pi: ExtensionAPI) {
-  const ext = new ContextIntelV2Extension(pi);
-  ext.register();
-}
-```
-
----
-
-## Phase 2: Core — Unified Data Layer
-
-### 2.1 Context Monitor (`core/context-monitor.ts`)
-
-Replaces the ad-hoc `sessionMessageCount` + `lastRecapAt` in the old ContextIntel + the `context-window` widget.
-
-```typescript
-export class ContextMonitor {
-  private messageCount = 0;
-  private toolCallCount = 0;
-  private touchedFiles = new Set<string>();
-  private tokenUsage: TokenUsage | null = null;
-
-  reset(): void { /* zero everything */ }
-  incrementMessage(): void { this.messageCount++; }
-  recordToolCall(name: string): void { this.toolCallCount++; }
-  recordFileWrite(path: string): void { this.touchedFiles.add(path); }
-  updateTokenUsage(usage: TokenUsage): void { this.tokenUsage = usage; }
-
-  getStats(): SessionStats { /* return aggregated snapshot */ }
-  getContextUsageRatio(): number { /* tokenUsage.total / tokenUsage.contextWindow */ }
-  getCompactSuggestion(): string | null {
-    const ratio = this.getContextUsageRatio();
-    if (ratio >= 0.9) return "critical";
-    if (ratio >= 0.8) return "warn";
-    return null;
+  async onAgentEnd(_event: any, ctx: any): Promise<void> {
+    const { counter, threshold, automation } = this.container;
+    counter.recordMessage();
+    await automation.runAll(this.container, this.pi);
   }
 }
 ```
 
-### 2.2 Session Stats (`core/session-stats.ts`)
-
-Replaces `usage-extension-core.ts` data collection. Feeds both the `/usage` dashboard AND automation triggers.
-
-```typescript
-export class SessionStatsCollector {
-  async collect(signal?: AbortSignal): Promise<UsageData> { /* ... */ }
-  async scanLogs(daysBack: number): Promise<ProviderCost[]> { /* ... */ }
-  getCurrentSessionStats(): SessionStats { /* ... */ }
-}
-```
-
-### 2.3 Transcript Builder + Prompt Builder
-
-Kept largely as-is from `context-intel/`. Minor cleanup:
-- Remove dead `buildDependencyAnalysis` (unused)
-- Add `buildCompactSummary` for auto-compaction
-- Add `buildSessionRecap` for auto-recap
-
 ---
 
-## Phase 3: Pruning Pipeline (Kept, Simplified)
-
-### 3.1 Remove redundant infrastructure
-
-| Removed | Replaced by |
-|---|---|
-| `logger.ts` (rotating file logger) | Unified telemetry + `console.debug` |
-| `config.ts` (bunfig) | `config.ts` in Phase 1 (Zod + JSONC) |
-| `registry.ts` (Map-based registry) | Static array in workflow (5 rules, not dynamic) |
-| 6 command files (`cmds/`) | Single `/ctx` command with subcommands |
-
-### 3.2 Simplify the workflow
-
-The `prepare → process → filter` pipeline works well and is kept, but:
-- Remove the registry abstraction (5 rules are known at compile time)
-- Remove the file logger (use pi-telemetry for errors, `console.debug` for debug)
-- Inline `metadata.ts` helpers into `workflow.ts`
-- Remove `MessageWithMetadata` wrapper — use a plain `Map<number, PruningMeta>` during pipeline execution instead of wrapping every message
-
-### 3.3 Target: pruning/ drops from ~700 LOC to ~350 LOC
-
----
-
-## Phase 4: Memory (Moved, No Logic Changes)
-
-The `core-tools/memory/src/` modules are well-structured and proven. The move is purely structural:
-
-| File | Moves To | Change |
-|---|---|---|
-| `core-tools/memory/src/store.ts` | `context-intel-v2/memory/store.ts` | None |
-| `core-tools/memory/src/consolidator.ts` | `context-intel-v2/memory/consolidator.ts` | None |
-| `core-tools/memory/src/injector.ts` | `context-intel-v2/memory/injector.ts` | None |
-| `core-tools/memory/src/bootstrap.ts` | `context-intel-v2/memory/bootstrap.ts` | Minor: accept config from parent |
-| `core-tools/memory/index.ts` | DELETED | Logic absorbed by ContextIntelV2Extension |
-| `core-tools/memory-mode.ts` | `context-intel-v2/commands/mem.ts` | `/mem` command extracted from the TUI-heavy file |
-| `core-tools/memory/src/index.ts` | DELETED | Logic absorbed by MemoryOrchestrator |
-
----
-
-## Phase 5: Automation — The "Agent Does It" Layer
-
-This is the **core redesign**. Instead of suggesting actions, v2 *executes* them automatically at the right moment.
-
-### 5.1 Auto Compactor (`automation/auto-compactor.ts`)
-
-**Before:** Context Intel's `onTurnEnd` counts messages and suggests `/recap` when >20 messages and 10+ minutes idle.
-
-**After:** When context usage exceeds `autoCompactThreshold` (default 80%), it:
-
-1. Runs the pruning pipeline (already happens on every `context` event)
-2. If still over threshold after pruning, calls `ctx.compact()` with a summary generated from the last N messages
-3. Notifies via telemetry: `"📦 Auto-compacted at 82% — preserved last 10 messages"`
-
-```typescript
-export class AutoCompactor {
-  constructor(
-    private config: AutomationConfig,
-    private monitor: ContextMonitor,
-  ) {}
-
-  async checkAndCompact(ctx: any): Promise<boolean> {
-    if (!this.config.autoCompactEnabled) return false;
-    const ratio = this.monitor.getContextUsageRatio();
-    if (ratio === null || ratio < this.config.autoCompactThreshold / 100) return false;
-
-    // Auto-compact
-    const summary = PromptBuilder.buildCompactSummary(
-      this.monitor.getRecentMessages(10),
-    );
-    await ctx.compact({ summary });
-    getTelemetry()?.notify(`📦 Auto-compacted at ${Math.round(ratio * 100)}%`, {
-      package: "context-intel-v2",
-      severity: "info",
-      badge: { text: "auto-compact", variant: "warning" },
-    });
-    return true;
-  }
-}
-```
-
-### 5.2 Auto Recapper (`automation/auto-recapper.ts`)
-
-**Before:** `/recap` is a manual command. Messages pile up until the user remembers to run it.
-
-**After:** At session boundaries (`session_shutdown`, `session_before_switch`), auto-generates a recap and stores it in memory.
-
-```typescript
-export class AutoRecapper {
-  async checkAndRecap(ctx: any, monitor: ContextMonitor): Promise<void> {
-    if (!this.config.autoRecapEnabled) return;
-    const stats = monitor.getStats();
-    if (stats.messageCount < 5) return; // not enough to recap
-
-    // Generate recap via LLM (reuse existing PromptBuilder.buildRecap)
-    const transcript = TranscriptBuilder.buildTranscript(ctx.messages, { fromLastUser: false });
-    const recap = await generateRecap(transcript); // LLM call
-
-    // Store in memory as a session fact
-    memoryStore.setSemantic(
-      `session.${sessionId}.recap`,
-      recap,
-      0.8,
-      "consolidation",
-    );
-
-    getTelemetry()?.notify(`📋 Auto-recap saved for session`, {
-      package: "context-intel-v2",
-      severity: "info",
-      badge: { text: "auto-recap", variant: "success" },
-    });
-  }
-}
-```
-
-### 5.3 Auto Consolidator (`automation/auto-consolidator.ts`)
-
-**Before:** Memory consolidates on `session_shutdown` only if there are ≥3 pending user messages. Requires `/memory-consolidate` command otherwise.
-
-**After:** Same trigger conditions, but:
-- Consolidates at both `session_shutdown` **and** `session_before_switch` (covers `/resume` and `/new`)
-- Stores consolidation results as telemetry events so the user sees badge notifications
-- If consolidation finds ≥5 new facts, sends a brief notification: `"🧠 Learned 3 facts, 2 lessons from this session"`
-
-### 5.4 Auto Advisor (`automation/auto-advisor.ts`)
-
-Replaces the ad-hoc `if (messageCount > 20 && timeSinceRecap > 10min)` check with a composable trigger system:
-
-```typescript
-export interface AutoAdviceTrigger {
-  id: string;
-  check(stats: SessionStats, ctx: any): string | null; // returns advice text or null
-  cooldownMs: number; // min interval between firings
-}
-
-// Built-in triggers:
-const triggers: AutoAdviceTrigger[] = [
-  {
-    id: "deep-context",
-    check: (stats) => stats.messageCount > 50 ? "Context is deep (50+ messages)." : null,
-    cooldownMs: 300_000, // 5 min
-  },
-  {
-    id: "high-activity",
-    check: (stats) => stats.toolCallCount > 10 ? `High activity (${stats.toolCallCount} tool calls). Consider a checkpoint.` : null,
-    cooldownMs: 120_000,
-  },
-  {
-    id: "many-files",
-    check: (stats) => stats.fileCount > 15 ? `${stats.fileCount} files touched — ready for handoff.` : null,
-    cooldownMs: 120_000,
-  },
-  {
-    id: "context-crowded",
-    check: (stats, ctx) => {
-      const ratio = ctx.getContextUsage()?.ratio;
-      return ratio > 0.85 ? "Context nearly full (85%+). Auto-compacting soon." : null;
-    },
-    cooldownMs: 60_000,
-  },
-];
-```
-
-These fire via telemetry badge notifications at natural moments (`onTurnEnd`, `onAgentEnd`), creating a ambient awareness layer without being intrusive.
-
----
-
-## Phase 6: UI — Widgets & Commands
-
-### 6.1 Widgets (TUI footer, always visible)
-
-| Widget | Source | New Location |
-|---|---|---|
-| `context` — token bar `[▓▓░░] 45%` | `foundation/context-window/` | `ui/context-widget.ts` |
-| `pruning-stats` — `✂️  Pruning: 12/150 (8%)` | `context-pruning/index.ts` (STATUS_KEY) | `ui/pruning-status.ts` |
-| `memory-stats` — `🧠 Memory: 45 facts, 12 lessons` | `core-tools/memory/index.ts` (setStatus) | `ui/memory-status.ts` |
-
-### 6.2 Commands
-
-| Command | Source | New Location | Change |
-|---|---|---|---|
-| `/handoff` | context-intel | `commands/handoff.ts` | Asset (unchanged) |
-| `/recap` | context-intel | `commands/recap.ts` | Enhanced (shows last auto-recap from memory) |
-| `/compact` | context-intel | `commands/compact.ts` | Enhanced (shows pruning stats before/after) |
-| `/mem` | memory-mode.ts | `commands/mem.ts` | Extracted from 400-line TUI file |
-| `/memory-consolidate` | core-tools/memory | `commands/memory-consolidate.ts` | Kept |
-| `/usage` | usage-extension | `commands/usage.ts` | Kept |
-| `/cost` | usage-extension | `commands/cost.ts` | Kept |
-| `/cp-stats` | context-pruning | `commands/cp-stats.ts` | Simplified |
-| `/cp-toggle` | context-pruning | REMOVED | Toggle via `/ctx pruning on\|off` |
-| `/cp-debug` | context-pruning | REMOVED | Toggle via `/ctx debug on\|off` |
-| `/cp-init` | context-pruning | REMOVED | Config file is now `context-intel.jsonc` |
-| `/cp-logs` | context-pruning | REMOVED | Logs via telemetry instead |
-
-All pruning commands replaced by one unified `/ctx` command:
-
-```
-/ctx stats           — Show unified stats (pruning + memory + context)
-/ctx pruning on|off  — Toggle pruning
-/ctx memory on|off   — Toggle memory persistence
-/ctx compact on|off  — Toggle auto-compaction
-/ctx recap on|off    — Toggle auto-recap
-/ctx debug on|off    — Toggle debug logging
-/ctx config          — Show current config
-```
-
----
-
-## Phase 7: Cleanup — Remove Legacy Modules
-
-After v2 is working and tested:
-
-### Files to delete:
-
-| File | LOC |
-|---|---|
-| `session-lifecycle/context-intel/` (entire dir) | ~200 |
-| `session-lifecycle/context-pruning/` (entire dir) | ~1,500 |
-| `session-lifecycle/usage-extension/` (entire dir) | ~1,200 |
-| `foundation/context-window/context-window.ts` | ~80 |
-| `core-tools/memory/` (entire dir) | ~1,700 |
-| `core-tools/memory-mode.ts` | ~450 |
-| `foundation/index.ts` — remove `contextWindow(pi)` line | — |
-| `session-lifecycle/index.ts` — remove `contextPruning`, `usageExtension`, `registerSessionName` calls | — |
-| `core-tools/index.ts` — remove `memory(pi)` call | — |
-
-**Total removed: ~5,130 LOC**
-
-### Files to update:
+### Step 8: Update Tests
 
 | File | Change |
-|---|---|
-| `foundation/index.ts` | Remove `contextWindow` import and call |
-| `session-lifecycle/index.ts` | Replace `ContextIntelExtension` + `contextPruning` + `usageExtension` + `welcomeOverlay` + `registerSessionName` with single `ContextIntelV2Extension` |
-| `core-tools/index.ts` | Remove `memory(pi)` call (subset A) |
-| `package.json` | Remove `bunfig` dependency (no longer needed after removing pruning config) |
-| `shared/telemetry-automation.ts` | Can be removed — triggers live in `automation/triggers.ts` now |
+|------|--------|
+| `tests/session-counter.test.ts` | NEW — test counting methods |
+| `tests/token-tracker.test.ts` | NEW — test ratio calculations |
+| `tests/threshold-monitor.test.ts` | NEW — test threshold checks |
+| `tests/automation-registry.test.ts` | NEW — test handler registration + cooldown |
+| `tests/advisor.test.ts` | REWRITE — test with mock AutomationContext |
+| `tests/compactor.test.ts` | UPDATE — test with new constructor |
+| `tests/recapper.test.ts` | UPDATE — test with new constructor |
+| Existing pruning rule tests | UNCHANGED |
 
 ---
 
-## Phase 8: Verification
+## DRY / OOP / SOLID Compliance (After Refactor)
 
-1. **Session start**: monitor resets, memory store opens, context widget shows 0%, pruning shows "--"
-2. **Conversation**: each turn updates message count, tool call count, file set
-3. **Context event**: pruning pipeline runs, removes duplicates, preserves tool pairs
-4. **80% threshold**: auto-compactor fires, compact + notify
-5. **Session switch**: auto-recap generated and stored, auto-consolidation runs
-6. **Session end**: auto-recap, auto-consolidation, monitor stats saved
-7. **Commands**: `/ctx`, `/mem`, `/usage`, `/cost`, `/handoff`, `/recap` all work
-8. **Tools**: `memory_search`, `memory_remember`, `memory_forget`, `memory_lessons`, `memory_stats` all work
-9. **Telemetry**: badge notifications fire for auto-compact, auto-recap, auto-advice
+| Principle | How |
+|-----------|---|
+| **DRY** | Types are defined once. `AutomationContext` is shared. `SessionCounter` methods don't duplicate threshold logic. `ThresholdMonitor` replaces 3 inline threshold checks. |
+| **S** | `SessionCounter` → counts only. `TokenTracker` → tokens only. `ThresholdMonitor` → thresholds only. `AutoCompactor` → compaction only. |
+| **O** | `AutomationRegistry` accepts new handlers via `.register()`. No edits needed to add a trigger. |
+| **L** | All auto-modules take the same `AutomationContext`. Interchangeable constructors. |
+| **I** | `SessionCountSnapshot` is minimal. `AutomationHandler` has 3 fields. No unused `analyze` stages. |
+| **D** | `ContextIntelExtension` depends on `ContextIntelContainer`, not on concrete classes. Container builds the dependency graph. Tests can mock the container. |
 
 ---
 
-## Migration Path
+## Code Metrics Target
 
-No breaking changes for end users:
-- `/ctx` replaces 6 separate pruning commands (backward-compat aliases for one release)
-- `/mem` works identically
-- `/usage`, `/cost` work identically
-- `/handoff`, `/recap` work identically
-- All memory tools keep the same names and signatures
-- Config moves from `cp.config.ts` (bunfig) + `settings.json memory.*` to `~/.pi/agent/context-intel.jsonc`. Old config values are read in a migration pass.
+| Metric | Current | Target | Delta |
+|--------|---------|--------|-------|
+| LOC | 2,865 | ~2,400 | **−465** |
+| Files | 27 | ~30 | **+3** (new files) |
+| Classes | 8 | 11 | **+3** (SessionCounter, TokenTracker, ThresholdMonitor) |
+| Classes >200 LOC | 2 (ContextMonitor 119, orchestrator 268) | 0 | **−2** |
+| Hardcoded triggers | 12 static methods + 4 const array | 16 registered handlers | **0** (same count, dynamic) |
+| `any` types | ~8 | ~2 | **−6** |
+| SRP violations | 1 (ContextMonitor) | 0 | **−1** |
+
+---
+
+## Implementation Order
+
+```
+Phase 1 (types + extraction):
+  Step 1: SessionCounter     ← 30 min
+  Step 2: TokenTracker       ← 15 min
+  Step 3: ThresholdMonitor   ← 15 min
+  Step 6: Clean types.ts     ← 15 min
+
+Phase 2 (DI + automation):
+  Step 4: di/Container.ts    ← 30 min
+  Step 5: automation/registry.ts + triggers refactor ← 45 min
+
+Phase 3 (integration):
+  Step 7: Refactor index.ts  ← 30 min
+  Step 8: Tests              ← 60 min
+
+Total: ~4 hours
+```
+
+---
+
+## Edge Cases
+
+1. **Backward compatibility**: All existing commands (`/ctx`, `/handoff`, `/recap`) unchanged. The refactor is internal — no API changes.
+
+2. **Config migration**: No config changes. `AutomationContext` reads from the existing `ContextIntelConfig`.
+
+3. **Memory store**: Unchanged. The store (`store.ts`) is already well-factored.
+
+4. **Pruning rules**: Unchanged. The registry pattern already exists there — we're bringing automation up to the same standard.
+
+5. **Session without cwd/tokens**: `TokenTracker` returns null for `getRatio()`. `ThresholdMonitor` doesn't fire. Graceful degradation.
 
 ---
 
 ## Summary
 
-| Metric | Before | After | Delta |
-|---|---|---|---|
-| Modules | 5 separate | 1 unified | **−4** |
-| Entry points | 4 (`foundation`, `session-lifecycle`, `core-tools`, standalone) | 1 (`session-lifecycle/context-intel-v2`) | — |
-| LOC | ~4,700 | ~2,500 | **−47%** |
-| Config systems | 3 (bunfig, JSON settings, inline) | 1 (Zod + JSONC) | **−2** |
-| Loggers | 1 (rotating file logger) | 0 (uses pi-telemetry) | **−1** |
-| Manual commands | 6 pruning + 1 usage + 1 recaps | 1 unified `/ctx` | **−7** |
-| Automation | Suggests only | Executes automatically | **New capability** |
-| Telemetry | 9 separate triggers | 9 triggers + 3 auto-execution events | **+3** |
+This refactor:
+- Splits the `ContextMonitor` god class into 3 focused classes (SRP)
+- Introduces dependency injection via `Container` (DIP)
+- Makes automation triggers open for extension via registry (OCP)
+- Standardizes auto-module constructors on `AutomationContext` (LSP)
+- Removes unused types (`PruningMeta`, `analyze` stage) (ISP)
+- Eliminates magic numbers into config-driven thresholds (DRY)
+- Total reduction: ~465 LOC (16%)
+- Zero breaking changes to end users
+- Zero changes to memory/pruning internals
