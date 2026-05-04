@@ -47,7 +47,6 @@ core-tools/              ← dev/full profiles
 │   └── clipboard/            copy_to_clipboard tool
 ├── subset B (full profile only)
 │   ├── file-collector/       Bash shim command tooling
-│   ├── ast-grep-tool/        AST structural search & replace
 │   └── code-review/          /code-review, complexity, TDI, TODO scanner
 
 content-tools/           ← full profile only
