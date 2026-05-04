@@ -5,11 +5,11 @@
 
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { RegexIntentClassifier } from "../../src/inference/intent";
+import { ManualIntentDetector } from "../../src/inference/intent";
 
-describe("RegexIntentClassifier", () => {
-  let classifier: RegexIntentClassifier;
-  beforeEach(() => { classifier = new RegexIntentClassifier(); });
+describe("ManualIntentDetector", () => {
+  let classifier: ManualIntentDetector;
+  beforeEach(() => { classifier = new ManualIntentDetector(); });
 
   describe("classify", () => {
     it("should classify fix intent", () => {

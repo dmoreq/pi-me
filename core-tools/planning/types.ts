@@ -3,7 +3,7 @@
  */
 
 export type PlanStepStatus = "pending" | "in_progress" | "completed" | "failed" | "skipped";
-export type TaskIntent = "fix" | "refactor" | "test" | "docs" | "deploy" | "analyze" | "implement" | "general";
+export type { TaskIntent } from '../intent/types';
 
 export interface PlanStep {
   id: string;

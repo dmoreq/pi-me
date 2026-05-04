@@ -50,6 +50,9 @@
     "@mariozechner/pi-tui": "*",
     "@sinclair/typebox": "*"
   },
+  "overrides": {
+    "@anthropic-ai/sdk": ">=0.92.0"
+  },
   "devDependencies": {
     "tsx": "^4.21.0"
   },

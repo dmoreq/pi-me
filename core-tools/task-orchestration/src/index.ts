@@ -4,8 +4,10 @@ import { TaskExecutor } from './core/executor';
 import { TaskStore, EventLog } from './persistence/state';
 import { NotificationInbox } from './ui/notification-inbox';
 import { ProgressWidget } from './ui/progress-widget';
-import { RegexIntentClassifier } from './inference/intent';
-import type { ExtensionAPI, Task, Message } from './types';
+import { AiIntentDetector } from './inference/ai-intent-detector';
+import { ManualIntentDetector } from './inference/intent';
+import { FallbackIntentDetector } from './inference/fallback-detector';
+import type { ExtensionAPI, IIntentClassifier, Task, Message } from './types';
 
 export interface ExtensionConfig {
   capture?: TaskCapture;
@@ -20,7 +22,19 @@ export interface ExtensionConfig {
 export function createExtension(pi: ExtensionAPI, config?: ExtensionConfig) {
   const store = config?.store || new TaskStore();
   const eventLog = config?.eventLog || new EventLog();
-  const classifier = new RegexIntentClassifier();
+
+  // Build classifier chain: AI (Groq) → Manual (regex) fallback
+  const groqApiKey = process.env.GROQ_API_KEY;
+  let classifier: IIntentClassifier;
+  if (groqApiKey) {
+    const aiDetector = new AiIntentDetector({ apiKey: groqApiKey });
+    classifier = new FallbackIntentDetector(aiDetector);
+    console.debug('[TaskOrchestration] AI intent detector enabled (Groq + Llama 3.1 8B)');
+  } else {
+    classifier = new ManualIntentDetector();
+    console.debug('[TaskOrchestration] GROQ_API_KEY not set — using manual intent detection only');
+  }
+
   const capture = config?.capture || new TaskCapture(classifier);
   const resolver = config?.resolver || new DependencyResolver();
   const executor = config?.executor || new TaskExecutor(store, pi);
@@ -32,8 +46,14 @@ export function createExtension(pi: ExtensionAPI, config?: ExtensionConfig) {
     const messages: Message[] = ctx?.messages || [];
     if (messages.length === 0) return;
 
-    const result = capture.infer(messages);
+    const result = await capture.inferAsync(messages);
     if (result.tasks.length === 0) return;
+
+    // Log classification source for observability
+    const aiCount = result.sources.filter(s => s === 'ai').length;
+    if (aiCount > 0) {
+      console.debug(`[TaskOrchestration] Intent classification: ${aiCount}/${result.tasks.length} from AI, ${result.tasks.length - aiCount} from manual`);
+    }
 
     for (const task of result.tasks) {
       await store.save(task);
