@@ -59,9 +59,9 @@ import {
   savePermissionConfig,
   invalidateConfigCache,
   type PermissionConfig,
-} from "./permission-core.js";
-import { DEFAULT_SAFETY_PATTERNS, type SafetyPattern } from "./safety-patterns.js";
-import { DEFAULT_PROTECTED_PATHS, matchesGlob, type ProtectedGlob } from "./path-guard.js";
+} from "./permission-core.ts";
+import { DEFAULT_SAFETY_PATTERNS, type SafetyPattern } from "./safety-patterns.ts";
+import { DEFAULT_PROTECTED_PATHS, matchesGlob, type ProtectedGlob } from "./path-guard.ts";
 import { confirmDialog } from "pi-dialog/dialog/confirm-dialog.ts";
 import { SafeOpsLayer } from "./safe-ops-layer.ts";
 

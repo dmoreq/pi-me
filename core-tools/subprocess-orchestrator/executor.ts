@@ -1,6 +1,5 @@
 /**
- * SubprocessExecutor — Run subprocess tasks with orchestration (v0.6.0)
- *
+ * Subprocess Executor — runs subprocess tasks with retry and timeout.
  * Supports: sequential, parallel, foreground (streaming), background (async),
  * chain, loop, and pi-spawn execution modes.
  */

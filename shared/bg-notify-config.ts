@@ -4,10 +4,10 @@
  */
 
 import { z } from "zod";
-import { loadConfigOrDefault } from "./pi-config.js";
-import type { BackgroundNotifyConfig, TerminalInfo } from "./types.js";
-import { isSayAvailable, playBeep, speakMessage } from "./audio.js";
-import { bringTerminalToFront } from "./terminal.js";
+import { loadConfigOrDefault } from "./pi-config.ts";
+import type { BackgroundNotifyConfig, TerminalInfo } from "./types.ts";
+import { isSayAvailable, playBeep, speakMessage } from "./audio.ts";
+import { bringTerminalToFront } from "./terminal.ts";
 
 // ── Schema & defaults ────────────────────────────────────────────────────────
 

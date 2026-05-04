@@ -3,16 +3,11 @@
  *
  * Profile: dev / full (skipped for "minimal").
  * Registers: checkpoint, welcome, skill-args.
- *
- * v0.9.0: Removed context-intel (fully moved to pi-slim).
- * v0.5.0: Removed usage-extension (moved to foundation/context-monitor).
- *         Removed context-pruning (now a plugin inside context-intel).
- *         Merged welcome-overlay + session-name into welcome/ module.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
-import { readProfile } from "../shared/profile.js";
+import { readProfile } from "../shared/profile.ts";
 
 import checkpoint from "./git-checkpoint/checkpoint.ts";
 import welcome from "./welcome/welcome.ts";

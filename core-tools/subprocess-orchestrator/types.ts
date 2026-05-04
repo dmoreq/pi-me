@@ -1,4 +1,6 @@
 /**
+ * Subprocess orchestrator types — task, result, and config interfaces.
+ */
  * Subprocess Orchestration types — v0.6.0 consolidated
  */
 

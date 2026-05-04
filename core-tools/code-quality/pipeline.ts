@@ -38,12 +38,12 @@ export class CodeQualityPipeline {
     // Stage 1: Format (8 formatters)
     const formatRunners = this.registry.getForFile(filePath, "format");
     const formatResults = await this.runAll(formatRunners, filePath, runnerConfig);
-    const format = this.aggregateResults(formatResults);
+    const format = this.toStageResults(formatResults);
 
     // Stage 2: Fix (3 fixers)
     const fixRunners = this.registry.getForFile(filePath, "fix");
     const fixResults = await this.runAll(fixRunners, filePath, runnerConfig);
-    const fix = this.aggregateResults(fixResults);
+    const fix = this.toStageResults(fixResults);
 
     const duration = Date.now() - startTime;
 
@@ -73,6 +73,17 @@ export class CodeQualityPipeline {
     });
 
     return Promise.all(promises);
+  }
+
+  /**
+   * Convert runner results to stage results (one per runner).
+   */
+  private toStageResults(results: RunnerResult[]): StageResult[] {
+    return results.map(r => ({
+      status: r.status === 'succeeded' ? 'succeeded' as const : r.status === 'failed' ? 'failed' as const : 'skipped' as const,
+      message: r.message,
+      changes: r.changes,
+    }));
   }
 
   /**

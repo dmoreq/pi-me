@@ -1,99 +1,97 @@
-# π-me v0.5.0
+# π-me v1.0.0
 
-**Production-Grade AI Assistant Extension Suite** — 22 unified extensions, 639+ tests, SOLID-refactored, telemetry-driven automation
+**Production-Grade AI Assistant Extension Suite** — unified task & plan management, 548+ tests, SOLID-refactored, telemetry-driven automation
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-639%20passing-brightgreen)]()
-[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](./CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-548%20passing-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](./CHANGELOG.md)
 
-A comprehensive extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). **Production-grade quality** with safety guards, session lifecycle management, context intelligence, code quality pipelines, persistent memory, and telemetry-driven automation.
+A comprehensive extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). **Production-grade quality** with safety guards, session lifecycle management, code quality pipelines, persistent memory, and telemetry-driven automation.
 
-**22 extensions • 4 umbrellas • 639+ tests • 0 failures • MIT licensed.**
+**20 extensions • 4 umbrellas • 540+ tests • 0 failures • MIT licensed.**
 
 ---
 
 ## Architecture Overview
 
 ```
-pi-me v0.5.0 — Extension Consolidation
-========================================
+pi-me v1.0.0 — Unified Task & Plan
+====================================
 
 foundation/              ← Always loaded
 ├── secrets/              Secret scanning (env vars, API keys)
-├── permission/           ★ Merged: 3-layer guard (safety → tiers → safe-ops)
+├── permission/           3-layer guard (safety → tiers → safe-ops)
 │   ├── permission.ts        /permission, /permission-mode
 │   ├── permission-core.ts   Command classification engine
 │   ├── safety-patterns.ts   Hard safety net patterns
-│   ├── safe-ops-layer.ts    Git/gh/rm protection (← from safe-ops.ts)
+│   ├── safe-ops-layer.ts    Git/gh/rm protection
 │   └── path-guard.ts        Protected path matching
-└── context-monitor/       ★ NEW: unified context + usage monitor
+└── context-monitor/       Unified context + usage monitor
     ├── context-widget.ts     Real-time context usage bar
     ├── usage-dashboard.ts    /usage, /cost commands
     └── ...
 
 session-lifecycle/       ← dev/full profiles
-├── context-intel/        ★ Merged: intelligence + pruning + read-awareness
-│   ├── index.ts             Handoff, auto-compact, session recap
-│   ├── plugins/
-│   │   ├── context-pruning  Dedup, superseded writes, error purging
-│   │   └── read-awareness   Track reads, block unread edits
-│   ├── transcript-builder
-│   └── prompt-builder
-├── welcome/              ★ Merged: welcome header + session name
-├── git-checkpoint/        Git checkpoint snapshots
-└── skill-args/            Skill argument parsing
+├── welcome/              Welcome header + auto session naming
+├── git-checkpoint/       Git checkpoint snapshots
+└── skill-args/           $1/$2/$ARGUMENTS skill argument substitution
 
 core-tools/              ← dev/full profiles
-├── code-quality/         ★ Merged: pipeline + formatter runners
-├── memory/               ★ Merged: memory + project-context scanner
-├── task-orchestration/    Task DAG execution
-├── planning/              Interactive plan mode
-├── subprocess-orchestrator/
-├── file-intelligence/     File summarization/inspection
-├── thinking-steps/        Structured reasoning
-└── ...
+├── subset A (always on)
+│   ├── task-plan/            Unified task & plan management (replaces task-orch + planning)
+│   ├── memory/               Persistent memory + project-context scanner
+│   ├── code-quality/         Auto-format (8) + auto-fix (3) pipeline
+│   ├── subprocess-orchestrator/  Subprocess execution (single/chain/loop/bg/pi)
+│   ├── thinking-steps/       Structured reasoning TUI (3 modes)
+│   ├── file-intelligence/    File summarization & indexing
+│   └── clipboard/            copy_to_clipboard tool
+├── subset B (full profile only)
+│   ├── file-collector/       Bash shim command tooling
+│   ├── ast-grep-tool/        AST structural search & replace
+│   └── code-review/          /code-review, complexity, TDI, TODO scanner
 
 content-tools/           ← full profile only
-├── web-tools/             Web fetch/search
+├── web-tools/             Web fetch, search, batch fetch
 ├── repeat/                Repeat/replay tools
-└── github.ts              GitHub integration
+└── github.ts              GitHub API integration
 
 authoring/               ← full profile only
-└── commit-helper/         Commit message generation
+└── commit-helper/         Conventional commit message generation
 
 shared/                  ← Infrastructure
-├── lifecycle.ts           ExtensionLifecycle base class (SOLID)
-├── telemetry-automation.ts  12 automation triggers
-├── automation-manager.ts    ★ NEW: sense → decide → act → inform
-├── command-builder.ts       ★ NEW: DRY command patterns
+├── lifecycle.ts           ExtensionLifecycle SOLID base class
+├── telemetry-automation.ts  9 automation triggers
+├── telemetry-helpers.ts      Safe pi-telemetry wrappers
+├── command-builder.ts        DRY command registration patterns
+├── profile.ts                Profile-based extension loading
+├── notify-utils.ts           Desktop notification utilities
+├── pi-config.ts              Pi configuration reading
 └── ...
 ```
 
 ---
 
-## 🔥 What's New in v0.5.0
+## What's New in v1.0.0
 
-### Extension Consolidation (20+ → 22 extensions)
+### Unified Task & Plan Management
 
-| Change | Before | After |
-|--------|--------|-------|
-| **Permission + Safe Ops merged** | 2 extensions | 1 unified 3-layer guard |
-| **Context Window + Usage merged** | 2 extensions | 1 unified monitor |
-| **Context Intel + Pruning merged** | 2 extensions | 1 extension with plugins |
-| **Read Guard → Context Intel** | 1 standalone | 1 plugin |
-| **Formatter → Code Quality** | 1 standalone | pipeline adapter |
-| **Welcome + Session Name merged** | 2 extensions | 1 unified module |
-| **Memory + Skill Bootstrap merged** | 2 extensions | auto-project-context scanner |
-| **Code Actions & File Picker removed** | 2 extensions | eliminated |
+**Task Orchestration** and **Interactive Plan Mode** are now merged into one system (`core-tools/task-plan/`):
 
-### Telemetry-Driven Automation
+- **Single `task` tool** replaces both `plan` and `task_control` (15+ actions: list, get, create, update, delete, add-step, complete-step, claim, release, execute, skip, retry, review, search)
+- **Unified Task type** — one model for auto-captured tasks and user-created plans
+- **Safety/review mode** — auto-captured tasks require approval before execution
+- **AI-powered intent detection** with regex fallback
+- **DAG-based execution** with retry, timeout, dry-run
+- **Persistent store** with locking, GC, search, event audit log
+- **Commands**: `/tasks`, `/tasks-review`, `/task <description>`
+- **58 new tests** — all passing
 
-Extensions now proactively **sense** conditions and **inform** the user:
+### Removed
 
-- **Session staleness**: warns when >20 messages over 30+ minutes → suggests /handoff
-- **Context pressure**: warns at 85%+ token usage → suggests compaction
-- **Memory readiness**: hints when 5+ messages pending consolidation
-- **Auto-compact**: automatic context compaction at threshold (configurable)
+- `core-tools/task-orchestration/` — merged into task-plan
+- `core-tools/planning/` — merged into task-plan
+- `core-tools/intent/` — merged into task-plan
+- `plan` tool and `task_control` tool — replaced by unified `task` tool
 
 ---
 
@@ -124,21 +122,33 @@ Add to your pi configuration:
 | `/saferm` | permission | Toggle rm→trash |
 | `/usage` | context-monitor | Usage statistics dashboard |
 | `/cost` | context-monitor | Cost report |
-| `/handoff` | context-intel | Transfer context to new session |
-| `/recap` | context-intel | Session summary |
 | `/welcome-toggle` | welcome | Toggle welcome header |
-| `/trust-me` | context-intel | Skip read-before-edit |
+| `/welcome-builtin` | welcome | Restore built-in header |
 | `/memory-consolidate` | memory | Manually trigger consolidation |
-| `/plan` | planning | Interactive plan mode |
-| `/formatter` | code-quality | Configure formatting |
-| `/usage` | context-monitor | Show usage stats |
+| `/mem` | memory | Memory slash commands |
+| `/remember` | memory | Manual memory add |
+| `/tasks` | task-plan | List all tasks grouped by status |
+| `/tasks-review` | task-plan | List tasks awaiting review |
+| `/task <desc>` | task-plan | Quick task creation |
+| `/code-review` | code-review | Full codebase health assessment |
+| `/thinking-steps` | thinking-steps | Set thinking display mode |
+
+---
+
+## Extension Profiles
+
+| Profile | Loads |
+|---------|-------|
+| **minimal** | Nothing from pi-me |
+| **dev** | `foundation/` + `session-lifecycle/` + `core-tools` subset A |
+| **full** | Everything above + `core-tools` subset B + `content-tools/` + `authoring/` |
 
 ---
 
 ## Test Suite
 
 ```bash
-npm test    # 639+ tests, all passing
+npm test    # 548+ tests, all passing
 ```
 
 ## License

@@ -9,8 +9,8 @@ import * as fsPromises from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { promisify } from "node:util";
-import type { TerminalInfo } from "./types.js";
-import { playBeep } from "./audio.js";
+import type { TerminalInfo } from "./types.ts";
+import { playBeep } from "./audio.ts";
 
 const execAsync = promisify(child_process.exec);
 

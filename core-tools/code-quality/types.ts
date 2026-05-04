@@ -38,7 +38,7 @@ export interface StageResult {
 
 export interface ProcessResult {
   filePath: string;
-  format: StageResult;
-  fix: StageResult;
+  format: StageResult[];
+  fix: StageResult[];
   duration: number; // ms
 }

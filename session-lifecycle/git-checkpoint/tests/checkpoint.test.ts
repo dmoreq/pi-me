@@ -19,7 +19,7 @@ import {
   MAX_UNTRACKED_DIR_FILES,
   isLargeFile,
   isLargeDirectory,
-} from "../checkpoint-core.js";
+} from "../checkpoint-core.ts";
 
 // ============================================================================
 // Test utilities

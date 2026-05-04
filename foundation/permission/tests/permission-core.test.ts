@@ -4,7 +4,7 @@ import {
   classifyCommand,
   type PermissionConfig,
   LEVELS,
-} from "../permission-core.js";
+} from "../permission-core.ts";
 
 describe("classifyCommand", () => {
   const defaultConfig: PermissionConfig = {

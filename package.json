@@ -1,7 +1,7 @@
 {
   "name": "pi-me",
-  "version": "0.9.0",
-  "description": "Comprehensive extension suite for the pi coding agent: SOLID-refactored with 7 merged extensions (planning, code quality, file intelligence, subprocess orchestration, web tools) — with profile-based loading and agent automation via telemetry",
+  "version": "1.0.0",
+  "description": "Production-grade extension suite for pi: safety guards, code quality pipelines, persistent memory, unified task & plan management, subprocess orchestration, and session lifecycle management",
   "license": "MIT",
   "keywords": [
     "pi-package",

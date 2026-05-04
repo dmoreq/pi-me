@@ -7,8 +7,8 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { getAgentDir } from "./pi-config.js";
-import type { Profile } from "./types.js";
+import { getAgentDir } from "./pi-config.ts";
+import type { Profile } from "./types.ts";
 
 export function readProfile(): Profile {
   try {

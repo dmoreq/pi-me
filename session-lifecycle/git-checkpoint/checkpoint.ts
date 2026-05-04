@@ -25,7 +25,7 @@ import {
   loadCheckpointFromRef,
   isSafeId,
   type CheckpointData,
-} from "./checkpoint-core.js";
+} from "./checkpoint-core.ts";
 
 // ============================================================================
 // Minimal local types (avoid hard dependency on pi-coding-agent types)

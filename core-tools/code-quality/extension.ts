@@ -76,8 +76,10 @@ export class CodeQualityExtension extends ExtensionLifecycle {
       const result = await this.pipeline.processFile(filePath, cwd, this.pi.exec);
 
       // Track stats
-      this.fileStats.formatted += result.format.status === "succeeded" ? 1 : 0;
-      this.fileStats.fixed += result.fix.status === "succeeded" ? 1 : 0;
+      const anyFormatted = result.format.some(s => s.status === "succeeded");
+      const anyFixed = result.fix.some(s => s.status === "succeeded");
+      this.fileStats.formatted += anyFormatted ? 1 : 0;
+      this.fileStats.fixed += anyFixed ? 1 : 0;
       this.fileStats.totalDuration += result.duration;
 
       // Notify user
@@ -86,8 +88,8 @@ export class CodeQualityExtension extends ExtensionLifecycle {
       // Track telemetry event
       this.track("code_quality_processed", {
         filePath,
-        formatted: result.format.status === "succeeded",
-        fixed: result.fix.status === "succeeded",
+        formatted: anyFormatted,
+        fixed: anyFixed,
         duration: result.duration,
       });
     } catch (err: any) {
@@ -102,16 +104,17 @@ export class CodeQualityExtension extends ExtensionLifecycle {
    * Notify user via telemetry based on pipeline results.
    */
   private notifyResults(result: ProcessResult): void {
-    const formatSuccess = result.format.status === "succeeded";
-    const fixSuccess = result.fix.status === "succeeded";
-    const formatFailed = result.format.status === "failed";
-    const fixFailed = result.fix.status === "failed";
+    const formatSuccess = result.format.some(s => s.status === "succeeded");
+    const fixSuccess = result.fix.some(s => s.status === "succeeded");
+    const formatFailed = result.format.some(s => s.status === "failed");
+    const fixFailed = result.fix.some(s => s.status === "failed");
+    const totalChanges = result.fix.reduce((sum, s) => sum + (s.changes ?? 0), 0);
 
     if (formatSuccess && fixSuccess) {
       notifyCodeQuality({
         stage: "both",
         status: "success",
-        detail: `formatted + fixed (${result.fix.changes ?? 0} issues)`,
+        detail: `formatted + fixed (${totalChanges} issues)`,
         filePath: result.filePath,
         duration: result.duration,
       });
@@ -119,7 +122,7 @@ export class CodeQualityExtension extends ExtensionLifecycle {
       notifyCodeQuality({
         stage: "format",
         status: "success",
-        detail: result.format.message ?? "formatted",
+        detail: result.format.find(s => s.message)?.message ?? "formatted",
         filePath: result.filePath,
         duration: result.duration,
       });
@@ -127,27 +130,29 @@ export class CodeQualityExtension extends ExtensionLifecycle {
       notifyCodeQuality({
         stage: "fix",
         status: "success",
-        detail: `fixed (${result.fix.changes ?? 0} issues)`,
+        detail: `fixed (${totalChanges} issues)`,
         filePath: result.filePath,
         duration: result.duration,
       });
     }
 
     if (formatFailed) {
+      const msgs = result.format.filter(s => s.status === "failed").map(s => s.message).filter(Boolean);
       notifyCodeQuality({
         stage: "format",
         status: "failure",
-        detail: `format failed: ${result.format.message ?? "unknown error"}`,
+        detail: `format failed: ${msgs[0] ?? "unknown error"}`,
         filePath: result.filePath,
         duration: result.duration,
       });
     }
 
     if (fixFailed) {
+      const msgs = result.fix.filter(s => s.status === "failed").map(s => s.message).filter(Boolean);
       notifyCodeQuality({
         stage: "fix",
         status: "failure",
-        detail: `fix failed: ${result.fix.message ?? "unknown error"}`,
+        detail: `fix failed: ${msgs[0] ?? "unknown error"}`,
         filePath: result.filePath,
         duration: result.duration,
       });
