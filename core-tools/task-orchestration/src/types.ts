@@ -20,15 +20,10 @@ export enum TaskStatus {
 
 /**
  * Task intent: what action the task represents
+ * Re-exported from shared intent types.
  */
-export enum TaskIntent {
-  FIX = 'fix',
-  REFACTOR = 'refactor',
-  TEST = 'test',
-  DOCS = 'docs',
-  DEPLOY = 'deploy',
-  ANALYZE = 'analyze'
-}
+export type { TaskIntent } from '../../intent/types';
+export { INTENTS } from '../../intent/types';
 
 /**
  * Task execution result
@@ -134,10 +129,9 @@ export interface ITaskStore {
 
 /**
  * Intent Classifier interface (for pluggable classifiers)
+ * Re-exported from shared intent types.
  */
-export interface IIntentClassifier {
-  classify(text: string): TaskIntent;
-}
+export type { IIntentClassifier } from '../../intent/types';
 
 /**
  * Executor interface

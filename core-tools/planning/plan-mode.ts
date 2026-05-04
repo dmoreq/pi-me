@@ -44,7 +44,7 @@ import {
   ensurePlansDir, writePlanFile, generatePlanId, readLockInfo, acquireLock, withPlanLock, listPlans, readPlanSettings,
   createPlanGarbageCollect, gcPlans,
   createPlan, updatePlan, addStep, completeStep, claimPlan, releasePlan, getPlan, deletePlan, executePlanStep,
-} from "./plan-mode-core.js";
+} from "./plan-mode-core.ts";
 export default function planModeExtension(pi: ExtensionAPI) {
 	let planningModeEnabled = false;
 	let activePlanId: string | null = null;

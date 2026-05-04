@@ -1,19 +1,33 @@
-import type { Task, TaskIntent, Message, IIntentClassifier } from '../types';
-import { RegexIntentClassifier } from '../inference/intent';
+/**
+ * TaskCapture — Extracts structured tasks from conversation messages.
+ *
+ * Segments user messages, classifies each segment's intent (async AI-first
+ * when available, sync manual fallback otherwise), and returns tasks with
+ * metadata (priority, tags, implicit dependencies).
+ */
+
+import type { Task, TaskIntent, Message, IIntentClassifier } from '../../intent/types';
+import { ManualIntentDetector } from '../inference/intent';
 
 export interface TaskCaptureResult {
   tasks: Task[];
   segments: string[];
   intents: TaskIntent[];
+  sources: ('ai' | 'manual')[];
 }
 
 export class TaskCapture {
   private classifier: IIntentClassifier;
+  private aiCount: number = 0;
 
   constructor(classifier?: IIntentClassifier) {
-    this.classifier = classifier || new RegexIntentClassifier();
+    this.classifier = classifier || new ManualIntentDetector();
   }
 
+  /**
+   * Synchronous infer — uses sync classify() only.
+   * For AI-powered classification, use inferAsync().
+   */
   infer(messages: Message[]): TaskCaptureResult {
     const segments: string[] = [];
     for (const msg of messages) {
@@ -25,6 +39,7 @@ export class TaskCapture {
 
     const tasks: Task[] = [];
     const intents: TaskIntent[] = [];
+    const sources: ('ai' | 'manual')[] = [];
     const seen = new Set<string>();
 
     for (const segment of segments) {
@@ -34,8 +49,9 @@ export class TaskCapture {
       seen.add(text.toLowerCase());
 
       const intent = this.classifier.classify(segment);
-      const now = new Date().toISOString();
+      sources.push('manual');
 
+      const now = new Date().toISOString();
       const task: Task = {
         id: `task-${Date.now()}-${tasks.length}`,
         text,
@@ -56,12 +72,79 @@ export class TaskCapture {
       intents.push(intent);
     }
 
-    return { tasks, segments, intents };
+    return { tasks, segments, intents, sources };
+  }
+
+  /**
+   * Async infer — uses classifyAsync() when the classifier supports it (AI path),
+   * falls back to sync classify() otherwise.
+   */
+  async inferAsync(messages: Message[]): Promise<TaskCaptureResult> {
+    const segments: string[] = [];
+    for (const msg of messages) {
+      if (msg.role === 'user' && msg.content) {
+        const msgSegments = this.segmentMessage(msg.content);
+        segments.push(...msgSegments);
+      }
+    }
+
+    const tasks: Task[] = [];
+    const intents: TaskIntent[] = [];
+    const sources: ('ai' | 'manual')[] = [];
+    const seen = new Set<string>();
+
+    for (const segment of segments) {
+      const text = this.extractText(segment);
+      if (!text || text.length < 2) continue;
+      if (seen.has(text.toLowerCase())) continue;
+      seen.add(text.toLowerCase());
+
+      // Use async classification when available (AI-powered detectors)
+      let intent: TaskIntent;
+      let source: 'ai' | 'manual' = 'manual';
+      if (this.classifier.classifyAsync) {
+        const result = await this.classifier.classifyAsync(segment);
+        intent = result.intent;
+        source = result.source;
+      } else {
+        intent = this.classifier.classify(segment);
+      }
+
+      if (source === 'ai') this.aiCount++;
+      sources.push(source);
+
+      const now = new Date().toISOString();
+      const task: Task = {
+        id: `task-${Date.now()}-${tasks.length}`,
+        text,
+        status: 'pending' as Task['status'],
+        intent,
+        createdAt: now,
+        priority: this.inferPriority(segment),
+        tags: this.inferTags(segment),
+        blockedBy: [],
+      };
+
+      if (tasks.length > 0) {
+        const dep = this.inferImplicitDependency(segment, tasks);
+        if (dep) task.blockedBy = [dep];
+      }
+
+      tasks.push(task);
+      intents.push(intent);
+    }
+
+    return { tasks, segments, intents, sources };
+  }
+
+  /** Number of segments classified via AI (since last created). */
+  get aiClassificationCount(): number {
+    return this.aiCount;
   }
 
   segmentMessage(message: string): string[] {
     if (!message || message.trim().length === 0) return [];
-    let text = message.trim();
+    const text = message.trim();
 
     if (text.includes(',')) {
       const parts = text.split(',').filter(Boolean).map(s => s.trim());

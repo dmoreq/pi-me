@@ -13,6 +13,7 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { registerToggleCommand, registerStatusCommand } from "../../shared/command-builder.ts";
 import {
   getBackgroundNotifyConfig,
   type TerminalInfo,
@@ -279,12 +280,23 @@ export class SafeOpsLayer {
   // ── Commands ──────────────────────────────────────────────────────
 
   registerCommands(pi: ExtensionAPI): void {
-    pi.registerCommand("safegit", {
+    // Use CommandBuilder for consistent toggle commands
+    registerToggleCommand(pi, {
+      name: "safegit",
       description: "Toggle safe-git protection on/off for this session",
-      handler: async (_args, ctx) => {
-        this.gitEnabledOverride = !this.effectiveGitEnabled(this.getConfig(ctx));
-        ctx.ui.notify(this.gitEnabledOverride ? "🔒 Safe-git protection ON" : "🔓 Safe-git protection OFF", "info");
-      },
+      getState: () => this.gitEnabledOverride ?? this.getConfig(undefined as any).gitEnabled,
+      setState: (v) => { this.gitEnabledOverride = v; },
+      onLabel: "🔒 Safe-git ON",
+      offLabel: "🔓 Safe-git OFF",
+    });
+
+    registerToggleCommand(pi, {
+      name: "saferm",
+      description: "Toggle safe-rm on/off for this session",
+      getState: () => this.rmEnabledOverride ?? this.getConfig(undefined as any).rmEnabled,
+      setState: (v) => { this.rmEnabledOverride = v; },
+      onLabel: "🟢 Safe-RM ON",
+      offLabel: "🔴 Safe-RM OFF",
     });
 
     pi.registerCommand("safegit-level", {
@@ -300,50 +312,18 @@ export class SafeOpsLayer {
       },
     });
 
-    pi.registerCommand("safegit-status", {
+    registerStatusCommand(pi, {
+      name: "safegit",
       description: "Show safe-git protection status",
-      handler: async (_args, ctx) => {
+      getStatusLines: (ctx) => {
         const cfg = this.getConfig(ctx);
-        const lines = [
+        return [
           "─── Safe Git ───",
-          `Git: ${this.effectiveGitEnabled(cfg) ? "🟢 ON" : "🔴 OFF"}`,
+          `Git: ${cfg.gitEnabled ? "🟢 ON" : "🔴 OFF"}`,
           `Level: ${this.effectiveGitLevel(cfg)}`,
           `Approved: ${this.gitApproved.size > 0 ? [...this.gitApproved].join(", ") : "none"}`,
           `Blocked: ${this.gitBlocked.size > 0 ? [...this.gitBlocked].join(", ") : "none"}`,
         ];
-        ctx.ui.notify(lines.join("\n"), "info");
-      },
-    });
-
-    pi.registerCommand("saferm", {
-      description: "Toggle safe-rm on/off for this session",
-      handler: async (_args, ctx) => {
-        this.rmEnabledOverride = !this.effectiveRmEnabled(this.getConfig(ctx));
-        ctx.ui.notify(this.rmEnabledOverride ? "🟢 Safe-RM: ON" : "🔴 Safe-RM: OFF", "info");
-      },
-    });
-
-    pi.registerCommand("saferm-toggle", {
-      description: "Toggle safe-rm on/off",
-      handler: async (_args, ctx) => {
-        this.rmEnabledOverride = !this.effectiveRmEnabled(this.getConfig(ctx));
-        ctx.ui.notify(this.rmEnabledOverride ? "🟢 Safe-RM: ON" : "🔴 Safe-RM: OFF", "info");
-      },
-    });
-
-    pi.registerCommand("saferm-on", {
-      description: "Enable safe-rm",
-      handler: async (_args, ctx) => {
-        this.rmEnabledOverride = true;
-        ctx.ui.notify("🟢 Safe-RM: ON", "info");
-      },
-    });
-
-    pi.registerCommand("saferm-off", {
-      description: "Disable safe-rm",
-      handler: async (_args, ctx) => {
-        this.rmEnabledOverride = false;
-        ctx.ui.notify("🔴 Safe-RM: OFF", "info");
       },
     });
 

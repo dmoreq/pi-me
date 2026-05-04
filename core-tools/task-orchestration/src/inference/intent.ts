@@ -42,7 +42,7 @@ const INTENT_PATTERNS: IntentPattern[] = [
   },
 ];
 
-export class RegexIntentClassifier implements IIntentClassifier {
+export class ManualIntentDetector implements IIntentClassifier {
   classify(text: string): TaskIntent {
     if (!text || text.trim().length === 0) {
       return 'analyze' as TaskIntent;
@@ -66,10 +66,6 @@ export class RegexIntentClassifier implements IIntentClassifier {
     if (/\b(error|fail|broken|crash|panic|bug)\b/i.test(trimmed)) return 'fix' as TaskIntent;
 
     return 'analyze' as TaskIntent;
-  }
-
-  getSupportedIntents(): TaskIntent[] {
-    return INTENT_PATTERNS.map(p => p.intent);
   }
 
   getConfidence(text: string, intent?: TaskIntent): number {

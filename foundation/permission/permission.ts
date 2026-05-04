@@ -170,6 +170,11 @@ function isQuietStartupFromSettings(): boolean {
 // STATE MANAGEMENT
 // ============================================================================
 
+// Auto-escalation tracking — suggest raising level when same command blocked 3+ times
+const blockedCommandCounts = new Map<string, number>();
+let lastEscalationNotify = 0;
+const ESCALATION_COOLDOWN = 120_000;
+
 export interface PermissionState {
   currentLevel: PermissionLevel;
   isSessionOnly: boolean;
@@ -537,7 +542,24 @@ export async function handleBashToolCall(
   const requiredLevel = classification.level;
   const requiredInfo = LEVEL_INFO[requiredLevel];
 
-  // Print mode: block
+  // Track blocked command for auto-escalation suggestion
+  const blockKey = `${requiredLevel}:${command.substring(0, 40)}`;
+  blockedCommandCounts.set(blockKey, (blockedCommandCounts.get(blockKey) ?? 0) + 1);
+  const blockedCount = blockedCommandCounts.get(blockKey)!;
+  if (
+    blockedCount >= 3 &&
+    Date.now() - lastEscalationNotify > ESCALATION_COOLDOWN &&
+    hasInteractiveUI(ctx) &&
+    state.permissionMode !== "block"
+  ) {
+    lastEscalationNotify = Date.now();
+    ctx.ui.notify(
+      `💡 Command blocked ${blockedCount}x at current level. Try /permission ${requiredLevel} to raise.`,
+      "info",
+    );
+  }
+
+  // Print mode: block — track blocked command for auto-escalation suggestion
   if (!hasInteractiveUI(ctx)) {
     return {
       block: true,
@@ -710,6 +732,28 @@ Use /permission low or /permission-mode ask to enable prompts.`
 export default function (pi: ExtensionAPI) {
   const state = createInitialState();
   const safeOps = new SafeOpsLayer();
+
+  // Auto-escalation tracking: suggest raising level when same command blocked 3+ times
+  const blockedCounts = new Map<string, number>();
+  let lastEscalationSuggestion = 0;
+  const ESCALATION_COOLDOWN_MS = 120_000;
+
+  function checkAutoEscalation(command: string, requiredLevel: string, ctx: any) {
+    const key = `${requiredLevel}:${command}`;
+    const count = (blockedCounts.get(key) ?? 0) + 1;
+    blockedCounts.set(key, count);
+
+    if (count >= 3 && Date.now() - lastEscalationSuggestion > ESCALATION_COOLDOWN_MS) {
+      lastEscalationSuggestion = Date.now();
+      const t = getTelemetry();
+      if (t && ctx.hasUI) {
+        t.notify(`💡 Command blocked ${count}x. Use /permission ${requiredLevel} to raise level.`, {
+          package: "permission",
+          severity: "info",
+        });
+      }
+    }
+  }
 
   pi.registerCommand("permission", {
     description: "View or change permission level",
