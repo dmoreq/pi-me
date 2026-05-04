@@ -1,17 +1,8 @@
 /**
- * Subprocess Orchestration Extension — v0.6.0 Consolidated
+ * Subprocess Orchestration Extension
  *
- * Replaces: subagent, sub-pi, sub-pi-skill, ralph-loop
  * Registers a "subprocess" tool that pi can invoke directly.
- *
- * Execution modes:
- *   single  — Run one subprocess task
- *   chain   — Sequential pipeline with context passing
- *   loop    — Repeat until condition
- *   bg      — Background async execution
- *   pi      — Spawn isolated pi subprocess
- *   list    — List active jobs
- *   status  — Inspect a job by id
+ * Supports: single, chain, loop, bg, pi, list, status modes.
  */
 
 import type { ExtensionAPI, ToolDefinition } from "@mariozechner/pi-coding-agent";

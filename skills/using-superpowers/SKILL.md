@@ -4,7 +4,7 @@ description: Use when starting any conversation - establishes how to find and us
 ---
 
 <SUBAGENT-STOP>
-If you were dispatched as a subagent to execute a specific task, skip this skill.
+If you were dispatched as a subprocess to execute a specific task, skip this skill.
 </SUBAGENT-STOP>
 
 <EXTREMELY-IMPORTANT>

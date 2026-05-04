@@ -4,7 +4,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_SAFETY_PATTERNS } from "../safety-patterns.js";
+import { DEFAULT_SAFETY_PATTERNS } from "../safety-patterns.ts";
 
 function checkCommand(command: string): string[] {
   return DEFAULT_SAFETY_PATTERNS

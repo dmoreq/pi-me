@@ -95,8 +95,8 @@ core-tools/
 │   │   └── ...
 │   └── tests/
 ├── file-intelligence/                # unchanged
-├── planning/                         # unchanged
-├── task-orchestration/               # unchanged
+├── task-plan/                        # MERGED: planning + task-orchestration
+
 ├── subprocess-orchestrator/          # unchanged
 ├── thinking-steps/                   # unchanged
 ├── code-actions/                     # DELETED

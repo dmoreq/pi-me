@@ -4,7 +4,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_PROTECTED_PATHS, matchesGlob } from "../path-guard.js";
+import { DEFAULT_PROTECTED_PATHS, matchesGlob } from "../path-guard.ts";
 
 describe("path-guard", () => {
   describe("matchesGlob", () => {

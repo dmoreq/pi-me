@@ -4,8 +4,8 @@
 
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { SecretObfuscator } from "./obfuscator.js";
-import type { SecretEntry } from "./types.js";
+import { SecretObfuscator } from "./obfuscator.ts";
+import type { SecretEntry } from "./types.ts";
 
 describe("SecretObfuscator", () => {
   describe("plain secrets", () => {

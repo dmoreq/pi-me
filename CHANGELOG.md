@@ -5,6 +5,80 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-05-04 (Unified Task & Plan Management)
+
+### BREAKING CHANGES
+
+- **Task Orchestration and Plan Mode merged**: `core-tools/task-orchestration/` and `core-tools/planning/` fully replaced by a single unified `core-tools/task-plan/` module. The `plan` tool and `task_control` tool are replaced by a single `task` tool with 15+ actions.
+- **core-tools/intent/types.ts removed**: Types moved into `core-tools/task-plan/src/types.ts` as the single source of truth.
+- **Safety/review mode**: Auto-captured tasks now require explicit review (`requiresReview=true`) before execution. Use `task review` tool with `approve=true` to approve.
+- **New `task` tool**: Replaces both `plan` and `task_control` tools. Supports: list, get, create, update, delete, add-step, complete-step, claim, release, execute, skip, retry, review, search.
+
+### Added
+
+- **Unified Task type**: Single `Task` interface that works for both auto-captured tasks and user-created plans (a plan is a Task with `steps[]` and `title`).
+- **Unified TaskDAG**: Merged from both systems — topological sort, cycle detection, ready-task queries.
+- **Unified TaskStore**: JSON file persistence with locking, garbage collection, search/filtering, event log.
+- **Unified TaskExecutor**: DAG-based batch execution with retry, timeout, safety mode, dry-run mode, and event emission.
+- **Unified Intent Detector**: AI-first (Groq/Llama) with regex-based manual fallback.
+- **Unified TaskCapture**: Extracts tasks from conversation with priority/tag/dependency inference.
+- **Safety mode**: Auto-captured tasks require review before execution. Toggle with `setSafetyMode()`.
+- **`/tasks` command**: List all tasks grouped by status.
+- **`/tasks-review` command**: Show tasks awaiting review.
+- **`/task <description>` command**: Quick task creation from command line.
+- **58 new unit tests** covering types, store, capture, executor, and intent detection.
+- **Telemetry tracking**: All task operations tracked via pi-telemetry.
+
+### Removed
+
+- `core-tools/task-orchestration/` — fully replaced by task-plan
+- `core-tools/planning/` — fully replaced by task-plan
+- `core-tools/intent/types.ts` — moved into task-plan/types.ts
+- `plan` tool — replaced by unified `task` tool
+- `task_control` tool — actions merged into `task` tool
+
+---
+
+## [0.10.0] - 2026-05-04 (Codebase Cleanup & Pipeline Fix)
+
+### Cleanup
+
+- **Deleted 5 flat barrel files**: core-tools/code-quality.ts, core-tools/planning.ts, core-tools/subprocess-orchestrator.ts, content-tools/web-tools.ts, core-tools/file-intelligence.ts -- pure re-exports with no consumers.
+- **Deleted 4 orphaned utility files**: shared/automation-manager.ts, shared/path-utils.ts, shared/tool-detect.ts, core-tools/fs-utils.ts -- never imported or wired.
+- **Deleted stale .d.ts file**: content-tools/repeat/types.d.ts -- no consumers.
+- **Fixed .js to .ts import extensions** across 21 files -- all internal relative imports now use correct extensions.
+- **Stripped version-history docblocks** from 7 source files. Changelog consolidated into this file.
+- **Updated legacy reference comments** in 3 files to reflect current architecture.
+
+### Fixed
+
+- **CodeQualityPipeline**: processFile() returned StageResult (single object) but types/tests expected StageResult[]. Added toStageResults() method; fixed extension.ts consumer to iterate arrays. Removed dead "analyze" stage from types, pipeline, and tests.
+- **Restored shared/telemetry-automation.ts**: Was missing from filesystem after context-intel extraction. Restored from git history.
+
+### Added
+
+- **Restored memory/ module** from feature branch: core-tools/memory/index.ts, core-tools/memory/src/ (store, consolidator, injector, bootstrap), core-tools/memory-mode.ts. Adds +41 passing tests.
+
+### Tests
+
+- 490 tests passing, 0 failing (up from 426 with 6 pre-existing failures fixed).
+
+---
+
+## [0.9.0] - 2026-05-04 (Context-Intel Cleanup)
+
+### BREAKING CHANGES
+
+- **Context-Intel removed**: `session-lifecycle/context-intel/` fully removed and deleted. The context-intelligence system (context monitoring, pruning, automation, memory, plugins) was adopted into **pi-slim v0.2.0** as the core context management layer. See [pi-slim](https://github.com/dmoreq/pi-slim) for the complete system.
+- **Barrel file removed**: `session-lifecycle/context-intel.ts` deleted. No remaining consumers.
+- **bunfig dependency removed**: No longer used after context-intel deletion.
+
+### Cleanup
+
+- Deleted planning documents: `CONTEXT_INTEL_IMPLEMENTATION_PLAN.md`, `CONTEXT_INTEL_REFACTOR_PLAN.md`, `CONTEXT_INTEL_SUMMARY.md`, `CODE_QUALITY_CONSOLIDATION_COMPLETE.md`, `CODE_QUALITY_CONSOLIDATION_PLAN.md`, `CODE_QUALITY_REFACTOR_PLAN.md`, `FEATURE_REPORT.md`.
+- Updated `session-lifecycle/index.ts` — removed ContextIntelExtension import/registration, bumped telemetry version to 0.9.0.
+- Updated `package.json` — bumped version to 0.9.0, removed bunfig.
+
 ## [0.5.0] - 2026-05-04 (Extension Consolidation & Agent Automation)
 
 ### BREAKING CHANGES

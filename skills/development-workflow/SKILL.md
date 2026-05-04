@@ -82,8 +82,8 @@ Execute the plan. Choose the right approach:
 - Small, frequent commits
 - Stop for feedback between logical groups
 
-### For subagent-driven execution (complex multi-task):
-Dispatch a fresh subagent per task with two-stage review:
+### For subprocess-driven execution (complex multi-task):
+Dispatch a fresh subprocess per task with two-stage review:
 1. **Implementer** — builds the task, self-reviews, commits
 2. **Spec reviewer** — verifies code matches spec (nothing more, nothing less)
 3. **Code quality reviewer** — checks architecture, testing, maintainability
@@ -110,7 +110,7 @@ If you haven't run it in this message, you haven't verified it.
 ## Phase 6: Code Review
 
 ### Requesting review
-After implementation, dispatch a code reviewer subagent with the template at `prompts/code-reviewer.md`. Include the git SHA range and a summary of what changed.
+After implementation, dispatch a code reviewer subprocess with the template at `prompts/code-reviewer.md`. Include the git SHA range and a summary of what changed.
 
 ### Receiving review feedback
 When receiving feedback:
@@ -152,6 +152,6 @@ When receiving feedback:
 ## Supporting Files
 
 Prompt templates are in `prompts/` within this skill directory:
-- `implementer-prompt.md` — For dispatching implementation subagents
+- `implementer-prompt.md` — For dispatching implementation subprocesss
 - `spec-reviewer-prompt.md` — For spec compliance review
 - `code-reviewer.md` — For code quality review

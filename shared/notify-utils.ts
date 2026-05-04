@@ -9,9 +9,9 @@
  * This file re-exports everything so existing imports keep working.
  */
 
-export * from "./audio.js";
-export * from "./terminal.js";
-export * from "./bg-notify-config.js";
+export * from "./audio.ts";
+export * from "./terminal.ts";
+export * from "./bg-notify-config.ts";
 
 // ── Helpers that don't belong in any sub-module ──────────────────────────────
 

@@ -2,15 +2,12 @@
  * content-tools — Umbrella entry point.
  *
  * Profile: full only.
- * Imports: github, repeat, web-tools.
- *
- * v0.4.0: Removed files-widget (dead extension from v0.3.0)
- * v0.5.0: Removed file-picker (redundant — agent reads files directly)
+ * Registers: github, repeat, web-tools tools.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
-import { readProfile } from "../shared/profile.js";
+import { readProfile } from "../shared/profile.ts";
 import github from "./github.ts";
 import repeat from "./repeat/repeat.ts";
 import webTools from "./web-tools/index.ts";
