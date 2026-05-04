@@ -1,19 +1,36 @@
-# Code Quality Consolidation Plan — Auto-Fix, Formatter, & Code Quality Pipeline
+# Code Quality Consolidation Plan — Auto-Formatter, Auto-Fix, & Code Quality Pipeline
 
 ## Executive Summary
 
-Consolidate 3 separate, overlapping modules into 1 unified Code Quality extension:
-- `core-tools/autofix/` (200 LOC) — standalone lint auto-fix
-- `core-tools/code-quality/formatter-runners/` (1,200 LOC) — 8 language formatters
-- `core-tools/code-quality/` (1,000 LOC) — pipeline + registry infrastructure
+Consolidate 3 separate, overlapping modules + **8 auto-formatters** into 1 unified Code Quality extension:
 
-**Result**: Single module, 27 files → 12 files, 2,417 LOC → 1,200 LOC (50% reduction), zero duplicate runner definitions, full telemetry integration.
+**Modules to consolidate:**
+- `core-tools/autofix/` (200 LOC) — standalone lint auto-fix runners
+- `core-tools/code-quality/` (1,000 LOC) — pipeline + registry infrastructure
+- `core-tools/code-quality/formatter-runners/` (1,200 LOC) — **8 auto-formatters**
+
+**8 Auto-Formatters Retained & Unified:**
+1. **Biome** — JavaScript, TypeScript, JSON
+2. **Prettier** — JavaScript, TypeScript, CSS, YAML, TOML
+3. **ESLint** — JavaScript, TypeScript
+4. **Ruff Format** — Python
+5. **Clang-Format** — C, C++, Objective-C
+6. **ShFmt** — Bash, Shell
+7. **CMake-Format** — CMake
+8. **MarkdownLint** — Markdown
+
+**3 Auto-Fix Runners Consolidated:**
+1. **Biome** — biome check --write
+2. **ESLint** — eslint --fix
+3. **Ruff** — ruff check --fix (Python)
+
+**Result**: Single unified module, 27 files → 12 files, 2,417 LOC → 1,200 LOC (50% reduction), zero duplicate runner definitions, **full telemetry integration for both auto-formatting AND auto-fixing**.
 
 ---
 
 ## Problem Analysis
 
-### Current State (3 Modules)
+### Current State (3 Modules + 8 Formatters)
 
 ```
 core-tools/
@@ -67,14 +84,20 @@ const biomeFix: FixRunner = {
 ```
 
 **Same tools in formatter-runners** (`core-tools/code-quality/formatter-runners/runners/`):
-- Separate biome.ts (format + check, no fix)
-- Separate eslint.ts (format only)
-- Separate ruff-format.ts (format only)
+- Separate biome.ts (format only, no fix logic)
+- Separate eslint.ts (format only, no fix logic)
+- Separate ruff-format.ts (format only, no fix logic)
+- Plus 5 others (clang-format, shfmt, cmake-format, markdownlint, ruff-check)
 
-**Problem**: Two implementations of "run biome" — one for fix, one for format. They don't share config detection, error handling, or telemetry. Adding support for a new formatter requires:
-1. Update `formatter-runners/runners/`
-2. Update `autofix/runners.ts`
-3. Potentially update `code-quality/registry.ts`
+**Problem**: 
+- **Two implementations of "run biome"** — one for fix (in autofix), one for format (in formatter-runners). They don't share config detection, error handling, or telemetry.
+- **3 fix runners hardcoded in autofix**: biome, eslint, ruff. Adding a new fix tool requires editing autofix/runners.ts.
+- **8 formatters hardcoded in formatter-runners**: Adding a new formatter requires editing formatter-runners/plan.ts + adding new runner file.
+
+Adding support for a new tool (e.g., Deno fmt) requires:
+1. Add to `formatter-runners/runners/deno.ts` + `formatter-runners/plan.ts`
+2. Add to `autofix/runners.ts` (if Deno supports --fix)
+3. Update both systems separately, no shared infrastructure
 
 ---
 
@@ -127,39 +150,50 @@ This bloats the interface and confuses the mental model.
 
 ---
 
-#### 4. Autofix in Subset B (Profile Inconsistency)
+#### 4. Formatters & Fixers in Different Profiles (Inconsistency)
 
-Autofix is only loaded in the `full` profile. But formatting/fixing should be universal:
-- `dev` profile: gets formatter-runners (via code-quality)
-- `dev` profile: does NOT get autofix (in subset B)
-- `full` profile: gets both
+Formatters and fixers are loaded inconsistently:
+- `dev` profile: gets **8 auto-formatters** (via code-quality in subset A)
+- `dev` profile: does NOT get **3 auto-fix runners** (autofix in subset B)
+- `full` profile: gets both formatters and fixers
 
-Result: `dev` users get code formatted but not auto-fixed. Inconsistent UX.
+Result: `dev` users get code **formatted automatically** but NOT **fixed automatically**. If a tool fixes lints (eslint --fix), only full profile users benefit. Inconsistent UX.
 
 ---
 
-#### 5. No Telemetry (Automation Gap)
+#### 5. No Telemetry (Silent Automation)
 
 Neither autofix nor formatter-runners notifies the user when they run:
-- No badge on success
+- **8 auto-formatters run silently** on every write/edit — user doesn't know if formatting succeeded
+- **3 auto-fix runners run silently** on every write/edit — user doesn't know if lints were fixed
 - No notification on failure (e.g., "eslint failed: missing .eslintrc")
-- No tracking of "formatted 42 files this session"
+- No tracking of "formatted 42 files this session" or "fixed 156 linting issues this session"
 
-The context-intel system uses telemetry badges for auto-execution feedback. Code quality should too.
+The context-intel system uses telemetry badges for auto-execution feedback. Code quality should too — users should see:
+- ✅ "file.ts formatted" (prettier ran)
+- ✅ "file.ts fixed (3 linting issues)" (eslint --fix applied)
+- ⚠️ "file.ts format failed: timeout" (prettier hung)
 
 ---
 
-#### 6. No Configuration (Magic Numbers)
+#### 6. No Configuration (Magic Numbers & Hidden Logic)
 
-Hardcoded timeouts:
+**Timeouts scattered**:
 - Autofix: `timeout: 15_000` ms (biome, eslint, ruff)
 - Pipeline: `timeoutMs: 30_000` default
 - Formatter-runners: varies per runner
 
-No way to configure:
-- Should format large files? (currently yes, slow)
-- Should skip binary files? (currently yes, but no explicit code)
-- Should skip formatting for specific languages?
+**8 formatters have hardcoded behavior**:
+- No way to configure which formatters to skip
+- No way to set per-language timeouts
+- No way to skip large files (>5MB) without waiting 30s
+- No way to skip binary files
+- No way to enable/disable specific formatters by language
+
+**3 fix runners have no config**:
+- No way to set which linters can auto-fix
+- No way to skip fix for specific file types
+- No cooldown between consecutive fixes
 
 ---
 
@@ -167,55 +201,61 @@ No way to configure:
 
 ### Target Structure
 
+**Single entry point. 8 Auto-Formatters + 3 Auto-Fixers + Unified Pipeline + Telemetry:**
+
 ```
 core-tools/code-quality/
 ├── index.ts                      ← single entry point
-├── extension.ts                  ← CodeQualityExtension (orchestration)
-├── types.ts                      ← unified types (FixRunner + CodeRunner)
-├── config.ts                     ← configuration schema (new)
-├── pipeline.ts                   ← format→fix→notify (unified)
+├── extension.ts                  ← CodeQualityExtension (auto-format + auto-fix on write/edit)
+├── types.ts                      ← unified types (FixRunner + CodeRunner, remove unused analyze)
+├── config.ts                     ← configuration schema (new: timeouts, skip-large-files, enabled formatters)
+├── pipeline.ts                   ← AUTO-FORMAT → AUTO-FIX → NOTIFY (unified 3-stage)
 ├── runners/
-│   ├── registry.ts               ← unified runner registry
+│   ├── registry.ts               ← unified runner registry (both formatters + fixers)
 │   ├── types.ts                  ← shared runner interfaces
-│   ├── formatter/
-│   │   ├── dispatch.ts           ← (moved, unchanged)
-│   │   ├── context.ts            ← (moved, unchanged)
-│   │   ├── path.ts               ← (moved, unchanged)
-│   │   ├── plan.ts               ← (moved, unchanged)
-│   │   ├── config.ts             ← (moved, unchanged)
-│   │   ├── system.ts             ← (moved, unchanged)
-│   │   ├── types.ts              ← (moved, unchanged)
-│   │   └── runners/              ← (moved, unchanged)
-│   │       ├── biome.ts
-│   │       ├── prettier.ts
-│   │       ├── eslint.ts
-│   │       ├── ruff-format.ts
-│   │       ├── clang-format.ts
-│   │       ├── shfmt.ts
-│   │       ├── cmake-format.ts
-│   │       ├── markdownlint.ts
+│   ├── formatter/                ← 8 AUTO-FORMATTERS (all retained, unchanged logic)
+│   │   ├── dispatch.ts           ← format orchestration (moved, unchanged)
+│   │   ├── context.ts            ← format run context (moved, unchanged)
+│   │   ├── path.ts               ← path utilities (moved, unchanged)
+│   │   ├── plan.ts               ← format plan by language (moved, unchanged)
+│   │   ├── config.ts             ← config discovery (moved, unchanged)
+│   │   ├── system.ts             ← system command checks (moved, unchanged)
+│   │   ├── types.ts              ← formatter types (moved, unchanged)
+│   │   └── runners/              ← 8 formatters (moved, unchanged)
+│   │       ├── biome.ts          ← ✅ AUTO-FORMAT: JS/TS/JSON
+│   │       ├── prettier.ts       ← ✅ AUTO-FORMAT: JS/TS/CSS/YAML
+│   │       ├── eslint.ts         ← ✅ AUTO-FORMAT: JS/TS
+│   │       ├── ruff-format.ts    ← ✅ AUTO-FORMAT: Python
+│   │       ├── clang-format.ts   ← ✅ AUTO-FORMAT: C/C++/Objective-C
+│   │       ├── shfmt.ts          ← ✅ AUTO-FORMAT: Bash/Shell
+│   │       ├── cmake-format.ts   ← ✅ AUTO-FORMAT: CMake
+│   │       ├── markdownlint.ts   ← ✅ AUTO-FORMAT: Markdown
+│   │       ├── helpers.ts
+│   │       ├── config-patterns.ts
 │   │       └── index.ts
-│   └── fix/
+│   └── fix/                      ← 3 AUTO-FIX RUNNERS (consolidated from autofix/)
 │       ├── types.ts              ← FixRunner interface
-│       ├── biome.ts              ← consolidated fix runner
-│       ├── eslint.ts             ← consolidated fix runner
-│       ├── ruff.ts               ← consolidated fix runner
+│       ├── biome.ts              ← ✅ AUTO-FIX: biome check --write
+│       ├── eslint.ts             ← ✅ AUTO-FIX: eslint --fix
+│       ├── ruff.ts               ← ✅ AUTO-FIX: ruff check --fix (Python)
 │       └── index.ts              ← export FIX_RUNNERS array
 ├── telemetry/
-│   ├── triggers.ts               ← automation triggers (badges)
+│   ├── triggers.ts               ← automation triggers (4 badges: format-success, fix-success, format-failure, fix-failure)
 │   └── types.ts                  ← trigger interfaces
 └── tests/
     ├── pipeline.test.ts
     ├── fix-runners.test.ts
-    └── formatter-runners.test.ts
+    ├── formatter-dispatch.test.ts
+    └── telemetry.test.ts
 ```
 
 **Rationale**:
-- `runners/formatter/` — all formatter logic stays grouped, just moved up one level
-- `runners/fix/` — all fix logic consolidated from autofix, same structure as formatters
-- `runners/registry.ts` — unified registry serves both formatters and fixers
-- `telemetry/` — new, handles automation feedback via pi-telemetry
-- Single `pipeline.ts` — orchestrates format→fix→notify sequence
+- **`runners/formatter/`** — all 8 auto-formatters grouped together, just moved up one level from formatter-runners/, logic unchanged
+- **`runners/fix/`** — all 3 auto-fix runners consolidated from autofix/, same directory structure as formatters
+- **`runners/registry.ts`** — unified registry serves both 8 formatters AND 3 fixers (Open/Closed principle: add new runners without editing core)
+- **`extension.ts`** — orchestrates: on write/edit, run pipeline which stages: auto-format → auto-fix → notify user
+- **`telemetry/`** — new, fires pi-telemetry badges on format success/failure, fix success/failure
+- **Single `pipeline.ts`** — orchestrates 3-stage sequence (format → fix → notify) with zero duplication
 
 ---
 
@@ -466,11 +506,29 @@ export default function (pi: ExtensionAPI) {
 }
 ```
 
-**Automation triggers** (via telemetry):
-- **`format-success`** → "✅ file.ts formatted"
-- **`fix-success`** → "✅ file.ts fixed (3 issues)"
-- **`format-failure`** → "⚠️  file.ts format failed: timeout"
-- **`fix-failure`** → "⚠️  file.ts fix failed: no eslint config"
+### Telemetry Integration — Automatic Feedback on Every Write/Edit
+
+**8 Auto-Formatters Fire Notifications:**
+- ✅ "file.ts formatted (prettier)" — Prettier succeeded
+- ✅ "file.ts formatted (biome)" — Biome succeeded
+- ✅ "file.ts formatted (eslint)" — ESLint format succeeded
+- ... (same for clang-format, ruff-format, shfmt, cmake-format, markdownlint)
+- ⚠️ "file.ts format failed: prettier timeout" — Formatter failed
+
+**3 Auto-Fix Runners Fire Notifications:**
+- ✅ "file.ts fixed (3 linting issues)" — ESLint --fix applied
+- ✅ "file.ts fixed (1 issue)" — Biome --write applied
+- ✅ "file.ts fixed (5 issues)" — Ruff --fix applied (Python)
+- ⚠️ "file.ts fix failed: eslint no config" — Fixer failed
+
+**Combined Success:**
+- ✅ "file.ts formatted + fixed (2 issues)" — Both stages succeeded
+
+**Session Tracking** (available via `/ctx stats`):
+- `format_count` — files formatted this session
+- `fix_count` — files fixed this session
+- `format_total_duration` — total time spent formatting
+- `fix_total_duration` — total time spent fixing
 
 ---
 
@@ -572,33 +630,42 @@ That's it. The formatter-runners directory becomes `runners/formatter/` (moved, 
 
 ## Testing Strategy
 
-### Unit Tests
+### Unit Tests (All Formatters + Fixers Tested)
 
 | Test File | Coverage |
 |-----------|----------|
 | `tests/pipeline.test.ts` | Format→fix→notify flow with mock runners |
-| `tests/fix-runners.test.ts` | Each fix runner (biome, eslint, ruff) returns correct `FixResult` |
-| `tests/formatter-dispatch.test.ts` | Formatter dispatch unchanged (copy of existing tests) |
+| `tests/fix-runners.test.ts` | Each of 3 fix runners (biome --write, eslint --fix, ruff --fix) returns correct `FixResult` |
+| `tests/formatter-dispatch.test.ts` | All 8 formatters dispatch unchanged (copy of existing tests) |
+| `tests/telemetry.test.ts` | Badge notifications fire correctly on success/failure |
 
-### Integration Tests
+### Integration Tests (All Scenarios Covered)
 
 | Scenario | Expected |
 |----------|----------|
-| Write TypeScript file → biome runs | Format badge fires |
-| Write file with lint error → eslint --fix runs | Fix badge shows "Fixed 2 issues" |
-| Write Python file → ruff --fix runs | Fix badge shows |
-| Write file with no config → fixers skip | No badge, no error |
-| Edit large file (>5MB) → skip format | No badge (silently skip) |
+| **Write TypeScript** → biome auto-formats | ✅ "file.ts formatted (biome)" badge |
+| **Write JS** → prettier auto-formats | ✅ "file.ts formatted (prettier)" badge |
+| **Write JS with lint error** → eslint --fix auto-fixes | ✅ "file.ts fixed (3 issues)" badge |
+| **Write Python** → ruff --fix auto-fixes | ✅ "file.ts fixed (2 issues)" badge |
+| **Write C file** → clang-format auto-formats | ✅ "file.c formatted (clang-format)" badge |
+| **Write Shell** → shfmt auto-formats | ✅ "file.sh formatted (shfmt)" badge |
+| **Write file with no config** → formatters skip | No badge, no error (silent skip) |
+| **Write large file (>5MB)** → skip format | No badge (configured skip) |
+| **Format timeout** → fail gracefully | ⚠️ "format failed: timeout" badge |
+| **Fix timeout** → fail gracefully | ⚠️ "fix failed: timeout" badge |
 
-### Regression Tests
+### Regression Tests (Backward Compatibility)
 
 | Test | Expected |
 |------|----------|
-| `/ctx stats` shows code-quality counts | ✅ format_count, fix_count fields |
-| Telemetry badge fires on format | ✅ pi-telemetry.notify() called |
-| Telemetry badge fires on fix failure | ✅ warning badge shown |
-| Dev profile loads code-quality | ✅ no autofix separately loaded |
-| Full profile loads code-quality | ✅ no separate autofix in subset B |
+| `/ctx stats` includes code-quality metrics | ✅ format_count, fix_count, format_duration_avg, fix_duration_avg |
+| Telemetry badge fires on format success | ✅ pi-telemetry.notify() with formatter name |
+| Telemetry badge fires on fix success | ✅ pi-telemetry.notify() with issue count |
+| Telemetry badge fires on failure | ✅ warning variant badge |
+| Dev profile loads code-quality | ✅ 8 formatters + 3 fixers both active (no separate autofix import) |
+| Full profile loads code-quality | ✅ no separate autofix in subset B (consolidated) |
+| All 8 formatters still work | ✅ biome, prettier, eslint, ruff-format, clang-format, shfmt, cmake-format, markdownlint |
+| All 3 fixers still work | ✅ biome --write, eslint --fix, ruff --fix |
 
 ---
 
@@ -606,13 +673,15 @@ That's it. The formatter-runners directory becomes `runners/formatter/` (moved, 
 
 | Metric | Current | Target | Delta |
 |--------|---------|--------|-------|
-| **Files** | 29 (3 modules) | ~12 (1 module) | **−17** (59%) |
-| **LOC** | 2,417 | ~1,200 | **−1,217** (50%) |
-| **Classes** | 5 (CodeQualityExtension, CodeQualityPipeline, RunnerRegistry, FormatRunContext, etc.) | 3 (CodeQualityExtension, CodeQualityPipeline, RunnerRegistry) | **−2** |
-| **Interfaces** | 7 (CodeRunner, RunnerConfig, ExecResult, RunnerResult, PipelineResult, FixRunner, FixResult) | 5 (removed PipelineResult, removed Snippet) | **−2** |
-| **Runner defs** | 2 sets (formatter-runners + autofix) | 1 set (unified formatters + fixers) | **−1 redundancy** |
+| **Files** | 29 (3 modules) | ~12 (1 module) | **−17** (59% reduction) |
+| **LOC** | 2,417 | ~1,200 | **−1,217** (50% reduction) |
+| **Auto-Formatters** | 8 (biome, prettier, eslint, ruff-format, clang-format, shfmt, cmake-format, markdownlint) | **8 retained** | **0** (no loss) |
+| **Auto-Fixers** | 3 (biome, eslint, ruff) in autofix/ | **3 consolidated** | **0** (no loss) |
 | **Entry points** | 2 (code-quality/index.ts, autofix/index.ts) | 1 (code-quality/index.ts) | **−1** |
-| **Telemetry triggers** | 0 | 4 (format-success, fix-success, format-failure, fix-failure) | **+4** |
+| **Runner registrations** | 2 separate (formatters in formatter-runners, fixers in autofix) | 1 unified (both formatters + fixers) | **−1 duplication** |
+| **Classes** | 5 | 3 | **−2** |
+| **Interfaces** | 7 | 5 (removed PipelineResult, removed Snippet) | **−2** |
+| **Telemetry triggers** | 0 | 4+ (format-success, fix-success, format-failure, fix-failure, combined-success, format-slow) | **+4** |
 
 ---
 
@@ -660,12 +729,17 @@ Timeouts scattered: 15s (autofix), 30s (pipeline default). Format plan is implic
 ## Summary
 
 This consolidation:
-1. **Merges 3 modules into 1** (29 files → 12 files)
-2. **Cuts LOC by 50%** (2,417 → 1,200)
-3. **Eliminates duplicate runner logic** (biome/eslint/ruff defined once)
-4. **Removes adapter indirection** (formatter-adapter.ts)
-5. **Adds telemetry feedback** (4 automation triggers)
-6. **Makes code quality universal** (dev profile gets both format+fix)
-7. **Improves maintainability** (one extension, one pipeline, one registry)
+1. **Merges 3 modules into 1** (29 files → 12 files, 50% LOC reduction)
+2. **Retains all 8 auto-formatters** (biome, prettier, eslint, ruff-format, clang-format, shfmt, cmake-format, markdownlint)
+3. **Consolidates 3 auto-fixers** (biome --write, eslint --fix, ruff --fix)
+4. **Eliminates duplicate runner logic** (biome/eslint/ruff defined once, not twice)
+5. **Removes adapter indirection** (formatter-adapter.ts unnecessary shim)
+6. **Adds telemetry feedback** (4+ automation triggers: format-success, fix-success, format-failure, fix-failure, combined-success, format-slow)
+7. **Makes code quality universal** (dev profile gets both auto-format + auto-fix, not just format)
+8. **Improves maintainability** (one extension, one pipeline, one registry, one entry point)
 
-All while maintaining zero breaking changes for end users.
+**Zero breaking changes** for end users:
+- All 8 formatters work identically
+- All 3 fixers work identically
+- All commands/configs unchanged
+- Just automatic user feedback via telemetry badges
