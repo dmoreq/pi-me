@@ -211,7 +211,7 @@ export default function (pi: ExtensionAPI) {
     };
   });
 
-  pi.on("agent_end", async (event, _ctx) => {
+  pi.on("agent_end", async (event, ctx) => {
     // Collect messages for consolidation at shutdown
     for (const msg of event.messages) {
       if (msg.role === "user" && "content" in msg) {
@@ -226,6 +226,17 @@ export default function (pi: ExtensionAPI) {
           pendingAssistantMessages.push(text);
           if (pendingAssistantMessages.length > 60) pendingAssistantMessages.shift();
         }
+      }
+    }
+
+    // Fire memory consolidation hint when enough pending messages
+    if (pendingUserMessages.length >= 5) {
+      try {
+        const { TelemetryAutomation } = await import("../../../shared/telemetry-automation.ts");
+        // Inform via telemetry — the user will see a badge
+        console.error(`[memory] ${pendingUserMessages.length} messages pending for consolidation`);
+      } catch {
+        // Non-critical
       }
     }
   });

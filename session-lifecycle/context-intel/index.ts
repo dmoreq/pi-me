@@ -21,6 +21,7 @@ import { PromptBuilder } from "./prompt-builder.ts";
 import { PluginManager, type PluginToolCallResult } from "./plugins/plugin.ts";
 import { ContextPruningPlugin } from "./plugins/context-pruning.ts";
 import { ReadAwarenessPlugin } from "./plugins/read-awareness.ts";
+import { AutomationManager, SessionStaleCondition } from "../../shared/automation-manager.ts";
 
 export { PluginManager } from "./plugins/plugin.ts";
 export { ContextPruningPlugin } from "./plugins/context-pruning.ts";
@@ -37,6 +38,7 @@ export class ContextIntelExtension extends ExtensionLifecycle {
   private lastRecapAt = 0;
   private sessionStartTime = 0;
   readonly pluginManager: PluginManager;
+  readonly automation: AutomationManager;
 
   constructor(pi: ExtensionAPI) {
     super(pi);
@@ -47,6 +49,9 @@ export class ContextIntelExtension extends ExtensionLifecycle {
       tools: [],
       events: this.events,
     });
+
+    // Initialize automation manager
+    this.automation = new AutomationManager(this);
 
     // Initialize plugin system with built-in plugins
     this.pluginManager = new PluginManager();
@@ -84,12 +89,10 @@ export class ContextIntelExtension extends ExtensionLifecycle {
   async onTurnEnd(ctx: ExtensionContext) {
     this.sessionMessageCount++;
 
-    // Check session staleness via automation triggers
+    // Evaluate automation conditions
     const elapsedMinutes = (Date.now() - this.sessionStartTime) / 60000;
-    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
-
-    const staleTrigger = TelemetryAutomation.sessionStale(elapsedMinutes, this.sessionMessageCount);
-    TelemetryAutomation.fire(this, staleTrigger);
+    this.automation.addCondition(new SessionStaleCondition(elapsedMinutes, this.sessionMessageCount));
+    await this.automation.evaluate();
 
     // Suggest recap if >20 messages and 10+ minutes since last recap
     if (this.sessionMessageCount > 20 && Date.now() - this.lastRecapAt > 10 * 60 * 1000) {
