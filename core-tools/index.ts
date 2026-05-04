@@ -2,11 +2,13 @@
  * core-tools — Umbrella entry point.
  *
  * Profile: dev loads subset A; full loads subset A + subset B.
- * Subset A: task-orchestration, plan-mode, memory, formatter,
- *           thinking-steps, edit-session, clipboard, preset,
- *           code-actions, read-guard.
+ * Subset A: task-orchestration, planning, memory, formatter,
+ *           thinking-steps, clipboard, code-quality, code-actions,
+ *           file-intelligence, read-guard, subprocess-orchestrator.
  * Subset B: sub-pi, subagent, ralph-loop, web-search, file-collector,
  *           ast-grep, code-review, autofix.
+ *
+ * v0.4.0: Removed preset, edit-session (dead extensions from v0.3.0)
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -20,9 +22,10 @@ import planMode from "./plan-mode.ts";
 import memory from "./memory/index.ts";
 import formatter from "./formatter/extensions/index.ts";
 import thinkingSteps from "./thinking-steps/thinking-steps.ts";
-import editSession from "./edit-session/extensions/edit-session-in-place.ts";
-import preset from "./preset/index.ts";
+import codeQuality from "./code-quality/index.ts";
+import fileIntelligence from "./file-intelligence/index.ts";
 import codeActions from "./code-actions/index.ts";
+import subprocessOrchestrator from "./subprocess-orchestrator/index.ts";
 import readGuard from "./read-guard/index.ts";
 import { registerClipboard } from "./clipboard.ts";
 
@@ -54,19 +57,20 @@ export default function (pi: ExtensionAPI) {
 		});
 	}
 
-	// Subset A — dev + full
+	// Subset A — dev + full (v0.4.0: cleaned up, removed dead extensions)
 	taskOrchestration(pi);
 	planMode(pi);
 	memory(pi);
 	formatter(pi);
 	thinkingSteps(pi);
-	editSession(pi);
-	registerClipboard(pi);
-	preset(pi);
+	codeQuality(pi);
+	fileIntelligence(pi);
 	codeActions(pi);
 	readGuard(pi);
+	registerClipboard(pi);
+	subprocessOrchestrator(pi);
 
-	// Subset B — full only
+	// Subset B — full only (additional web tools & advanced features)
 	if (profile === "full") {
 		subPi(pi);
 		subagent(pi);
