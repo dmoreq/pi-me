@@ -46,6 +46,25 @@ export class CodeQualityExtension extends ExtensionLifecycle {
   getPipeline(): CodeQualityPipeline {
     return this.pipeline;
   }
+
+  /**
+   * Process a file through the quality pipeline and fire automation triggers.
+   */
+  async processFileWithTelemetry(filePath: string, cwd: string, exec: any): Promise<any> {
+    // Fire telemetry for format stage
+    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
+    const formatTrigger = TelemetryAutomation.qualityCheckRan(filePath, "format");
+    TelemetryAutomation.fire(this, formatTrigger);
+
+    const result = await this.pipeline.processFile(filePath, cwd, exec);
+
+    // Fire telemetry for completion
+    const completeTrigger = TelemetryAutomation.qualityCheckRan(filePath, "complete");
+    TelemetryAutomation.fire(this, completeTrigger);
+
+    this.track("file_processed", { filePath, duration: result.duration });
+    return result;
+  }
 }
 
 /**

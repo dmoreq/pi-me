@@ -71,7 +71,12 @@ export class PlanningExtension extends ExtensionLifecycle {
     };
 
     this.activePlan = plan;
-    this.notify(`Plan created: ${title}`, { severity: "info" });
+
+    // Fire telemetry automation trigger
+    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
+    const planTrigger = TelemetryAutomation.planCreated(title);
+    TelemetryAutomation.fire(this, planTrigger);
+
     this.track("plan_created", { title });
     return plan;
   }
