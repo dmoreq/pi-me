@@ -10,7 +10,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import memory from "./src/index.ts";
-import registerMemoryMode from "../memory-mode.ts";
+import registerMemoryMode from "./src/memory-mode.ts";
 
 function isAutoInjectDisabled(): boolean {
   try {

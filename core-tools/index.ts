@@ -22,7 +22,7 @@ import { getTelemetry } from "pi-telemetry";
 // ── Subset A — dev + full ────────────────────────────────────────────────
 
 import taskOrchestration from "./task-orchestration/src/index.ts";
-import planMode from "./plan-mode.ts";
+import planMode from "./planning/plan-mode.ts";
 import memory from "./memory/index.ts";
 import thinkingSteps from "./thinking-steps/thinking-steps.ts";
 import codeQuality from "./code-quality/index.ts";
@@ -40,6 +40,8 @@ import codeReview from "./code-review/index.ts";
 import autofix from "./autofix/index.ts";
 
 // ── Umbrella default export ──────────────────────────────────────────────
+
+
 
 export default function (pi: ExtensionAPI) {
 	const profile = readProfile();
