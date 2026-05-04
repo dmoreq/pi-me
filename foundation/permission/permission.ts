@@ -63,6 +63,7 @@ import {
 import { DEFAULT_SAFETY_PATTERNS, type SafetyPattern } from "./safety-patterns.js";
 import { DEFAULT_PROTECTED_PATHS, matchesGlob, type ProtectedGlob } from "./path-guard.js";
 import { confirmDialog } from "pi-dialog/dialog/confirm-dialog.ts";
+import { SafeOpsLayer } from "./safe-ops-layer.ts";
 
 // Re-export types and constants needed by the hook
 export {
@@ -696,11 +697,19 @@ Use /permission low or /permission-mode ask to enable prompts.`
 }
 
 // ============================================================================
-// Extension entry point
+// Extension entry point — 3-layer guard
+// ============================================================================
+//
+// Layer 1: Safety patterns (always-active hard safety net)
+// Layer 2: Permission tiers (configurable level-based blocking)
+// Layer 3: Safe Ops (git/gh protection + rm→trash replacement)
+//
+// This merges what was formerly safe-ops.ts into the permission extension.
 // ============================================================================
 
 export default function (pi: ExtensionAPI) {
   const state = createInitialState();
+  const safeOps = new SafeOpsLayer();
 
   pi.registerCommand("permission", {
     description: "View or change permission level",
@@ -712,12 +721,28 @@ export default function (pi: ExtensionAPI) {
     handler: (args, ctx) => handlePermissionModeCommand(state, args, ctx),
   });
 
+  // Register SafeOpsLayer commands
+  safeOps.registerCommands(pi);
+
   pi.on("session_start", async (_event, ctx) => {
     handleSessionStart(state, ctx);
+    await safeOps.init(ctx);
+
+    if (ctx.hasUI) {
+      const cfg = safeOps.getConfig(ctx);
+      const parts: string[] = ["🛡️  Safe-Ops:"];
+      parts.push(...safeOps.getStatus(cfg));
+      ctx.ui.notify(parts.join(" "), "info");
+    }
   });
 
   pi.on("tool_call", async (event, ctx) => {
     if (event.toolName === "bash") {
+      // Layer 3: Safe Ops — check git/rm first (fast path for simple replacements)
+      const safeOpsResult = await safeOps.intercept(event.input.command as string, ctx);
+      if (safeOpsResult) return safeOpsResult;
+
+      // Layers 1+2: Safety patterns + permission tiers
       return handleBashToolCall(state, event.input.command as string, ctx);
     }
 
@@ -731,5 +756,9 @@ export default function (pi: ExtensionAPI) {
     }
 
     return undefined;
+  });
+
+  pi.on("session_shutdown", async () => {
+    safeOps.reset();
   });
 }

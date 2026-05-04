@@ -18,7 +18,10 @@ export interface AutomationTrigger {
 }
 
 /**
- * Telemetry automation triggers (9 total)
+ * Telemetry automation triggers (12 total)
+ *
+ * Triggers 1-9: Core automation hints
+ * Triggers 10-12: Session lifecycle, memory, and context pressure
  */
 export class TelemetryAutomation {
   /**
@@ -148,6 +151,55 @@ export class TelemetryAutomation {
       message: `✨ Running ${stage} on ${filePath}...`,
       badge: { text: stage, variant: "info" },
     };
+  }
+
+  /**
+   * Trigger 10: Session stale detection
+   * Fires when session has >20 messages over 30+ minutes
+   */
+  static sessionStale(elapsedMinutes: number, messageCount: number): AutomationTrigger | null {
+    if (elapsedMinutes > 30 && messageCount > 20) {
+      return {
+        id: "session-stale",
+        condition: true,
+        message: `⏰ Session has ${messageCount} messages over ${elapsedMinutes}m. Auto-handoff suggested.`,
+        badge: { text: "session-stale", variant: "warning" },
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Trigger 11: Memory consolidation ready
+   * Fires when 5+ messages are pending for memory consolidation
+   */
+  static memoryReadyForConsolidation(pendingMessages: number): AutomationTrigger | null {
+    if (pendingMessages >= 5) {
+      return {
+        id: "memory-consolidation",
+        condition: true,
+        message: `🧠 ${pendingMessages} new messages ready for memory consolidation.`,
+        badge: { text: "memory-ready", variant: "info" },
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Trigger 12: Context pressure warning
+   * Fires when context usage exceeds 85%
+   */
+  static contextPressure(usedTokens: number, totalTokens: number): AutomationTrigger | null {
+    const ratio = totalTokens > 0 ? usedTokens / totalTokens : 0;
+    if (ratio > 0.85) {
+      return {
+        id: "context-pressure",
+        condition: true,
+        message: `📊 Context at ${Math.round(ratio * 100)}%. Auto-compacting recommended.`,
+        badge: { text: "high-context", variant: "error" },
+      };
+    }
+    return null;
   }
 
   /**
