@@ -1,9 +1,5 @@
 /**
- * Welcome Module — Combined welcome header + session name.
- *
- * Merges:
- * - session-lifecycle/welcome-overlay/index.ts (persistent welcome header)
- * - session-lifecycle/session-name.ts (auto-naming from first user message)
+ * Welcome Module — Persistent welcome header + auto session naming.
  *
  * Provides:
  * - Persistent welcome header with mascot, shortcuts, tips

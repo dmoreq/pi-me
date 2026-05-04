@@ -1,5 +1,5 @@
-import { loadConfigOrDefault } from "../../shared/pi-config.js";
-import { DEFAULT_OPTIONS, fileCollector } from "./extension.js";
+import { loadConfigOrDefault } from "../../shared/pi-config.ts";
+import { DEFAULT_OPTIONS, fileCollector } from "./extension.ts";
 import { z } from "zod";
 
 const RegexPatternSchema = z.object({

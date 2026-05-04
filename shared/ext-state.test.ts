@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { readExtStateSync, writeExtStateSync, getExtStatePath, ensureExtStateDir } from "./ext-state.js";
+import { readExtStateSync, writeExtStateSync, getExtStatePath, ensureExtStateDir } from "./ext-state.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";

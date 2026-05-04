@@ -10,10 +10,10 @@ import type { CodeRunner, RunnerConfig, RunnerResult } from "./types.ts";
 
 class MockRunner implements CodeRunner {
   readonly id: string;
-  readonly type: "format" | "fix" | "analyze";
+  readonly type: "format" | "fix";
   readonly delay: number;
 
-  constructor(id: string, type: "format" | "fix" | "analyze", delay: number = 0) {
+  constructor(id: string, type: "format" | "fix", delay: number = 0) {
     this.id = id;
     this.type = type;
     this.delay = delay;
@@ -41,7 +41,6 @@ describe("CodeQualityPipeline", () => {
 
     assert.strictEqual(result.format.length, 0);
     assert.strictEqual(result.fix.length, 0);
-    assert.strictEqual(result.analyze.length, 0);
   });
 
   it("should call format runners", async () => {
@@ -71,11 +70,10 @@ describe("CodeQualityPipeline", () => {
     assert.strictEqual(result.fix.length, 1);
   });
 
-  it("should call all three stages", async () => {
+  it("should call both stages", async () => {
     const registry = new RunnerRegistry();
     registry.register(new MockRunner("prettier", "format"));
     registry.register(new MockRunner("eslint", "fix"));
-    registry.register(new MockRunner("sonar", "analyze"));
 
     const pipeline = new CodeQualityPipeline(registry);
     const result = await pipeline.processFile("app.ts", "/cwd", async () => ({
@@ -85,7 +83,6 @@ describe("CodeQualityPipeline", () => {
 
     assert.ok(result.format.length > 0);
     assert.ok(result.fix.length > 0);
-    assert.ok(result.analyze.length > 0);
   });
 
   it("should measure duration", async () => {
