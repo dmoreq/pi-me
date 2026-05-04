@@ -28,7 +28,7 @@ import codeQuality from "./code-quality/index.ts";
 import fileIntelligence from "./file-intelligence/index.ts";
 import codeActions from "./code-actions/index.ts";
 import subprocessOrchestrator from "./subprocess-orchestrator/index.ts";
-import readGuard from "./read-guard/index.ts";
+// read-guard: merged into context-intel plugins (Phase 3)
 import { registerClipboard } from "./clipboard.ts";
 
 // ── Subset B — full only ─────────────────────────────────────────────────
@@ -64,7 +64,7 @@ export default function (pi: ExtensionAPI) {
 	codeQuality(pi);
 	fileIntelligence(pi);
 	codeActions(pi);
-	readGuard(pi);
+	// read-guard: now loaded via ContextIntelExtension plugins
 	registerClipboard(pi);
 	subprocessOrchestrator(pi);
 

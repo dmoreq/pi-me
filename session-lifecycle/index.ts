@@ -15,7 +15,6 @@ import { readProfile } from "../shared/profile.js";
 
 import { ContextIntelExtension } from "./context-intel";
 import checkpoint from "./git-checkpoint/checkpoint.ts";
-import contextPruning from "./context-pruning/index.ts";
 import welcomeOverlay from "./welcome-overlay/index.ts";
 import { registerSessionName } from "./session-name.ts";
 import { registerArgsHandler } from "./skill-args.ts";
@@ -39,11 +38,11 @@ export default function (pi: ExtensionAPI) {
 		t.heartbeat("session-lifecycle");
 	}
 
-	// ContextIntelExtension handles handoff, auto-compact, session recap
+	// ContextIntelExtension v0.5.0 handles handoff, auto-compact, session recap,
+	// AND context-pruning + read-awareness as built-in plugins.
 	new ContextIntelExtension(pi).register();
 
 	checkpoint(pi);
-	void contextPruning(pi);
 	registerSessionName(pi);
 	welcomeOverlay(pi);
 	registerArgsHandler(pi);
