@@ -13,7 +13,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
 import secrets from "./secrets/secrets.ts";
 import permission from "./permission/permission.ts";
-import contextMonitor from "./context-monitor/context-monitor.ts";
+import contextMonitor from "./context-monitor/index.ts";
 
 export default function (pi: ExtensionAPI) {
 	const t = getTelemetry();
