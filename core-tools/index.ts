@@ -5,10 +5,12 @@
  * Subset A: task-orchestration, planning, memory, formatter,
  *           thinking-steps, clipboard, code-quality, code-actions,
  *           file-intelligence, read-guard, subprocess-orchestrator.
- * Subset B: sub-pi, subagent, ralph-loop, web-search, file-collector,
- *           ast-grep, code-review, autofix.
+ * Subset B: sub-pi (DEPRECATED), subagent (DEPRECATED), ralph-loop (DEPRECATED),
+ *           web-search (DEPRECATED), file-collector, ast-grep, code-review, autofix.
  *
  * v0.4.0: Removed preset, edit-session (dead extensions from v0.3.0)
+ * v0.6.0: Deprecated subagent, sub-pi, sub-pi-skill, ralph-loop, web-search
+ *          → Merged into subprocess-orchestrator (subset A) and web-tools (content-tools)
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";

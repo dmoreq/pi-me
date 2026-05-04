@@ -1,15 +1,23 @@
-import { loadConfigOrDefault } from "../../shared/pi-config.js";
-import { DEFAULT_OPTIONS, subPiSkill } from "./extension.js";
-import { z } from "zod";
+/**
+ * DEPRECATED: sub-pi-skill merged into subprocess-orchestrator in v0.6.0
+ *
+ * This module is kept for backward compatibility in v0.6.0.
+ * It will be removed in v0.7.0.
+ *
+ * Sub-pi skill routing is now part of SubprocessOrchestrationExtension.
+ * Use: subprocess action 'pi' with skill parameter.
+ */
 
-const ConfigSchema = z.object({
-  toolName: z.string().optional(),
-});
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
-const config = loadConfigOrDefault({
-  filename: "sub-pi-skill.jsonc",
-  schema: ConfigSchema,
-  defaults: DEFAULT_OPTIONS,
-});
-
-export default subPiSkill(config);
+export default function (pi: ExtensionAPI) {
+  console.warn(
+    "[DEPRECATED v0.6.0] sub-pi-skill merged into subprocess-orchestrator\n" +
+    "  Use: SubprocessOrchestrationExtension with action 'pi', skill: '...'.\n" +
+    "  The 'subprocess' tool replaces the 'sub-pi-skill' tool.\n" +
+    "  This adapter will be removed in v0.7.0.\n" +
+    "  Migration: Use { action: 'pi', skill: 'my-skill', prompt: '...' } via 'subprocess' tool.\n" +
+    "  Guide: https://github.com/dmoreq/pi-me/releases/tag/v0.6.0"
+  );
+  // No-op: skill routing now handled by subprocess-orchestrator
+}
