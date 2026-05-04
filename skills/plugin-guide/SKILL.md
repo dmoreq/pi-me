@@ -35,16 +35,16 @@ Use this guide to determine which tool, extension, or skill to use for a given t
 | Browse rendered markdown | pi-markdown-preview | Terminal/browser/PDF |
 | Parse PDF/Office docs | pi-docparser | Document parsing |
 
-### Subagent Orchestration
+### Subprocess Orchestration
 
 | Task | Tool / Extension | Notes |
 |---|---|---|
-| Delegate to a single subagent | `subagent` tool | Preferred for most delegation |
-| Run chain of subagents | `subagent` with `chain` mode | Pipeline where each step uses prior output |
-| Run parallel subagents | `subagent` with `parallel` mode | Concurrent independent tasks |
-| Run subagent in a loop | `ralph_loop` tool | Polling/iteration loops with condition |
-| Dispatch via subprocess | `sub-pi` tool | When you need skill prefix dispatch |
-| Coordinate AI teams | pi-crew | Worktrees, workflows, async orchestration |
+| Run a single subprocess | `subprocess` tool (action: single) | Preferred for most delegation |
+| Run chain of subprocesses | `subprocess` tool (action: chain) | Pipeline where each step passes context |
+| Run parallel subprocesses | `subprocess` tool (action: single, run concurrently) | Concurrent independent tasks |
+| Run subprocess in a loop | `subprocess` tool (action: loop) | Polling/iteration loops with condition |
+| Spawn isolated pi session | `subprocess` tool (action: pi) | When you need a fresh pi subprocess |
+| List active jobs | `subprocess` tool (action: list) | Status of background jobs |
 
 ### Knowledge & Memory
 
@@ -114,7 +114,7 @@ Use this guide to determine which tool, extension, or skill to use for a given t
 
 ## Choosing between similar tools
 
-**`subagent` vs `sub_pi` vs `ralph_loop`:** Use `subagent` for everything unless you specifically need skill-prefix dispatch (`sub_pi`) or iterative polling loops (`ralph_loop`).
+**`subprocess` tool actions:** Use `single` for one-off tasks, `chain` for sequential pipelines, `loop` for polling, `bg` for fire-and-forget, `pi` for isolated pi subprocesses. List active jobs with `list`.
 
 **`plan_tracker` vs `task` tool:** `plan_tracker` is for in-session task lists (like a todo overlay). `task` (task-plan) is the unified task & plan manager that handles persistent plans, auto-capture from conversation, AI intent detection, safety/review mode, and DAG-based execution.
 

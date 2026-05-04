@@ -11,7 +11,7 @@ description: Use when creating new skills, editing existing skills, or verifying
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
 
-You write test cases (pressure scenarios with subagents), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
+You write test cases (pressure scenarios with subprocesss), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
 
 **Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill teaches the right thing.
 
@@ -26,7 +26,7 @@ A **skill** is a reference guide for proven techniques, patterns, or tools. Skil
 
 | TDD Concept | Skill Creation |
 |-------------|----------------|
-| **Test case** | Pressure scenario with subagent |
+| **Test case** | Pressure scenario with subprocess |
 | **Production code** | Skill document (SKILL.md) |
 | **Test fails (RED)** | Agent violates rule without skill (baseline) |
 | **Test passes (GREEN)** | Agent complies with skill present |
@@ -102,7 +102,7 @@ description: Use when [specific triggering conditions and symptoms]
 ## RED-GREEN-REFACTOR for Skills
 
 ### RED: Write Failing Test (Baseline)
-Run pressure scenario with subagent WITHOUT the skill. Document exact behavior — what choices, rationalizations, and which pressures triggered violations.
+Run pressure scenario with subprocess WITHOUT the skill. Document exact behavior — what choices, rationalizations, and which pressures triggered violations.
 
 ### GREEN: Write Minimal Skill
 Write skill addressing those specific rationalizations. Run same scenario WITH skill — agent should now comply.
