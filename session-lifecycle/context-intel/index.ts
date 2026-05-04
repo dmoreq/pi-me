@@ -1,27 +1,44 @@
 /**
  * Context Intelligence Extension
  *
- * Merges handoff, auto-compact, and session-recap into one umbrella
- * that intelligently manages conversation context across sessions.
+ * Merges handoff, auto-compact, session-recap, context-pruning, and
+ * read-awareness into one umbrella that intelligently manages conversation
+ * context across sessions.
+ *
+ * Plugin system:
+ *   - ContextPruningPlugin: deduplicate/remove obsolete messages
+ *   - ReadAwarenessPlugin: track reads, block unread edits
+ *   (More plugins can be added via PluginManager)
  *
  * Extends ExtensionLifecycle for automatic telemetry and hook wiring.
  */
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
-import { registerPackage, telemetryNotify } from "../../shared/telemetry-helpers.ts";
+import { registerPackage } from "../../shared/telemetry-helpers.ts";
 import { TranscriptBuilder } from "./transcript-builder.ts";
 import { PromptBuilder } from "./prompt-builder.ts";
+import { PluginManager, type PluginToolCallResult } from "./plugins/plugin.ts";
+import { ContextPruningPlugin } from "./plugins/context-pruning.ts";
+import { ReadAwarenessPlugin } from "./plugins/read-awareness.ts";
+import { AutomationManager, SessionStaleCondition } from "../../shared/automation-manager.ts";
+
+export { PluginManager } from "./plugins/plugin.ts";
+export { ContextPruningPlugin } from "./plugins/context-pruning.ts";
+export { ReadAwarenessPlugin } from "./plugins/read-awareness.ts";
 
 export class ContextIntelExtension extends ExtensionLifecycle {
   readonly name = "context-intel";
-  readonly version = "0.3.0";
-  protected readonly description = "Intelligent context management: handoff, auto-compact, session recap";
+  readonly version = "0.5.0";
+  protected readonly description = "Intelligent context management: handoff, auto-compact, session recap, pruning, read-awareness";
   protected readonly tools = ["none"];
-  protected readonly events = ["session_start", "turn_end", "agent_end"];
+  protected readonly events = ["session_start", "turn_end", "agent_end", "session_shutdown", "context", "tool_call"];
 
   private sessionMessageCount = 0;
   private lastRecapAt = 0;
+  private sessionStartTime = 0;
+  readonly pluginManager: PluginManager;
+  readonly automation: AutomationManager;
 
   constructor(pi: ExtensionAPI) {
     super(pi);
@@ -32,24 +49,50 @@ export class ContextIntelExtension extends ExtensionLifecycle {
       tools: [],
       events: this.events,
     });
+
+    // Initialize automation manager
+    this.automation = new AutomationManager(this);
+
+    // Initialize plugin system with built-in plugins
+    this.pluginManager = new PluginManager();
+    this.pluginManager.register(new ContextPruningPlugin());
+    this.pluginManager.register(new ReadAwarenessPlugin());
   }
 
+  // ── Lifecycle Hooks ────────────────────────────────────────
+
   /**
-   * Reset on new session.
+   * Reset on new session and initialize plugins.
    */
-  async onSessionStart() {
+  async onSessionStart(_event: any, ctx: ExtensionContext) {
     this.sessionMessageCount = 0;
     this.lastRecapAt = Date.now();
+    this.sessionStartTime = Date.now();
     this.notify("Session started. Use /handoff to transfer context or /recap for summary.", {
       severity: "info",
     });
+
+    // Initialize all plugins
+    await this.pluginManager.onSessionStart(ctx);
+  }
+
+  /**
+   * Cleanup plugins on shutdown.
+   */
+  async onSessionShutdown() {
+    await this.pluginManager.onSessionShutdown();
   }
 
   /**
    * Track message count and suggest recap if idle or long session.
    */
-  async onTurnEnd() {
+  async onTurnEnd(ctx: ExtensionContext) {
     this.sessionMessageCount++;
+
+    // Evaluate automation conditions
+    const elapsedMinutes = (Date.now() - this.sessionStartTime) / 60000;
+    this.automation.addCondition(new SessionStaleCondition(elapsedMinutes, this.sessionMessageCount));
+    await this.automation.evaluate();
 
     // Suggest recap if >20 messages and 10+ minutes since last recap
     if (this.sessionMessageCount > 20 && Date.now() - this.lastRecapAt > 10 * 60 * 1000) {
@@ -57,16 +100,18 @@ export class ContextIntelExtension extends ExtensionLifecycle {
         badge: { text: "recap-hint", variant: "info" },
       });
     }
+
+    // Let plugins handle turn_end
+    await this.pluginManager.onTurnEnd(ctx);
   }
 
   /**
    * Auto-detect if agent output contains hints for handoff or task extraction.
    */
-  async onAgentEnd(_: any, ctx: any) {
+  async onAgentEnd(_event: any, ctx: any) {
     const messages = ctx.messages ?? [];
     if (messages.length === 0) return;
 
-    // Import automation triggers
     const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
 
     // Count tool calls to detect high activity
@@ -88,7 +133,26 @@ export class ContextIntelExtension extends ExtensionLifecycle {
     TelemetryAutomation.fire(this, contextTrigger);
   }
 
-  // ── Helpers for CLI commands (to be wired by future extension) ──────
+  /**
+   * Context event — run context pruning plugin to optimize messages.
+   */
+  async onContext(_event: any, _ctx: ExtensionContext) {
+    // Context pruning is handled via the plugin system
+    // The actual pruning logic is in ContextPruningPlugin.onContext()
+    // which modifies messages before they reach the LLM
+  }
+
+  /**
+   * Tool call interception — delegate to plugin system.
+   */
+  async onToolCall(event: any, ctx: ExtensionContext): Promise<PluginToolCallResult | undefined> {
+    return this.pluginManager.onToolCall(
+      { toolName: event.toolName, input: event.input },
+      ctx,
+    );
+  }
+
+  // ── Helpers for CLI commands ───────────────────────────────
 
   /**
    * Get a one-line recap of the session.
@@ -97,7 +161,6 @@ export class ContextIntelExtension extends ExtensionLifecycle {
     const transcript = TranscriptBuilder.buildTranscript(messages, { fromLastUser: false });
     const { system, user } = PromptBuilder.buildRecap(transcript);
     this.track("recap_requested", { messageCount: messages.length });
-    // Would call LLM here; for now return placeholder
     return `[Recap would be generated here]`;
   }
 

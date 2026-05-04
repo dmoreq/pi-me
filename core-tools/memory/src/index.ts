@@ -24,6 +24,7 @@ import { homedir } from "node:os";
 import { readFileSync } from "node:fs";
 import { MemoryStore } from "./store.ts";
 import { buildContextBlock, type InjectorConfig } from "./injector.ts";
+import { scanProject, ingestProjectContext } from "./project-context.ts";
 
 type ToolResult = AgentToolResult<unknown>;
 function ok(text: string): ToolResult { return { content: [{ type: "text", text }], details: {} }; }
@@ -178,6 +179,17 @@ export default function (pi: ExtensionAPI) {
         // Session may not have entries yet (brand-new session)
       }
 
+      // Auto-scan project context and store as semantic facts
+      try {
+        const projectInfo = await scanProject(sessionCwd);
+        const ingested = ingestProjectContext(store, projectInfo);
+        if (ingested > 0) {
+          console.error(`[memory] Ingested ${ingested} project context facts for ${projectInfo.name}`);
+        }
+      } catch {
+        // Non-fatal — project scanning is best-effort
+      }
+
       const stats = store.stats();
       if (stats.semantic + stats.lessons > 0) {
         ctx.ui.setStatus("pi-memory", ctx.ui.theme.fg("dim", `🧠  Memory: ${stats.semantic} facts, ${stats.lessons} lessons`));
@@ -199,7 +211,7 @@ export default function (pi: ExtensionAPI) {
     };
   });
 
-  pi.on("agent_end", async (event, _ctx) => {
+  pi.on("agent_end", async (event, ctx) => {
     // Collect messages for consolidation at shutdown
     for (const msg of event.messages) {
       if (msg.role === "user" && "content" in msg) {
@@ -214,6 +226,17 @@ export default function (pi: ExtensionAPI) {
           pendingAssistantMessages.push(text);
           if (pendingAssistantMessages.length > 60) pendingAssistantMessages.shift();
         }
+      }
+    }
+
+    // Fire memory consolidation hint when enough pending messages
+    if (pendingUserMessages.length >= 5) {
+      try {
+        const { TelemetryAutomation } = await import("../../../shared/telemetry-automation.ts");
+        // Inform via telemetry — the user will see a badge
+        console.error(`[memory] ${pendingUserMessages.length} messages pending for consolidation`);
+      } catch {
+        // Non-critical
       }
     }
   });

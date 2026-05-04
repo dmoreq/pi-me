@@ -2,8 +2,11 @@
  * session-lifecycle — Umbrella entry point.
  *
  * Profile: dev / full (skipped for "minimal").
- * Registers: handoff, checkpoint, auto-compact, context-pruning,
- *             session-recap, usage, welcome, session-name, skill-args.
+ * Registers: context-intel, checkpoint, welcome, skill-args.
+ *
+ * v0.5.0: Removed usage-extension (moved to foundation/context-monitor).
+ *         Removed context-pruning (now a plugin inside context-intel).
+ *         Merged welcome-overlay + session-name into welcome/ module.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -12,15 +15,12 @@ import { readProfile } from "../shared/profile.js";
 
 import { ContextIntelExtension } from "./context-intel";
 import checkpoint from "./git-checkpoint/checkpoint.ts";
-import contextPruning from "./context-pruning/index.ts";
-import usageExtension from "./usage-extension/index.ts";
-import welcomeOverlay from "./welcome-overlay/index.ts";
-import { registerSessionName } from "./session-name.ts";
+import welcome from "./welcome/welcome.ts";
 import { registerArgsHandler } from "./skill-args.ts";
 
 // Re-export for external consumers (backwards-compat)
 export { parseCommandArgs, substituteArgs, handleInput, invalidateSkillIndex } from "./skill-args.ts";
-export { sessionNameFromMessage } from "./session-name.ts";
+export { sessionNameFromMessage } from "./welcome/welcome.ts";
 
 export default function (pi: ExtensionAPI) {
 	const profile = readProfile();
@@ -30,24 +30,18 @@ export default function (pi: ExtensionAPI) {
 	if (t) {
 		t.register({
 			name: "session-lifecycle",
-			version: "0.3.0",
-			description: "Session lifecycle: handoff, checkpoint, auto-compact, context-pruning, session-recap, usage, welcome",
+			version: "0.5.0",
+			description: "Session lifecycle: context-intel, checkpoint, welcome, skill-args",
 			events: ["session_start", "session_shutdown", "session_before_*"] as string[],
 		});
 		t.heartbeat("session-lifecycle");
 	}
 
-	// v0.4.0: Load merged extensions only (removed deprecated v0.3.1 stubs)
-	// ContextIntelExtension handles:
-	// - Handoff (/handoff command) — was auto-compact, handoff, session-recap
-	// - Auto-compact (auto-triggers at threshold)
-	// - Session recap (/recap command)
+	// ContextIntelExtension v0.5.0: handoff, auto-compact, session recap,
+	// plus context-pruning + read-awareness as built-in plugins.
 	new ContextIntelExtension(pi).register();
 
 	checkpoint(pi);
-	void contextPruning(pi);
-	registerSessionName(pi);
-	usageExtension(pi);
-	welcomeOverlay(pi);
+	welcome(pi); // merged: welcome-overlay + session-name
 	registerArgsHandler(pi);
 }

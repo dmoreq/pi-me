@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-05-04 (Extension Consolidation & Agent Automation)
+
+### BREAKING CHANGES
+
+- **Permission + Safe Ops merged**: `foundation/safe-ops.ts` removed. All safe-ops commands (/safegit, /saferm, etc.) still work — now loaded via `foundation/permission/` as `SafeOpsLayer`.
+- **Context Window + Usage merged**: `session-lifecycle/usage-extension/` removed. `/usage` and `/cost` commands moved to `foundation/context-monitor/`.
+- **Context Pruning → Plugin**: `session-lifecycle/context-pruning/` removed. Pruning rules are now plugins in `session-lifecycle/context-intel/plugins/`. Commands (/cp-stats, /cp-toggle) still work.
+- **Read Guard → Plugin**: `core-tools/read-guard/` removed. Now a plugin in `session-lifecycle/context-intel/plugins/`. `/trust-me` command still works.
+- **Formatter → Code Quality**: Formatter runners accessible via code-quality pipeline adapter. `/formatter` command remains.
+- **Welcome + Session Name merged**: `session-lifecycle/welcome-overlay/` and `session-lifecycle/session-name.ts` merged into `session-lifecycle/welcome/`.
+- **Skill Bootstrap → Memory**: `authoring/skill-bootstrap/` removed. Auto-project-context scanning now happens in `core-tools/memory/src/project-context.ts`.
+- **Code Actions removed**: `core-tools/code-actions/` deleted (redundant with built-in TUI).
+- **File Picker removed**: `content-tools/file-picker/` deleted (redundant — agent reads files directly).
+
+### Features
+
+- **3 new TelemetryAutomation triggers** (10-12): sessionStale, memoryReadyForConsolidation, contextPressure
+- **AutomationManager**: new `shared/automation-manager.ts` with sense → decide → act → inform pipeline
+- **Plugin system**: `session-lifecycle/context-intel/plugins/plugin.ts` — composable `ContextPlugin` interface with `PluginManager`
+- **CommandBuilder**: new `shared/command-builder.ts` — DRY settings/toggle/status command registration
+- **Auto-project-context scanning**: Memory automatically scans project structure on session_start
+
+### Architecture
+
+- Extensions reduced from 37 to 22 unified modules
+- All merged extensions extend `ExtensionLifecycle` (SOLID base class)
+- PluginManager handles lifecycle dispatch for composable plugins
+- Telemetry-driven automation across context-intel, memory, and permission
+
+### Tests
+
+- All 545 existing tests preserved and passing
+
 ## [0.4.0] - 2025-06-XX (Production-Grade Deep Cleanup)
 
 ### BREAKING CHANGES

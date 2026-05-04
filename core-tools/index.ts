@@ -26,9 +26,9 @@ import formatter from "./formatter/extensions/index.ts";
 import thinkingSteps from "./thinking-steps/thinking-steps.ts";
 import codeQuality from "./code-quality/index.ts";
 import fileIntelligence from "./file-intelligence/index.ts";
-import codeActions from "./code-actions/index.ts";
+// code-actions: removed in v0.8.0 (redundant with built-in TUI snippet experience)
 import subprocessOrchestrator from "./subprocess-orchestrator/index.ts";
-import readGuard from "./read-guard/index.ts";
+// read-guard: merged into context-intel plugins (Phase 3)
 import { registerClipboard } from "./clipboard.ts";
 
 // ── Subset B — full only ─────────────────────────────────────────────────
@@ -63,8 +63,7 @@ export default function (pi: ExtensionAPI) {
 	thinkingSteps(pi);
 	codeQuality(pi);
 	fileIntelligence(pi);
-	codeActions(pi);
-	readGuard(pi);
+	// read-guard: now loaded via ContextIntelExtension plugins
 	registerClipboard(pi);
 	subprocessOrchestrator(pi);
 
