@@ -2,18 +2,14 @@
  * core-tools — Umbrella entry point.
  *
  * Profile: dev loads subset A; full loads subset A + subset B.
- * Subset A: task-orchestration (replaces btw-task, todo, plan-tracker),
- *           plan-mode, memory, formatter, thinking-steps,
- *           edit-session, clipboard, preset, code-actions, read-guard.
+ * Subset A: task-orchestration, plan-mode, memory, formatter,
+ *           thinking-steps, edit-session, clipboard, preset,
+ *           code-actions, read-guard.
  * Subset B: sub-pi, subagent, ralph-loop, web-search, file-collector,
  *           ast-grep, code-review, autofix.
- *
- * Imports real implementation files directly (wrappers deleted in Phase 1.5).
- * Clipboard inlined (~94 lines, OSC52 tool).
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
 import { readProfile } from "../shared/profile.js";
 import { getTelemetry } from "pi-telemetry";
 
@@ -28,6 +24,7 @@ import editSession from "./edit-session/extensions/edit-session-in-place.ts";
 import preset from "./preset/index.ts";
 import codeActions from "./code-actions/index.ts";
 import readGuard from "./read-guard/index.ts";
+import { registerClipboard } from "./clipboard.ts";
 
 // ── Subset B — full only ─────────────────────────────────────────────────
 
@@ -40,87 +37,17 @@ import astGrepTools from "./ast-grep-tool/index.ts";
 import codeReview from "./code-review/index.ts";
 import autofix from "./autofix/index.ts";
 
-// ── Inlined: clipboard ───────────────────────────────────────────────────
-
-function toBase64(text: string): string {
-	return Buffer.from(text, "utf-8").toString("base64");
-}
-
-function copyToClipboard(text: string): void {
-	const base64Text = toBase64(text);
-	const osc52 = `\x1b]52;c;${base64Text}\x07`;
-	process.stdout.write(osc52);
-}
-
-function clipboardExtension(pi: ExtensionAPI): void {
-	pi.registerTool({
-		name: "copy_to_clipboard",
-		label: "Copy to Clipboard",
-		description:
-			"Copy text to the user's system clipboard. Use this when the user asks you to " +
-			"put something in their clipboard, write a draft reply to clipboard, or copy any " +
-			"generated text for easy pasting. The text will be available for pasting immediately.",
-		parameters: Type.Object({
-			text: Type.String({
-				description: "The text to copy to the clipboard",
-			}),
-		}),
-		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const { text } = params as { text: string };
-
-			if (!text || text.trim().length === 0) {
-				return {
-					content: [{ type: "text", text: "Error: No text provided to copy." }],
-					details: { success: false, error: "empty_text" },
-				};
-			}
-
-			try {
-				copyToClipboard(text);
-
-				const preview = text.length > 100 ? `${text.slice(0, 100)}...` : text;
-				const charCount = text.length;
-
-				if (ctx.hasUI) {
-					ctx.ui.notify(`Copied ${charCount} characters to clipboard`, "info");
-				}
-
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Successfully copied ${charCount} characters to clipboard.\n\nPreview:\n${preview}`,
-						},
-					],
-					details: {
-						success: true,
-						characterCount: charCount,
-						preview,
-					},
-				};
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : "Unknown error";
-				return {
-					content: [{ type: "text", text: `Failed to copy to clipboard: ${errorMessage}` }],
-					details: { success: false, error: errorMessage },
-				};
-			}
-		},
-	});
-}
-
 // ── Umbrella default export ──────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {
 	const profile = readProfile();
 	if (profile === "minimal") return;
 
-	// Register core-tools package with telemetry
 	const t = getTelemetry();
 	if (t) {
 		t.register({
 			name: "core-tools",
-			version: "0.2.0",
+			version: "0.3.0",
 			description: "Pi-me core tool suite: task orchestration, planning, memory, editing, code review, subagent, and more",
 			tools: ["read", "edit", "write", "bash", "search", "copy_to_clipboard"],
 			events: ["session_start", "tool_call", "message_end", "session_shutdown"],
@@ -134,7 +61,7 @@ export default function (pi: ExtensionAPI) {
 	formatter(pi);
 	thinkingSteps(pi);
 	editSession(pi);
-	clipboardExtension(pi);
+	registerClipboard(pi);
 	preset(pi);
 	codeActions(pi);
 	readGuard(pi);

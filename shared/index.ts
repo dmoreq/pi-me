@@ -7,6 +7,11 @@
  */
 
 export * from "./types";
+export * from "./audio.js";
+export * from "./terminal.js";
+export * from "./bg-notify-config.js";
 export * from "./notify-utils";
+export * from "./lifecycle.js";
+export * from "./telemetry-helpers.js";
 export * from "./ext-state";
 export * from "./register-package.js";
