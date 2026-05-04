@@ -13,6 +13,7 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { registerToggleCommand, registerStatusCommand } from "../../../shared/command-builder.ts";
 import type { ContextPlugin, ContextMessage, PluginToolCallResult, ToolCallEvent } from "./plugin.ts";
 import { readExtStateSync, writeExtStateSync } from "../../../shared/ext-state.ts";
 import { getTelemetry } from "pi-telemetry";
@@ -228,38 +229,32 @@ export class ContextPruningPlugin implements ContextPlugin {
   // ── Commands ───────────────────────────────────────────────
 
   registerCommands(pi: ExtensionAPI): void {
-    pi.registerCommand("cp-stats", {
+    registerStatusCommand(pi, {
+      name: "cp",
       description: "Show pruning statistics",
-      handler: async (_args, ctx) => {
+      getStatusLines: () => {
         const { totalPruned, totalProcessed } = this.stats;
         const pct = totalProcessed > 0 ? Math.round((totalPruned / totalProcessed) * 100) : 0;
-        ctx.ui.notify(
-          `✂️ Context Pruning: ${totalPruned}/${totalProcessed} (${pct}%)`,
-          "info",
-        );
+        return [`✂️ Context Pruning: ${totalPruned}/${totalProcessed} (${pct}%)`];
       },
     });
 
-    pi.registerCommand("cp-toggle", {
+    registerToggleCommand(pi, {
+      name: "cp",
       description: "Toggle context pruning on/off",
-      handler: async (_args, ctx) => {
-        this.config.enabled = !this.config.enabled;
-        ctx.ui.notify(
-          this.config.enabled ? "🟢 Context pruning ON" : "🔴 Context pruning OFF",
-          "info",
-        );
-      },
+      getState: () => this.config.enabled,
+      setState: (v) => { this.config.enabled = v; },
+      onLabel: "🟢 Context pruning ON",
+      offLabel: "🔴 Context pruning OFF",
     });
 
-    pi.registerCommand("cp-debug", {
+    registerToggleCommand(pi, {
+      name: "cp-debug",
       description: "Toggle pruning debug logging",
-      handler: async (_args, ctx) => {
-        this.config.debug = !this.config.debug;
-        ctx.ui.notify(
-          this.config.debug ? "🐛 Debug logging ON" : "🔇 Debug logging OFF",
-          "info",
-        );
-      },
+      getState: () => this.config.debug,
+      setState: (v) => { this.config.debug = v; },
+      onLabel: "🐛 Debug logging ON",
+      offLabel: "🔇 Debug logging OFF",
     });
 
     pi.registerCommand("cp-recent", {
