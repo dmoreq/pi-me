@@ -132,8 +132,27 @@ The π-me extension suite is organized into **4 profile-based umbrellas** that l
 ## 📅 Session Lifecycle (dev / full profiles)
 
 **Profile:** Loaded for `dev` and `full` profiles (skipped for `minimal`).  
-**Version:** 0.3.0  
+**Version:** 0.3.1 (Soft Deprecation)  
 **Purpose:** Session boundaries, context management, progress tracking.
+
+### ⚠️ DEPRECATION NOTICE (v0.3.1)
+
+**Three extensions have been merged and are now deprecated:**
+
+| Extension | Status | Removal | Notes |
+|-----------|--------|---------|-------|
+| **Handoff** | ⚠️ Deprecated | v0.4.0 | Merged into Context Intel (v0.3.0). Use `/handoff [goal]` (same interface). |
+| **Auto Compact** | ⚠️ Deprecated | v0.4.0 | Merged into Context Intel (v0.3.0). Auto-triggers on context threshold. |
+| **Session Recap** | ⚠️ Deprecated | v0.4.0 | Merged into Context Intel (v0.3.0). Use `/recap` (same interface). |
+
+**Migration:** No action needed for users. All features work identically through Context Intel.
+The old modules are now no-op stubs that print deprecation warnings.
+
+**Timeline:**
+- **v0.3.1** (now): Deprecation warnings, full backward compatibility
+- **v0.4.0** (1 month): Hard removal of deprecated modules (-490 LOC)
+
+---
 
 ### 1. **Context Intelligence** (`context-intel/`)
 
@@ -224,9 +243,12 @@ ghi789 HEAD: ...
 
 ---
 
-### 3. **Auto Compact** (`auto-compact/`)
+### 3. **Auto Compact** (`auto-compact/`) ⚠️ DEPRECATED (v0.3.1)
 
-**What it does:**
+⚠️ **DEPRECATION NOTICE:** This extension has been merged into **Context Intel** (v0.3.0).
+It will be removed in v0.4.0. No migration needed — all features work identically through Context Intel.
+
+**Historical note (functionality preserved in Context Intel):**
 - Monitors context usage in real-time
 - Automatically triggers message compaction when usage exceeds threshold
 - Per-model configurable thresholds (GPT-4 vs Claude vs local models)
@@ -300,9 +322,12 @@ After:
 
 ---
 
-### 5. **Session Recap** (`session-recap/`)
+### 5. **Session Recap** (`session-recap/`) ⚠️ DEPRECATED (v0.3.1)
 
-**What it does:**
+⚠️ **DEPRECATION NOTICE:** This extension has been merged into **Context Intel** (v0.3.0).
+It will be removed in v0.4.0. No migration needed — all features work identically through Context Intel.
+
+**Historical note (functionality preserved in Context Intel):**
 - Generates one-line summary of session progress
 - Auto-displays when terminal regains focus
 - Accessible via `/recap` for manual trigger

@@ -1,9 +1,9 @@
 # π-me Extensions — Table Format Report
 
-**Version:** 0.3.0  
-**Total Extensions:** 40  
+**Version:** 0.3.1 (Soft Deprecation)  
+**Total Extensions:** 40 (7 deprecated in v0.3.1, will be removed in v0.4.0)  
 **Test Coverage:** 598 passing, 0 failing  
-**Last Updated:** 2025-05-03
+**Last Updated:** 2025-05-XX
 
 ---
 
@@ -22,15 +22,35 @@
 
 | # | Extension | Purpose | Key Methods | Events | Tools | Tests | Status |
 |---|-----------|---------|-------------|--------|-------|-------|--------|
-| 5 | **Context Intel** ⭐ | Merged: handoff, recap, auto-compact | `buildHandoffPrompt()`, `buildRecapPrompt()`, `compactMessages()` | session_start, turn_end, agent_end | /handoff, /recap, /compact | 31 | ✅ v0.3.0 |
+| 5 | **Context Intel** ⭐ | Merged: handoff, recap, auto-compact (now primary) | `buildHandoffPrompt()`, `buildRecapPrompt()`, `compactMessages()` | session_start, turn_end, agent_end | /handoff, /recap, /compact | 31 | ✅ v0.3.0 (primary in v0.3.1+) |
 | 6 | **Git Checkpoint** | Save working tree as git refs | `saveCheckpoint()`, `restoreCheckpoint()`, `listCheckpoints()` | session_start, session_shutdown | git reflog | 8 | ✅ Active |
-| 7 | **Auto Compact** | Auto-compress messages at threshold | `shouldCompact()`, `compactMessages()`, `preserveImportant()` | context_usage_update | none | 12 | ✅ Active |
+| 7 | **Auto Compact** ⚠️ DEPRECATED | Auto-compress (merged into Context Intel) | `shouldCompact()`, `compactMessages()`, `preserveImportant()` | context_usage_update | none | 12 | ⚠️ v0.3.1 (remove v0.4.0) |
 | 8 | **Context Pruning** | Remove duplicates, obsolete messages | `findDuplicates()`, `findSuperseded()`, `pruneMessages()` | message_added, turn_end | none | 9 | ✅ Active |
-| 9 | **Session Recap** | Generate session summary | `buildRecap()`, `displayOnFocus()`, `renderFullRecap()` | terminal_focus, /recap | /recap | 6 | ✅ Active |
+| 9 | **Session Recap** ⚠️ DEPRECATED | Session summary (merged into Context Intel) | `buildRecap()`, `displayOnFocus()`, `renderFullRecap()` | terminal_focus, /recap | /recap | 6 | ⚠️ v0.3.1 (remove v0.4.0) |
 | 10 | **Usage Extension** | Track tokens & cost | `trackTokens()`, `getUsageStats()`, `calculateCost()` | tool_call, message | /usage, /cost | 10 | ✅ Active |
 | 11 | **Welcome Overlay** | Session welcome & tips | `renderWelcome()`, `getProfileTips()` | session_start | none | 4 | ✅ Active |
 | 12 | **Session Name** | Auto-name from first message | `extractSessionName()`, `registerSessionName()` | session_start | none | 8 | ✅ Extracted |
 | 13 | **Skill Args** | $1/$2/$ARGUMENTS substitution | `parseCommandArgs()`, `substituteArgs()`, `handleInput()` | skill_execution | /skills | 6 | ✅ Extracted |
+
+---
+
+## DEPRECATION NOTICE (v0.3.1)
+
+⚠️ **3 extensions have been merged and are now deprecated:**
+
+| Extension | Merged Into | Status | Removal | Migration |
+|-----------|-------------|--------|---------|----------|
+| **Auto Compact** | Context Intel | ⚠️ Deprecated v0.3.1 | ❌ v0.4.0 | No action needed — still works |
+| **Handoff** | Context Intel | ⚠️ Deprecated v0.3.1 | ❌ v0.4.0 | Use `/handoff [goal]` (same interface) |
+| **Session Recap** | Context Intel | ⚠️ Deprecated v0.3.1 | ❌ v0.4.0 | Use `/recap` (same interface) |
+
+**Why:** These were merged into ContextIntelExtension in v0.3.0 for better cohesion, but the merge was incomplete. v0.3.0.1 fixed the loading, and v0.3.1 deprecates the legacy modules with a 1-release migration period.
+
+**Impact:** None for users. All features work identically through Context Intel. The old modules are now no-op stubs that print deprecation warnings.
+
+**Timeline:**
+- **v0.3.1** (now): Deprecation warnings, full backward compatibility
+- **v0.4.0** (1 month): Hard removal of deprecated modules (-490 LOC)
 
 ---
 
@@ -124,21 +144,27 @@
 ### dev (development)
 ```
 ✅ foundation (all 4)
-✅ session-lifecycle (all 9)
+✅ session-lifecycle (all 9, incl. 3 deprecated)
 ✅ core-tools/subset-A (10)
 ✅ authoring (2)
    Total: 25 extensions
+   
+NOTE: 3 extensions (auto-compact, handoff, session-recap) are deprecated
+      in v0.3.1 and will be removed in v0.4.0. Use Context Intel instead.
 ```
 
 ### full (default, all features)
 ```
 ✅ foundation (all 4)
-✅ session-lifecycle (all 9)
+✅ session-lifecycle (all 9, incl. 3 deprecated)
 ✅ core-tools/subset-A (10)
 ✅ core-tools/subset-B (10)
 ✅ content-tools (5)
 ✅ authoring (2)
    Total: 40 extensions
+   
+NOTE: 3 extensions (auto-compact, handoff, session-recap) are deprecated
+      in v0.3.1 and will be removed in v0.4.0. Use Context Intel instead.
 ```
 
 ---

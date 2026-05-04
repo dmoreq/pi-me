@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-05-XX (Soft Deprecation)
+
+### DEPRECATED (will remove in v0.4.0)
+
+⚠️ **Legacy Extensions** — These have been merged into ContextIntelExtension (v0.3.0):
+- `session-lifecycle/auto-compact/` — auto context compaction
+- `session-lifecycle/handoff.ts` — session handoff command
+- `session-lifecycle/session-recap/` — session summary command
+
+**Migration:** No changes needed! All features work identically through ContextIntelExtension.
+These modules are deprecated stubs and will be removed in v0.4.0.
+
+For details, see [MIGRATION_GUIDE_v0.3.1.md](./MIGRATION_GUIDE_v0.3.1.md).
+
+### Hotfixes
+
+- **Critical:** Load ContextIntelExtension (was implemented but never registered)
+  - All 9 telemetry automation triggers now fire correctly
+  - Context management features (handoff, recap, compact) fully working
+  - Fixes: context-depth, high-activity, file-involvement badges
+
+### Documentation
+
+- Added deprecation notices to legacy modules
+- Updated EXTENSIONS_TABLE.md with deprecation markers
+- Updated EXTENSION_REVIEW.md with migration guidance
+- Created comprehensive cleanup & migration documentation
+
+### Testing
+
+- 598 tests passing, 0 failing
+- All telemetry automation triggers verified
+- Backward compatibility confirmed
+
+---
+
 ## [0.3.0] - 2025-05-03
 
 ### Major Changes
