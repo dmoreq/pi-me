@@ -67,6 +67,12 @@ export class FileIntelligenceExtension extends ExtensionLifecycle {
     };
 
     await this.store.save(index);
+
+    // Fire telemetry automation trigger
+    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
+    const indexTrigger = TelemetryAutomation.fileIndexed(filePath);
+    TelemetryAutomation.fire(this, indexTrigger);
+
     this.track("file_indexed", { filePath, lines });
   }
 

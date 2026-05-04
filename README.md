@@ -1,15 +1,26 @@
 # pi-me
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-417%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-598%20passing-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)]()
 
-A comprehensive extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). Provides safety guards, session lifecycle management, developer tools, content manipulation utilities, and AI-assisted authoring helpers.
+A comprehensive, SOLID-refactored extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). Provides safety guards, session lifecycle management, unified planning, code quality pipelines, file intelligence, subprocess orchestration, and AI-assisted authoring.
 
-**7 extensions, 25 skills, 417+ tests. MIT licensed.**
+**40 extensions, 7 merged (v0.3.0), 25 skills, 598+ tests, 0% jest. MIT licensed.**
 
 ---
 
 ## Features
+
+### v0.3.0 Highlights — SOLID Refactoring ✨
+| Category | Changes |
+|----------|---------|
+| **Merged Extensions** | Context Intelligence, Planning, Code Quality Pipeline, File Intelligence, Subprocess Orchestration, Web Tools (6 merges → 7 extensions) |
+| **Shared Foundation** | `ExtensionLifecycle` base class eliminates boilerplate; unified telemetry, builders, extractors |
+| **Test Coverage** | 598 passing tests (was 464); 0 failing (fixed all 23 jest issues); 100% node:test |
+| **Dead Code Removed** | Deleted preset, edit-session, files-widget; -3.5K lines |
+| **SOLID Principles** | RunnerRegistry (Open/Closed), CodeRunner interface (Liskov), focused types (Interface Segregation) |
+| **Agent Automation** | 9 telemetry triggers with badge notifications (context depth, high activity, parallel tasks, etc.) |
 
 ### Foundation — Safety & Diagnostics (always on)
 | Feature | Purpose |
@@ -20,48 +31,45 @@ A comprehensive extension suite for the [pi coding agent](https://github.com/mar
 | **Context Window** | Footer widget showing context usage %. Warns at 70%, alerts at 90%. |
 | **Safe Operations** | Intercepts dangerous git/gh commands. Replaces `rm` with `trash` on macOS. |
 
-### Session Lifecycle — State & Branding
+### Session Lifecycle — Context Intelligence (merged in v0.3.0)
 | Feature | Purpose |
 |---------|---------|
 | **Git Checkpoint** | Auto-saves working tree as git refs at each turn start. Enables session fork recovery. |
 | **Auto Compact** | Triggers context compaction when usage exceeds threshold. Per-model thresholds via TUI. |
 | **Context Pruning** | Removes duplicate, superseded, and resolved-error messages dynamically. |
+| **Context Intelligence** | `TranscriptBuilder`, `PromptBuilder`. Auto-suggests recap/handoff based on message count & activity. |
 | **Session Naming** | Auto-names sessions from the first user message. |
-| **Session Recap** | One-line session summary on terminal refocus. `/recap` for full recap. |
-| **Usage Dashboard** | `/usage` for token/cost dashboard; `/cost` for spending reports. |
-| **Handoff** | `/handoff <prompt>` generates a focused context summary for a new session. |
-| **Skill Args** | `$1`, `$2`, `$ARGUMENTS` substitution in skill bodies for parameterized skills. |
+| **Handoff** | `/handoff` generates focused context summary for new session. |
+| **Skill Args** | `$1`, `$2`, `$ARGUMENTS` substitution in skill bodies. |
+| **Usage Dashboard** | `/usage` for token/cost dashboard. |
 
-### Core Tools — Agent Tools
+### Core Tools — Unified Planning & Execution
 | Feature | Purpose |
 |---------|---------|
+| **Planning (merged v0.3.0)** | `PlanDAG` with topological sort, parallel execution, cycle detection. `StepExecutor` with retry logic. |
+| **Code Quality (merged v0.3.0)** | `RunnerRegistry` (Open/Closed); format → fix → analyze pipeline; extensible runners. |
+| **File Intelligence (new v0.3.0)** | `FileStore` + `FileCapturer`: index imports/exports/classes/functions, language detection. |
+| **Subprocess Orchestration (new v0.3.0)** | `TaskNormalizer`, `SubprocessExecutor`: plan steps → subprocess tasks with critical task tracking. |
+| **Web Tools (merged v0.3.0)** | Unified `WebSearcher` + `WebFetcher`: search, fetch, extract, sanitize. |
 | **Read-Before-Edit Guard** | Blocks edits to files the agent hasn't read. Prevents blind overwrites. |
-| **Auto-Fix Pipeline** | Runs Biome/ESLint/Ruff `--fix` after write/edit. |
-| **Web Search** | Exa, Tavily, or Valiyu backend. Set `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY`. |
-| **Todo** | Live overlay task list with 4-state machine, dependency tracking, branch replay. |
+| **Todo** | Live overlay task list with 4-state machine, dependency tracking. |
 | **Ralph Loop** | Subagent loop executor with condition polling, pause/resume, steering. |
-| **Plan Tracker** | Inline plan progress widget with task status management. |
-| **Plan Mode** | File-based plans in `.pi/plans/` with JSON frontmatter, locking. |
-| **Subagent** | Full engine: single/chain/parallel dispatch, async jobs, slash commands, team tool. |
+| **Subagent** | Full engine: single/chain/parallel dispatch, async jobs, slash commands. |
 | **Sub-Pi** | Subprocess pi dispatch in single, chain, or parallel modes. |
 | **Memory** | SQLite-backed persistent memory: key-value facts, lessons, event audit. |
-| **Formatter** | Auto-formats files on save/write via Biome, Prettier, Ruff, shfmt, and more. |
-| **AST-grep Tools** | Registered `ast_grep_search` and `ast_grep_replace` tools for structural code search. |
-| **Code Review** | `/code-review` runs full codebase assessment: complexity, TODO inventory, TDI score. |
-| **Edit Session** | `/edit-turn` re-edits previous user messages via `$VISUAL` / `$EDITOR`. |
-| **Clipboard** | Copies text to clipboard via OSC52 escape sequences. |
-| **Preset** | Save and switch provider/model/tool presets. `/preset` to cycle. |
-| **Code Actions** | `/code` picks code snippets from assistant messages. |
-| **Thinking Steps** | Structured thinking (plan, research, implement, review) before tool calls. |
+| **AST-grep Tools** | Registered `ast_grep_search` and `ast_grep_replace` tools. |
+| **Code Review** | `/code-review` runs codebase assessment: complexity, TODO inventory, TDI score. |
+| **Clipboard** | OSC52 escape sequences for clipboard copy. |
+| **Code Actions** | `/code` picks snippets from assistant messages. |
+| **Thinking Steps** | Structured thinking (plan, research, implement, review). |
 
 ### Content Tools — File & Resource Utilities
 | Feature | Purpose |
 |---------|---------|
 | **GitHub** | GitHub API: search code, create issues/PRs, read files. Requires `GITHUB_TOKEN`. |
-| **Repeat** | `/repeat` replays previous bash/edit/write commands with modifications. |
-| **Files Widget** | `/readfiles` TUI file browser with tree, diff viewer, commenting. |
+| **Repeat** | `/repeat` replays previous bash/edit/write commands. |
 | **File Picker** | `/files` TUI file selector with reveal, quicklook, editor actions. |
-| **Web Fetch** | HTTP fetcher with browser profiles, JS rendering, content extraction. |
+| **Web Fetch** | HTTP fetcher with browser profiles, content extraction. |
 
 ### Authoring — AI-Assisted Creation
 | Feature | Purpose |

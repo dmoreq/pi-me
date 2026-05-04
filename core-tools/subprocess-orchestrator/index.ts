@@ -77,6 +77,12 @@ export class SubprocessOrchestrationExtension extends ExtensionLifecycle {
    */
   async runPlan(steps: any[], cwd?: string): Promise<any[]> {
     const tasks = this.normalizer.normalizeMany(steps, cwd);
+
+    // Fire telemetry automation trigger
+    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
+    const normalizeTrigger = TelemetryAutomation.tasksNormalized(tasks.length);
+    TelemetryAutomation.fire(this, normalizeTrigger);
+
     return this.runTasks(tasks);
   }
 

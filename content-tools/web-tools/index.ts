@@ -53,6 +53,11 @@ export class WebToolsExtension extends ExtensionLifecycle {
    * Search the web.
    */
   async search(query: string, limit: number = 10) {
+    // Fire telemetry automation trigger
+    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
+    const searchTrigger = TelemetryAutomation.webSearched(query);
+    TelemetryAutomation.fire(this, searchTrigger);
+
     this.track("web_search", { query, limit });
     return this.searcher.search({ query, limit });
   }

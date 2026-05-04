@@ -66,25 +66,26 @@ export class ContextIntelExtension extends ExtensionLifecycle {
     const messages = ctx.messages ?? [];
     if (messages.length === 0) return;
 
+    // Import automation triggers
+    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
+
     // Count tool calls to detect high activity
     const toolCalls = TranscriptBuilder.countToolCalls(messages, "bash") +
                       TranscriptBuilder.countToolCalls(messages, "write") +
                       TranscriptBuilder.countToolCalls(messages, "edit");
 
-    if (toolCalls > 5) {
-      this.notify("🔥 High activity detected. Consider checkpointing with `/recap`.", {
-        badge: { text: "high-activity", variant: "warning" },
-      });
-      this.track("high_activity_detected", { toolCalls });
-    }
+    const highActivityTrigger = TelemetryAutomation.highActivityDetected(toolCalls);
+    TelemetryAutomation.fire(this, highActivityTrigger);
+    if (highActivityTrigger) this.track("high_activity_detected", { toolCalls });
 
     // Extract file paths — if many files touched, suggest handoff prep
     const files = TranscriptBuilder.extractFilePaths(messages);
-    if (files.length > 10) {
-      this.notify("📁 Many files involved. Ready for `/handoff` when you are.", {
-        badge: { text: "files-involved", variant: "info" },
-      });
-    }
+    const filesTrigger = TelemetryAutomation.fileInvolvementDetected(files.length);
+    TelemetryAutomation.fire(this, filesTrigger);
+
+    // Check message count for context depth warning
+    const contextTrigger = TelemetryAutomation.contextDepth(messages.length);
+    TelemetryAutomation.fire(this, contextTrigger);
   }
 
   // ── Helpers for CLI commands (to be wired by future extension) ──────
