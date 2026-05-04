@@ -4,10 +4,13 @@
  * - semantic: key-value facts (preferences, project patterns, corrections)
  * - lessons: learned corrections with dedup
  * - events: audit log of all memory operations
+ *
+ * Ported from core-tools/memory/src/store.ts. Zero logic changes.
  */
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
+import crypto from "node:crypto";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -43,8 +46,7 @@ export interface MemoryEvent {
 
 export class MemoryStore {
   private db: DatabaseSync;
-  private writeLock: Promise<void> = Promise.resolve();
-  private hasFTS5: boolean = false;
+  private hasFTS5 = false;
 
   constructor(dbPath: string) {
     const dir = dirname(dbPath);
@@ -89,17 +91,12 @@ export class MemoryStore {
     `);
 
     // Migration: add last_accessed column if missing
-    try {
-      this.db.exec(`ALTER TABLE semantic ADD COLUMN last_accessed TEXT`);
-    } catch {
-      // Column already exists — ignore
-    }
+    try { this.db.exec("ALTER TABLE semantic ADD COLUMN last_accessed TEXT"); } catch { /* ignore */ }
 
-    // FTS5 virtual tables for semantic + lesson search (optional — node:sqlite may lack FTS5)
+    // FTS5 virtual tables (optional — node:sqlite may lack FTS5)
     try {
       this.db.exec(`
         CREATE VIRTUAL TABLE IF NOT EXISTS semantic_fts USING fts5(key, value, content='semantic', content_rowid='rowid');
-
         CREATE TRIGGER IF NOT EXISTS semantic_ai AFTER INSERT ON semantic BEGIN
           INSERT INTO semantic_fts(rowid, key, value) VALUES (new.rowid, new.key, new.value);
         END;
@@ -111,10 +108,8 @@ export class MemoryStore {
           INSERT INTO semantic_fts(rowid, key, value) VALUES (new.rowid, new.key, new.value);
         END;
       `);
-
       this.db.exec(`
         CREATE VIRTUAL TABLE IF NOT EXISTS lessons_fts USING fts5(rule, category, content='lessons', content_rowid='rowid');
-
         CREATE TRIGGER IF NOT EXISTS lessons_fts_ai AFTER INSERT ON lessons BEGIN
           INSERT INTO lessons_fts(rowid, rule, category) VALUES (new.rowid, new.rule, new.category);
         END;
@@ -126,25 +121,16 @@ export class MemoryStore {
           INSERT INTO lessons_fts(rowid, rule, category) VALUES (new.rowid, new.rule, new.category);
         END;
       `);
-
-      // Rebuild FTS indexes from existing data (idempotent)
-      this.db.exec(`INSERT INTO semantic_fts(semantic_fts) VALUES('rebuild')`);
-      this.db.exec(`INSERT INTO lessons_fts(lessons_fts) VALUES('rebuild')`);
+      this.db.exec("INSERT INTO semantic_fts(semantic_fts) VALUES('rebuild')");
+      this.db.exec("INSERT INTO lessons_fts(lessons_fts) VALUES('rebuild')");
       this.hasFTS5 = true;
     } catch {
-      // FTS5 not available (node:sqlite compiled without SQLITE_ENABLE_FTS5).
-      // Search will use substring fallback — fine for typical memory store sizes.
       this.hasFTS5 = false;
     }
   }
 
-  /**
-   * Serialize async callers so concurrent read-modify-write cycles
-   * (e.g. two consolidation calls) don't clobber each other.
-   */
+  /** Wrap operations in a SQLite transaction. */
   private withLock<T>(fn: () => T): T {
-    // DatabaseSync is synchronous, so we just need to ensure
-    // transactional integrity. Wrap in a SQLite transaction.
     this.db.exec("BEGIN IMMEDIATE");
     try {
       const result = fn();
@@ -163,11 +149,11 @@ export class MemoryStore {
     return this.db.prepare("SELECT * FROM semantic WHERE key = ?").get(normalized) as unknown as SemanticEntry | undefined;
   }
 
-  setSemantic(key: string, value: string, confidence: number = 0.8, source: SemanticEntry["source"] = "consolidation"): void {
+  setSemantic(key: string, value: string, confidence = 0.8, source: SemanticEntry["source"] = "consolidation"): void {
     const normalized = key.toLowerCase();
     this.withLock(() => {
       const existing = this.db.prepare("SELECT * FROM semantic WHERE key = ?").get(normalized) as unknown as SemanticEntry | undefined;
-      if (existing && existing.confidence > confidence) return; // higher confidence wins
+      if (existing && existing.confidence > confidence) return;
 
       this.db.prepare(`
         INSERT INTO semantic (key, value, confidence, source, updated_at)
@@ -184,15 +170,15 @@ export class MemoryStore {
   }
 
   deleteSemantic(key: string): boolean {
-    const normalized = key.toLowerCase();
     return this.withLock(() => {
+      const normalized = key.toLowerCase();
       const result = this.db.prepare("DELETE FROM semantic WHERE key = ?").run(normalized);
       if (result.changes > 0) this.logEvent("delete", "semantic", normalized);
       return result.changes > 0;
     });
   }
 
-  listSemantic(prefix?: string, limit: number = 100): SemanticEntry[] {
+  listSemantic(prefix?: string, limit = 100): SemanticEntry[] {
     if (prefix) {
       return this.db.prepare("SELECT * FROM semantic WHERE key LIKE ? ORDER BY updated_at DESC LIMIT ?")
         .all(`${prefix}%`, limit) as unknown as SemanticEntry[];
@@ -201,28 +187,21 @@ export class MemoryStore {
       .all(limit) as unknown as SemanticEntry[];
   }
 
-  searchSemantic(query: string, limit: number = 10): SemanticEntry[] {
+  searchSemantic(query: string, limit = 10): SemanticEntry[] {
     const terms = query.trim().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
-
     if (!this.hasFTS5) return this._searchSemanticFallback(query, limit);
 
-    // Build FTS5 query — quote each term for safety
     const ftsQuery = terms.map(t => `"${t.replace(/"/g, '""')}"`).join(" OR ");
-
     try {
-      const rows = this.db.prepare(`
-        SELECT s.key, s.value, s.confidence, s.source, s.created_at, s.updated_at, s.last_accessed
-        FROM semantic s
+      return this.db.prepare(`
+        SELECT s.* FROM semantic s
         JOIN semantic_fts fts ON s.rowid = fts.rowid
         WHERE semantic_fts MATCH ?
         ORDER BY bm25(semantic_fts)
         LIMIT ?
       `).all(ftsQuery, limit) as unknown as SemanticEntry[];
-
-      return rows;
     } catch {
-      // FTS query failed — fall back to substring matching
       return this._searchSemanticFallback(query, limit);
     }
   }
@@ -230,7 +209,6 @@ export class MemoryStore {
   private _searchSemanticFallback(query: string, limit: number): SemanticEntry[] {
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
-
     const all = this.db.prepare("SELECT * FROM semantic").all() as unknown as SemanticEntry[];
     return all
       .map(entry => {
@@ -254,34 +232,28 @@ export class MemoryStore {
 
   // ─── Lessons ─────────────────────────────────────────────────────
 
-  addLesson(rule: string, category: string = "general", source: string = "consolidation", negative: boolean = false): { success: boolean; id?: string; reason?: string } {
+  addLesson(rule: string, category = "general", source = "consolidation", negative = false): { success: boolean; id?: string; reason?: string } {
     const trimmed = rule.trim();
     if (!trimmed) return { success: false, reason: "empty rule" };
-
     const normalizedCategory = category.trim().toLowerCase() || "general";
 
     return this.withLock(() => {
-      // Exact-match dedup (case-insensitive)
-      const existing = this.db.prepare(
-        "SELECT id FROM lessons WHERE LOWER(TRIM(rule)) = LOWER(?) AND is_deleted = 0"
-      ).get(trimmed.toLowerCase()) as { id: string } | undefined;
-      if (existing) return { success: false as const, reason: "duplicate" as const, id: existing.id };
+      const existing = this.db.prepare("SELECT id FROM lessons WHERE LOWER(TRIM(rule)) = LOWER(?) AND is_deleted = 0")
+        .get(trimmed.toLowerCase()) as { id: string } | undefined;
+      if (existing) return { success: false, reason: "duplicate", id: existing.id };
 
-      // Jaccard dedup
       const allRules = this.db.prepare("SELECT id, rule FROM lessons WHERE is_deleted = 0").all() as { id: string; rule: string }[];
       for (const r of allRules) {
         if (jaccard(trimmed, r.rule) >= 0.7) {
-          return { success: false as const, reason: "similar" as const, id: r.id };
+          return { success: false, reason: "similar", id: r.id };
         }
       }
 
       const id = crypto.randomUUID();
-      this.db.prepare(
-        "INSERT INTO lessons (id, rule, category, source, negative) VALUES (?, ?, ?, ?, ?)"
-      ).run(id, trimmed, normalizedCategory, source, negative ? 1 : 0);
-
+      this.db.prepare("INSERT INTO lessons (id, rule, category, source, negative) VALUES (?, ?, ?, ?, ?)")
+        .run(id, trimmed, normalizedCategory, source, negative ? 1 : 0);
       this.logEvent("create", "lesson", id, trimmed.slice(0, 100));
-      return { success: true as const, id };
+      return { success: true, id };
     });
   }
 
@@ -291,12 +263,11 @@ export class MemoryStore {
     return { ...row, negative: !!row.negative };
   }
 
-  listLessons(category?: string, limit: number = 50): LessonEntry[] {
+  listLessons(category?: string, limit = 50): LessonEntry[] {
     let rows: any[];
     if (category) {
-      const normalizedCategory = category.trim().toLowerCase();
       rows = this.db.prepare("SELECT * FROM lessons WHERE category = ? AND is_deleted = 0 ORDER BY created_at DESC LIMIT ?")
-        .all(normalizedCategory, limit);
+        .all(category.trim().toLowerCase(), limit);
     } else {
       rows = this.db.prepare("SELECT * FROM lessons WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT ?")
         .all(limit);
@@ -304,28 +275,19 @@ export class MemoryStore {
     return rows.map(r => ({ ...r, negative: !!r.negative }));
   }
 
-  /**
-   * Search lessons by relevance to a query. Uses FTS5 when available,
-   * falls back to substring matching. Returns lessons ranked by relevance.
-   */
-  searchLessons(query: string, limit: number = 20): LessonEntry[] {
+  searchLessons(query: string, limit = 20): LessonEntry[] {
     const terms = query.trim().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
-
     if (!this.hasFTS5) return this._searchLessonsFallback(query, limit);
 
     const ftsQuery = terms.map(t => `"${t.replace(/"/g, '""')}"`).join(" OR ");
-
     try {
       const rows = this.db.prepare(`
-        SELECT l.id, l.rule, l.category, l.source, l.negative, l.created_at
-        FROM lessons l
+        SELECT l.* FROM lessons l
         JOIN lessons_fts fts ON l.rowid = fts.rowid
         WHERE lessons_fts MATCH ? AND l.is_deleted = 0
-        ORDER BY bm25(lessons_fts)
-        LIMIT ?
+        ORDER BY bm25(lessons_fts) LIMIT ?
       `).all(ftsQuery, limit) as any[];
-
       return rows.map(r => ({ ...r, negative: !!r.negative }));
     } catch {
       return this._searchLessonsFallback(query, limit);
@@ -335,7 +297,6 @@ export class MemoryStore {
   private _searchLessonsFallback(query: string, limit: number): LessonEntry[] {
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
-
     const all = this.db.prepare("SELECT * FROM lessons WHERE is_deleted = 0").all() as any[];
     return all
       .map(entry => {
@@ -351,10 +312,8 @@ export class MemoryStore {
 
   deleteLesson(id: string): boolean {
     return this.withLock(() => {
-      // Support both full UUIDs and prefix matches (e.g. first 8 chars)
       let result = this.db.prepare("UPDATE lessons SET is_deleted = 1 WHERE id = ? AND is_deleted = 0").run(id);
       if (result.changes === 0 && id.length < 36) {
-        // Try prefix match — ensure it's unambiguous
         const matches = this.db.prepare("SELECT id FROM lessons WHERE id LIKE ? AND is_deleted = 0").all(`${id}%`) as { id: string }[];
         if (matches.length === 1) {
           result = this.db.prepare("UPDATE lessons SET is_deleted = 1 WHERE id = ? AND is_deleted = 0").run(matches[0].id);
@@ -369,13 +328,12 @@ export class MemoryStore {
 
   // ─── Events ──────────────────────────────────────────────────────
 
-  private logEvent(eventType: string, memoryType: string, key: string, details: string = ""): void {
-    this.db.prepare(
-      "INSERT INTO events (event_type, memory_type, memory_key, details) VALUES (?, ?, ?, ?)"
-    ).run(eventType, memoryType, key, details);
+  private logEvent(eventType: string, memoryType: string, key: string, details = ""): void {
+    this.db.prepare("INSERT INTO events (event_type, memory_type, memory_key, details) VALUES (?, ?, ?, ?)")
+      .run(eventType, memoryType, key, details);
   }
 
-  listEvents(limit: number = 50): MemoryEvent[] {
+  listEvents(limit = 50): MemoryEvent[] {
     return this.db.prepare("SELECT * FROM events ORDER BY id DESC LIMIT ?").all(limit) as unknown as MemoryEvent[];
   }
 

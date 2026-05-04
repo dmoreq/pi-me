@@ -1,6 +1,10 @@
 /**
- * PromptBuilder — construct system and user prompts for LLM calls
- * Shared by handoff, auto-compact, and session-recap.
+ * PromptBuilder — construct system and user prompts for LLM calls.
+ *
+ * Shared by handoff, auto-compact, auto-recap, and session-recap.
+ * Ported from session-lifecycle/context-intel/prompt-builder.ts.
+ * Removed: buildDependencyAnalysis (dead code).
+ * Added: buildSessionRecap for auto-recap.
  */
 
 export class PromptBuilder {
@@ -43,9 +47,23 @@ Provide a one-line recap.`;
    */
   static buildCompactInstructions(customInstructions?: string): string {
     if (customInstructions) return customInstructions;
-
     return `Summarize the conversation so far in 2-3 sentences. Preserve facts, code, and open decisions.
 Keep enough detail that a reader can understand the current state and next steps.`;
+  }
+
+  /**
+   * Build session recap for auto-recap storage (slightly more detailed than buildRecap).
+   */
+  static buildSessionRecap(transcript: string): { system: string; user: string } {
+    const system = `You are a helpful assistant. Summarize the key outcomes, decisions, and open items
+from this conversation in 3-5 sentences. Focus on what was accomplished and what needs follow-up.`;
+
+    const user = `## Conversation
+${transcript}
+
+Provide a concise session recap.`;
+
+    return { system, user };
   }
 
   /**
@@ -60,22 +78,6 @@ If no tasks found, return [].`;
 ${transcript}
 
 Extract tasks:`;
-
-    return { system, user };
-  }
-
-  /**
-   * Build prompt for analyzing task dependencies.
-   */
-  static buildDependencyAnalysis(tasks: string[]): { system: string; user: string } {
-    const system = `Analyze the list of tasks and identify dependencies.
-Return a JSON object mapping task IDs to arrays of task IDs they depend on.
-Example: { "t2": ["t1"], "t3": ["t1", "t2"] }`;
-
-    const user = `Tasks:
-${tasks.map((t, i) => `${i + 1}. ${t}`).join("\n")}
-
-Analyze dependencies:`;
 
     return { system, user };
   }
