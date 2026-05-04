@@ -10,6 +10,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
 import { readProfile } from "../shared/profile.js";
 
+import { ContextIntelExtension } from "./context-intel";
 import handoff from "./handoff.ts";
 import checkpoint from "./git-checkpoint/checkpoint.ts";
 import autoCompact from "./auto-compact/index.ts";
@@ -39,6 +40,17 @@ export default function (pi: ExtensionAPI) {
 		t.heartbeat("session-lifecycle");
 	}
 
+	// Load merged context-intel extension (v0.3.0 redesign)
+	// This was implemented in v0.3.0 but never registered, now fixed in v0.3.0.1
+	new ContextIntelExtension(pi).register();
+
+	// Keep legacy extensions for now (will deprecate in v0.3.1)
+	// They are no longer needed since context-intel handles:
+	// - Handoff (/handoff command)
+	// - Auto-compact (auto-triggers at threshold)
+	// - Session recap (/recap command)
+	// Comment these out and use context-intel instead
+	// TODO: Remove in v0.3.1 (soft deprecation)
 	handoff(pi);
 	checkpoint(pi);
 	autoCompact(pi);
