@@ -2,6 +2,8 @@
  * Code Quality Extension
  *
  * Unified code quality pipeline: format → fix → analyze
+ * Merged with core-tools/formatter runners in Phase 5.
+ *
  * Extends ExtensionLifecycle for automatic telemetry.
  */
 
@@ -10,11 +12,12 @@ import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
 import { registerPackage } from "../../shared/telemetry-helpers.ts";
 import { CodeQualityPipeline } from "./pipeline.ts";
 import { RunnerRegistry } from "./registry.ts";
+import { formatAdapter } from "./runners/formatter-adapter.ts";
 
 export class CodeQualityExtension extends ExtensionLifecycle {
   readonly name = "code-quality";
-  readonly version = "0.3.0";
-  protected readonly description = "Code quality pipeline: format, fix, analyze";
+  readonly version = "0.5.0";
+  protected readonly description = "Code quality pipeline: format, fix, analyze (merged with formatter)";
   protected readonly tools = [];
   protected readonly events = ["edit", "write"];
 
@@ -23,6 +26,9 @@ export class CodeQualityExtension extends ExtensionLifecycle {
   constructor(pi: ExtensionAPI) {
     super(pi);
     this.pipeline = new CodeQualityPipeline();
+
+    // Register the formatter adapter as a format runner
+    this.pipeline.getRegistry().register(formatAdapter);
 
     registerPackage({
       name: this.name,
