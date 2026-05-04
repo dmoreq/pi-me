@@ -9,7 +9,7 @@
  */
 
 import type { CodeRunner, RunnerConfig, RunnerResult } from "../types.ts";
-import { formatFile } from "../../formatter/extensions/formatter/dispatch.ts";
+import { formatFile } from "../formatter-runners/dispatch.ts";
 
 /**
  * Create a CodeRunner that delegates to the formatter system.

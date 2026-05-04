@@ -2,15 +2,17 @@
  * core-tools — Umbrella entry point.
  *
  * Profile: dev loads subset A; full loads subset A + subset B.
- * Subset A: task-orchestration, planning, memory, formatter,
- *           thinking-steps, clipboard, code-quality, code-actions,
- *           file-intelligence, read-guard, subprocess-orchestrator.
+ * Subset A: task-orchestration, planning, memory,
+ *           thinking-steps, clipboard, code-quality,
+ *           file-intelligence, subprocess-orchestrator.
  * Subset B: file-collector, ast-grep, code-review, autofix.
  *
  * v0.4.0: Removed preset, edit-session (dead extensions from v0.3.0)
  * v0.6.0: Deprecated subagent, sub-pi, sub-pi-skill, ralph-loop, web-search
  * v0.7.0: Removed subagent, sub-pi, sub-pi-skill, ralph-loop, web-search
  *          → All consolidated into subprocess-orchestrator (subset A) and web-tools (content-tools)
+ * v0.8.0: Removed formatter TUI extension (merged into code-quality pipeline)
+ *          Removed read-guard, context-pruning, welcome-overlay, session-name, context-window
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -22,7 +24,6 @@ import { getTelemetry } from "pi-telemetry";
 import taskOrchestration from "./task-orchestration/src/index.ts";
 import planMode from "./plan-mode.ts";
 import memory from "./memory/index.ts";
-import formatter from "./formatter/extensions/index.ts";
 import thinkingSteps from "./thinking-steps/thinking-steps.ts";
 import codeQuality from "./code-quality/index.ts";
 import fileIntelligence from "./file-intelligence/index.ts";
@@ -59,7 +60,6 @@ export default function (pi: ExtensionAPI) {
 	taskOrchestration(pi);
 	planMode(pi);
 	memory(pi);
-	formatter(pi);
 	thinkingSteps(pi);
 	codeQuality(pi);
 	fileIntelligence(pi);
