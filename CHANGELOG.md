@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-05-04 (Context-Intel Cleanup)
+
+### BREAKING CHANGES
+
+- **Context-Intel removed**: `session-lifecycle/context-intel/` fully removed and deleted. The context-intelligence system (context monitoring, pruning, automation, memory, plugins) was adopted into **pi-slim v0.2.0** as the core context management layer. See [pi-slim](https://github.com/dmoreq/pi-slim) for the complete system.
+- **Barrel file removed**: `session-lifecycle/context-intel.ts` deleted. No remaining consumers.
+- **bunfig dependency removed**: No longer used after context-intel deletion.
+
+### Cleanup
+
+- Deleted planning documents: `CONTEXT_INTEL_IMPLEMENTATION_PLAN.md`, `CONTEXT_INTEL_REFACTOR_PLAN.md`, `CONTEXT_INTEL_SUMMARY.md`, `CODE_QUALITY_CONSOLIDATION_COMPLETE.md`, `CODE_QUALITY_CONSOLIDATION_PLAN.md`, `CODE_QUALITY_REFACTOR_PLAN.md`, `FEATURE_REPORT.md`.
+- Updated `session-lifecycle/index.ts` — removed ContextIntelExtension import/registration, bumped telemetry version to 0.9.0.
+- Updated `package.json` — bumped version to 0.9.0, removed bunfig.
+
 ## [0.5.0] - 2026-05-04 (Extension Consolidation & Agent Automation)
 
 ### BREAKING CHANGES

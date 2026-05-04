@@ -2,8 +2,9 @@
  * session-lifecycle — Umbrella entry point.
  *
  * Profile: dev / full (skipped for "minimal").
- * Registers: context-intel, checkpoint, welcome, skill-args.
+ * Registers: checkpoint, welcome, skill-args.
  *
+ * v0.9.0: Removed context-intel (fully moved to pi-slim).
  * v0.5.0: Removed usage-extension (moved to foundation/context-monitor).
  *         Removed context-pruning (now a plugin inside context-intel).
  *         Merged welcome-overlay + session-name into welcome/ module.
@@ -13,7 +14,6 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
 import { readProfile } from "../shared/profile.js";
 
-import { ContextIntelExtension } from "./context-intel";
 import checkpoint from "./git-checkpoint/checkpoint.ts";
 import welcome from "./welcome/welcome.ts";
 import { registerArgsHandler } from "./skill-args.ts";
@@ -30,16 +30,12 @@ export default function (pi: ExtensionAPI) {
 	if (t) {
 		t.register({
 			name: "session-lifecycle",
-			version: "0.5.0",
-			description: "Session lifecycle: context-intel, checkpoint, welcome, skill-args",
+			version: "0.9.0",
+			description: "Session lifecycle: checkpoint, welcome, skill-args",
 			events: ["session_start", "session_shutdown", "session_before_*"] as string[],
 		});
 		t.heartbeat("session-lifecycle");
 	}
-
-	// ContextIntelExtension v0.5.0: handoff, auto-compact, session recap,
-	// plus context-pruning + read-awareness as built-in plugins.
-	new ContextIntelExtension(pi).register();
 
 	checkpoint(pi);
 	welcome(pi); // merged: welcome-overlay + session-name
