@@ -10,6 +10,8 @@ description: |
 
 # Pi Subagents
 
+> **Note:** pi-me provides the `subprocess` tool (via subprocess-orchestrator) as an alternative to `subagent`. The `subprocess` tool supports `single`, `chain`, `loop`, `bg`, `pi`, `list`, and `status` actions. If `subagent` is unavailable, use `subprocess({ action: "single", ... })`.
+
 This skill is for the main parent orchestrator only. Do not inject or follow it inside spawned child subagents. The parent session owns delegation, orchestration, review fanout, and final fix-worker launches; child subagents should receive concrete role-specific tasks and should not run their own subagent workflows.
 
 Use this skill when the parent orchestrator needs to launch a specialized subagent, compose multiple agents into a workflow, or create/edit agents and chains on demand.

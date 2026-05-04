@@ -1,11 +1,11 @@
 # Spec Compliance Reviewer Prompt Template
 
-Use this template when dispatching a spec compliance reviewer subagent.
+Use this template when dispatching a spec compliance reviewer subprocess.
 
 **Purpose:** Verify implementer built what was requested (nothing more, nothing less)
 
 ```
-Dispatch a subagent with this prompt:
+Dispatch a subprocess with this prompt:
   description: "Review spec compliance for Task N"
   prompt: |
     You are reviewing whether an implementation matches its specification.

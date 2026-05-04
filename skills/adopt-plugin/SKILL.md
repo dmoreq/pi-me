@@ -232,6 +232,6 @@ Reference: `adopt-plugin` branch.
 **Strategy decisions:**
 - `checkpoint` → replaced pi-me's `git stash` wrapper with full git-ref checkpoints
 - `permission` → merged tier system + safety nets into unified 3-layer system
-- `lsp`, `ralph-loop`, `repeat`, `token-rate` → adopted as-is (no pi-me equivalent)
+- `lsp`, `repeat`, `token-rate` → adopted as-is (no pi-me equivalent)
 
 **Result:** 22 extensions, 148 tests across 8 test files, 3 safety modules merged into 1.

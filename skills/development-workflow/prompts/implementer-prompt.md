@@ -1,16 +1,16 @@
 # Implementer Subagent Prompt Template
 
-Use this template when dispatching an implementer subagent.
+Use this template when dispatching an implementer subprocess.
 
 ```
-Dispatch a subagent with this prompt:
+Dispatch a subprocess with this prompt:
   description: "Implement Task N: [task name]"
   prompt: |
     You are implementing Task N: [task name]
 
     ## Task Description
 
-    [FULL TEXT of task from plan - paste it here, don't make subagent read file]
+    [FULL TEXT of task from plan - paste it here, don't make subprocess read file]
 
     ## Context
 

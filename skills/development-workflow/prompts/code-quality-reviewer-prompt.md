@@ -1,13 +1,13 @@
 # Code Quality Reviewer Prompt Template
 
-Use this template when dispatching a code quality reviewer subagent.
+Use this template when dispatching a code quality reviewer subprocess.
 
 **Purpose:** Verify implementation is well-built (clean, tested, maintainable)
 
 **Only dispatch after spec compliance review passes.**
 
 ```
-Dispatch a subagent with the code-reviewer template:
+Dispatch a subprocess with the code-reviewer template:
   Use the template at ./code-reviewer.md (in the requesting-code-review skill directory)
 
   WHAT_WAS_IMPLEMENTED: [from implementer's report]
