@@ -4,7 +4,7 @@
  * Profile: dev loads subset A; full loads subset A + subset B.
  * Subset A: task-plan (unified), memory, thinking-steps, clipboard,
  *           code-quality (8 auto-formatters + 3 auto-fixers), file-intelligence, subprocess-orchestrator.
- * Subset B: file-collector, ast-grep, code-review.
+ * Subset B: file-collector, code-review.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -24,7 +24,6 @@ import { registerClipboard } from "./clipboard.ts";
 // ── Subset B — full only ─────────────────────────────────────────────────
 
 import fileCollector from "./file-collector/index.ts";
-import astGrepTools from "./ast-grep-tool/index.ts";
 import codeReview from "./code-review/index.ts";
 
 // ── Umbrella default export ──────────────────────────────────────────────
@@ -56,7 +55,6 @@ export default function (pi: ExtensionAPI) {
 	// Subset B — full only
 	if (profile === "full") {
 		fileCollector(pi);
-		astGrepTools(pi);
 		codeReview(pi);
 	}
 }
