@@ -1,6 +1,10 @@
 /**
- * TranscriptBuilder — extract and format conversation transcripts
- * Used by handoff, auto-compact, and session-recap to build LLM-ready transcripts.
+ * TranscriptBuilder — extract and format conversation transcripts.
+ *
+ * Used by handoff, auto-compact, auto-recap to build LLM-ready transcripts.
+ * Ported from session-lifecycle/context-intel/transcript-builder.ts.
+ * Removed: buildDependencyAnalysis (dead code).
+ * Added: buildCompactSummary for auto-compaction.
  */
 
 import type { Message } from "@mariozechner/pi-coding-agent";
@@ -70,18 +74,25 @@ export class TranscriptBuilder {
   }
 
   /**
+   * Build a compact summary from the last N messages (for auto-compaction).
+   * Returns the last `count` messages as a condensed transcript.
+   */
+  static buildCompactSummary(messages: Message[], count: number = 10): string {
+    const relevant = messages.slice(-count);
+    return this.buildTranscript(relevant, { fromLastUser: false, maxChars: 2000 });
+  }
+
+  /**
    * Check if conversation has meaningful activity (not just user messages).
    */
   static hasMeaningfulActivity(messages: Message[]): boolean {
     if (messages.length === 0) return false;
 
-    // Check for assistant tool calls
     for (const msg of messages) {
       if (msg.role === "assistant") {
         const toolCalls = this.extractToolCalls(msg.content);
         if (toolCalls.length > 0) return true;
 
-        // Check for substantial assistant response
         const text = this.extractText(msg.content);
         if (text.split(/\s+/).length >= 30) return true;
       }
@@ -124,9 +135,9 @@ export class TranscriptBuilder {
   }
 
   /**
-   * Extract plain text from message content (strips markdown if needed).
+   * Extract plain text from message content.
    */
-  private static extractText(content: any): string {
+  static extractText(content: any): string {
     if (typeof content === "string") {
       return content.trim();
     }
@@ -142,12 +153,11 @@ export class TranscriptBuilder {
   /**
    * Extract tool calls from content (looks for toolUse blocks or tool_call structures).
    */
-  private static extractToolCalls(content: any): Array<[string, any]> {
+  static extractToolCalls(content: any): Array<[string, any]> {
     const calls: Array<[string, any]> = [];
 
     if (typeof content !== "object") return calls;
 
-    // Handle Anthropic toolUse blocks
     if (Array.isArray(content)) {
       for (const block of content) {
         if (block && typeof block === "object") {
@@ -158,12 +168,10 @@ export class TranscriptBuilder {
       }
     }
 
-    // Handle single toolUse block
     if (content.type === "tool_use" && content.name && content.input) {
       calls.push([content.name, content.input]);
     }
 
-    // Handle tool_call structure
     if (content.tool_call && typeof content.tool_call === "object") {
       const tc = content.tool_call;
       if (tc.name && tc.arguments) {
