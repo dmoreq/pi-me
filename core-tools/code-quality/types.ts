@@ -1,10 +1,13 @@
 /**
- * Code Quality Pipeline types
+ * Code Quality Pipeline Types
+ *
+ * Format → Fix → Notify pipeline types.
+ * Removed unused "analyze" stage and Snippet type.
  */
 
 export interface CodeRunner {
   readonly id: string;
-  readonly type: "format" | "fix" | "analyze";
+  readonly type: "format" | "fix";
   matches(filePath: string): boolean;
   run(filePath: string, config: RunnerConfig): Promise<RunnerResult>;
 }
@@ -24,23 +27,18 @@ export interface ExecResult {
 export interface RunnerResult {
   status: "succeeded" | "failed" | "skipped" | "warning";
   message?: string;
-  changes?: number; // lines changed
+  changes?: number; // issues fixed
 }
 
-export interface PipelineResult {
+export interface StageResult {
+  status: "succeeded" | "failed" | "skipped";
+  message?: string;
+  changes?: number;
+}
+
+export interface ProcessResult {
   filePath: string;
-  format: RunnerResult[];
-  fix: RunnerResult[];
-  analyze: RunnerResult[];
+  format: StageResult;
+  fix: StageResult;
   duration: number; // ms
-}
-
-export interface Snippet {
-  id: string;
-  file: string;
-  startLine: number;
-  endLine: number;
-  language: string;
-  code: string;
-  description: string;
 }
