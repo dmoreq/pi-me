@@ -114,10 +114,14 @@ export abstract class ExtensionLifecycle implements LifecycleHooks {
   }
 
   /**
-   * Record a domain event. Uses heartbeat as proxy until pi-telemetry
-   * exposes a custom-event API.
+   * Record a domain event. Uses pi-telemetry's recordEvent() API.
+   * The event appears in /telemetry events timeline.
    */
-  protected track(_event: string, _data?: Record<string, unknown>): void {
-    getTelemetry()?.heartbeat(this.name);
+  protected track(event: string, data?: Record<string, unknown>): void {
+    try {
+      getTelemetry()?.recordEvent(this.name, 'track', event, data);
+    } catch {
+      // Telemetry is best-effort
+    }
   }
 }

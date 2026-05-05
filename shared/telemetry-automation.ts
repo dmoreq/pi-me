@@ -6,6 +6,7 @@
  */
 
 import type { ExtensionLifecycle } from "./lifecycle.ts";
+import { recordEvent } from "pi-telemetry/helpers";
 
 export interface AutomationTrigger {
   id: string;
@@ -161,5 +162,8 @@ export class TelemetryAutomation {
       severity: trigger.badge.variant === "error" ? "error" : "info",
       badge: { text: trigger.badge.text, variant: trigger.badge.variant },
     });
+
+    // Also emit as domain event for /telemetry events timeline
+    recordEvent(ext.name, trigger.id, trigger.message);
   }
 }
