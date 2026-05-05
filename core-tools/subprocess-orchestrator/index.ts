@@ -12,6 +12,8 @@ import { Type } from "@sinclair/typebox";
 import { SubprocessExecutor } from "./executor.ts";
 import { TaskNormalizer } from "./normalizer.ts";
 import type { SubprocessTask, SubprocessConfig, JobHandle } from "./types.ts";
+import { createCommandIntentDetector } from "../intent/detector.ts";
+import type { CommandIntent } from "../intent/types.ts";
 
 // ── Tool parameter schema ───────────────────────────────────────────────
 
@@ -36,15 +38,49 @@ const SubprocessParams = Type.Object({
   parallel: Type.Optional(Type.Boolean({ default: false })),
 });
 
+// ─── Intent-based subprocess configuration ─────────────────────────────────
+
+/** Timeout overrides per command intent (ms). */
+const INTENT_TIMEOUTS: Partial<Record<CommandIntent, number>> = {
+  build: 120_000,    // Builds can take long
+  test: 180_000,     // Test suites need ample time
+  deploy: 300_000,   // Deployments need 5+ min
+  install: 120_000,  // Package installs
+  analyze: 60_000,
+  serve: 30_000,
+  cleanup: 60_000,
+};
+
+/** Whether a command intent should be treated as critical (stop on failure). */
+const CRITICAL_INTENTS: Set<CommandIntent> = new Set([
+  "deploy",
+  "build",
+]);
+
+/** Priority labels for display / telemetry. */
+const INTENT_LABELS: Record<CommandIntent, string> = {
+  build: "🔨 Build",
+  test: "🧪 Test",
+  deploy: "🚀 Deploy",
+  lint: "✨ Lint",
+  install: "📦 Install",
+  analyze: "🔍 Analyze",
+  file_ops: "📁 File Ops",
+  serve: "🖥️  Serve",
+  cleanup: "🧹 Cleanup",
+  general: "⚙️  Cmd",
+};
+
 export class SubprocessOrchestrationExtension extends ExtensionLifecycle {
   readonly name = "subprocess-orchestrator";
-  readonly version = "0.6.0";
-  protected readonly description = "Execute subprocess tasks: single, chain, loop, background, pi subprocess";
+  readonly version = "0.7.0";
+  protected readonly description = "Execute subprocess tasks: single, chain, loop, background, pi subprocess. AI-powered command intent classification for smart timeouts and critical flags.";
   protected readonly tools = ["subprocess"];
-  protected readonly events = ["agent_end"];
+  protected readonly events = ["agent_end", "tool_call"];
 
   private executor: SubprocessExecutor;
   private normalizer = TaskNormalizer;
+  private commandDetector = createCommandIntentDetector();
 
   constructor(pi: ExtensionAPI, config?: SubprocessConfig) {
     super(pi);
@@ -57,6 +93,10 @@ export class SubprocessOrchestrationExtension extends ExtensionLifecycle {
       tools: this.tools,
       events: this.events,
     });
+
+    if (this.commandDetector.hasAI) {
+      console.debug("[subprocess-orchestrator] Groq command intent detection enabled");
+    }
   }
 
   /**
@@ -127,22 +167,42 @@ MODES (use exactly one action):
   }
 
   private async executeSingle(id: string, params: any): Promise<any> {
+    const cmd = params.cmd ?? "";
+
+    // Classify command intent (AI or manual) for smart defaults
+    let intent: CommandIntent = "general";
+    try {
+      const result = await this.commandDetector.detector.classify(cmd);
+      intent = result.intent;
+      this.track("command_classified", { intent, source: result.source, cmd: cmd.slice(0, 80) });
+    } catch {
+      // Fall through to defaults
+    }
+
     const task: SubprocessTask = {
       id,
-      name: params.cmd.slice(0, 60),
-      cmd: params.cmd,
+      name: `${INTENT_LABELS[intent]} ${cmd.slice(0, 40)}`,
+      cmd,
       args: params.args,
       cwd: params.cwd,
-      timeout: params.timeout,
-      critical: params.critical,
+      timeout: params.timeout ?? INTENT_TIMEOUTS[intent] ?? 300_000,
+      critical: params.critical ?? CRITICAL_INTENTS.has(intent),
     };
+
     const result = await this.executor.execute([task]);
-    return result[0];
+    return { ...result[0], _classifiedIntent: intent };
   }
 
   private async executeChain(id: string, params: any): Promise<any> {
-    const result = await this.executor.executeChain(params.steps);
-    return result;
+    // Classify the overall chain intent from the first step
+    const steps = params.steps ?? [];
+    if (steps.length > 0 && steps[0]?.cmd) {
+      try {
+        const result = await this.commandDetector.detector.classify(steps[0].cmd);
+        this.track("chain_classified", { intent: result.intent, stepCount: steps.length });
+      } catch { /* ignore */ }
+    }
+    return this.executor.executeChain(steps);
   }
 
   private async executeLoop(id: string, params: any): Promise<any> {
@@ -168,13 +228,20 @@ MODES (use exactly one action):
   }
 
   private async executePi(id: string, params: any): Promise<any> {
-    const result = await this.executor.spawnPi({
+    // Classify pi prompt intent for telemetry
+    if (params.prompt) {
+      try {
+        const result = await this.commandDetector.detector.classify(params.prompt.slice(0, 200));
+        this.track("pi_subprocess_classified", { intent: result.intent });
+      } catch { /* ignore */ }
+    }
+
+    return this.executor.spawnPi({
       prompt: params.prompt,
       skill: params.skill,
       model: params.model,
       fork: params.fork,
     });
-    return result;
   }
 
   private async getJobStatus(jobId: string): Promise<any> {

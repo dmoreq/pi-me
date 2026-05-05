@@ -11,11 +11,19 @@ import type { FileComplexity } from "./complexity.ts";
 import type { TDIResult } from "./tdi.ts";
 import type { TodoSummary } from "./todo-scanner.ts";
 
+export interface ReviewScopeMetadata {
+	intent: string;
+	label: string;
+	description: string;
+	source: string;
+}
+
 export interface CodeReviewInput {
 	tdi: TDIResult;
 	complexities: FileComplexity[];
 	todos: TodoSummary;
 	projectRoot: string;
+	reviewScope?: ReviewScopeMetadata;
 }
 
 /**
@@ -51,13 +59,18 @@ function formatComplexityWarnings(complexities: FileComplexity[], projectRoot: s
  * Build the full markdown report.
  */
 export function buildReport(input: CodeReviewInput): string {
-	const { tdi, complexities, todos, projectRoot } = input;
+	const { tdi, complexities, todos, projectRoot, reviewScope } = input;
 	const timestamp = new Date().toISOString();
 	const lines: string[] = [];
 
 	lines.push(`# Code Review Report`);
 	lines.push(`**Date:** ${timestamp}`);
 	lines.push(`**Project:** \`${projectRoot}\``);
+	if (reviewScope) {
+		lines.push(`**Focus:** ${reviewScope.label} (${reviewScope.source})`);
+		lines.push(`**Description:** ${reviewScope.description}`);
+		lines.push(`**Intent:** ${reviewScope.intent}`);
+	}
 	lines.push("");
 	lines.push("## Technical Debt Index");
 	lines.push("");
