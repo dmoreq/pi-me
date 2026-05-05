@@ -15,66 +15,26 @@ import type { SubprocessTask, SubprocessConfig, JobHandle } from "./types.ts";
 
 // ── Tool parameter schema ───────────────────────────────────────────────
 
-const SubprocessParams = Type.Union([
-  // Single task
-  Type.Object({
-    action: Type.Literal("single"),
-    cmd: Type.String({ description: "Command to execute" }),
-    args: Type.Optional(Type.Array(Type.String())),
-    cwd: Type.Optional(Type.String()),
-    timeout: Type.Optional(Type.Number()),
-    critical: Type.Optional(Type.Boolean()),
-  }),
-  // Chain execution
-  Type.Object({
-    action: Type.Literal("chain"),
-    steps: Type.Array(Type.Object({
-      id: Type.String(),
-      prompt: Type.String(),
-      passContext: Type.Optional(Type.Boolean()),
-      model: Type.Optional(Type.String()),
-      timeout: Type.Optional(Type.Number()),
-    })),
-  }),
-  // Loop execution
-  Type.Object({
-    action: Type.Literal("loop"),
-    task: Type.String({ description: "Command to run each iteration" }),
-    conditionCmd: Type.String({ description: "Continue while this returns 'true'" }),
-    maxIterations: Type.Optional(Type.Number({ default: 10 })),
-    interval: Type.Optional(Type.Number({ default: 1000 })),
-  }),
-  // Background job
-  Type.Object({
-    action: Type.Literal("bg"),
-    cmd: Type.String({ description: "Command to run in background" }),
-    args: Type.Optional(Type.Array(Type.String())),
-    label: Type.Optional(Type.String()),
-    notifyOnComplete: Type.Optional(Type.Boolean()),
-  }),
-  // Pi subprocess
-  Type.Object({
-    action: Type.Literal("pi"),
-    prompt: Type.String({ description: "Prompt for pi subprocess" }),
-    skill: Type.Optional(Type.String()),
-    model: Type.Optional(Type.String()),
-    fork: Type.Optional(Type.Boolean()),
-  }),
-  // List active jobs
-  Type.Object({
-    action: Type.Literal("list"),
-  }),
-  // Inspect a job
-  Type.Object({
-    action: Type.Literal("status"),
-    id: Type.String({ description: "Job ID to inspect" }),
-  }),
-  // Execute a plan (normalize plan steps → subprocess tasks)
-  Type.Object({
-    action: Type.Literal("plan"),
-    parallel: Type.Optional(Type.Boolean({ default: false })),
-  }),
-]);
+const SubprocessParams = Type.Object({
+  action: Type.String({ description: "Action: single, chain, loop, bg, pi, list, status, plan" }),
+  cmd: Type.Optional(Type.String({ description: "Command to execute" })),
+  args: Type.Optional(Type.Array(Type.String())),
+  cwd: Type.Optional(Type.String()),
+  timeout: Type.Optional(Type.Number()),
+  critical: Type.Optional(Type.Boolean()),
+  steps: Type.Optional(Type.Array(Type.Any())),
+  task: Type.Optional(Type.String({ description: "Command to run each iteration" })),
+  conditionCmd: Type.Optional(Type.String({ description: "Continue while this returns 'true'" })),
+  maxIterations: Type.Optional(Type.Number({ default: 10 })),
+  interval: Type.Optional(Type.Number({ default: 1000 })),
+  label: Type.Optional(Type.String()),
+  notifyOnComplete: Type.Optional(Type.Boolean()),
+  prompt: Type.Optional(Type.String({ description: "Prompt for pi subprocess" })),
+  skill: Type.Optional(Type.String()),
+  model: Type.Optional(Type.String()),
+  fork: Type.Optional(Type.Boolean()),
+  parallel: Type.Optional(Type.Boolean({ default: false })),
+});
 
 export class SubprocessOrchestrationExtension extends ExtensionLifecycle {
   readonly name = "subprocess-orchestrator";
