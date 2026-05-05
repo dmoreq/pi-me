@@ -772,12 +772,7 @@ export default function (pi: ExtensionAPI) {
     handleSessionStart(state, ctx);
     await safeOps.init(ctx);
 
-    if (ctx.hasUI) {
-      const cfg = safeOps.getConfig(ctx);
-      const parts: string[] = ["🛡️  Safe-Ops:"];
-      parts.push(...safeOps.getStatus(cfg));
-      ctx.ui.notify(parts.join(" "), "info");
-    }
+
   });
 
   pi.on("tool_call", async (event, ctx) => {
