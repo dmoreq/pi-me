@@ -2,11 +2,10 @@
  * Telemetry helpers — ergonomic wrappers around pi-telemetry.
  * All functions are no-ops when telemetry is not loaded.
  *
- * Delegates to pi-telemetry's first-class helpers where available,
- * falling back to getTelemetry() for methods not yet in helpers.
+ * Delegates to pi-telemetry's first-class helpers.
  */
 
-import { getTelemetry } from "pi-telemetry";
+
 import {
   registerPackage as helpersRegisterPackage,
   telemetryNotify as helpersTelemetryNotify,
