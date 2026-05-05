@@ -8,6 +8,8 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { createSessionIntentDetector } from "../../core-tools/intent/detector.ts";
+import type { SessionIntent } from "../../core-tools/intent/types.ts";
 
 // ============================================================================
 // Constants
@@ -15,7 +17,22 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 const STATUS_KEY = "welcome-header";
 const SESSION_NAME_STATUS_KEY = "session-name";
+const SESSION_INTENT_STATUS_KEY = "session-intent";
 const MAX_NAME_LENGTH = 60;
+
+// ─── Session intent labels & emoji ─────────────────────────────────────────
+
+const INTENT_LABELS: Record<SessionIntent, { emoji: string; label: string }> = {
+  debug:   { emoji: "🐛", label: "Debugging" },
+  feature: { emoji: "✨", label: "Building Feature" },
+  refactor:{ emoji: "♻️", label: "Refactoring" },
+  explore: { emoji: "🔍", label: "Exploring Codebase" },
+  review:  { emoji: "👁️", label: "Code Review" },
+  test:    { emoji: "🧪", label: "Testing" },
+  learn:   { emoji: "📚", label: "Learning" },
+  ops:     { emoji: "🚀", label: "Operations" },
+  general: { emoji: "💬", label: "General" },
+};
 
 // ============================================================================
 // Session Name Logic
@@ -39,6 +56,7 @@ export function sessionNameFromMessage(text: string): string {
 export class WelcomeModule {
   private welcomeEnabled = true;
   private firstMessageSeen = false;
+  private sessionDetector = createSessionIntentDetector();
 
   register(pi: ExtensionAPI): void {
     // ── Session lifecycle ──────────────────────────────────────
@@ -71,8 +89,20 @@ export class WelcomeModule {
       const name = sessionNameFromMessage(event.text);
       pi.setSessionName(name);
 
+      // Classify session intent (AI or manual)
+      let sessionIntent: SessionIntent = "general";
+      try {
+        const result = await this.sessionDetector.detector.classify(event.text);
+        sessionIntent = result.intent;
+      } catch { /* fall through to general */ }
+
       if (ctx.hasUI) {
+        const meta = INTENT_LABELS[sessionIntent];
         ctx.ui.setStatus(SESSION_NAME_STATUS_KEY, ctx.ui.theme.fg("dim", `💬  Session: ${name}`));
+        ctx.ui.setStatus(
+          SESSION_INTENT_STATUS_KEY,
+          ctx.ui.theme.fg("dim", `${meta.emoji}  ${meta.label}`),
+        );
       }
 
       return { action: "continue" };

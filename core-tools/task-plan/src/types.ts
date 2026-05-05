@@ -12,20 +12,10 @@
 
 import type { Message } from "./types-external.ts";
 
-// ─── Intents ────────────────────────────────────────────────────────────────
+// ─── Intents (re-exported from centralized core-tools/intent/) ────────────────
 
-export const INTENTS = [
-  "fix",
-  "refactor",
-  "test",
-  "docs",
-  "deploy",
-  "analyze",
-  "implement",
-  "general",
-] as const;
-
-export type TaskIntent = (typeof INTENTS)[number];
+export { INTENTS } from "../../intent/types.ts";
+export type { TaskIntent } from "../../intent/types.ts";
 
 // ─── Status ─────────────────────────────────────────────────────────────────
 
@@ -259,12 +249,9 @@ export interface TaskEvent {
   metadata?: Record<string, unknown>;
 }
 
-// ─── Intent Classifier ──────────────────────────────────────────────────────
+// ─── Intent Classifier (re-exported from centralized core-tools/intent/) ─────
 
-export interface IIntentClassifier {
-  classify(text: string): TaskIntent;
-  classifyAsync?(text: string): Promise<{ intent: TaskIntent; source: "ai" | "manual" }>;
-}
+export type { IIntentClassifier } from "../../intent/types.ts";
 
 // Re-export external types
 export type { Message } from "./types-external.ts";
