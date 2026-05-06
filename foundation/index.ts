@@ -2,17 +2,15 @@
  * foundation — Umbrella entry point.
  *
  * Always loaded (all profiles include foundation).
- * Registers: secrets, permission (3-layer guard: safety + tiers + safe-ops),
- *            context-monitor (merged context-window + usage-extension).
+ * Registers: secrets, context-monitor (merged context-window + usage-extension).
  *
- * v0.4.0: Merged safe-ops.ts into permission/ as SafeOpsLayer (Layer 3).
  * v0.5.0: Merged context-window + usage-extension → context-monitor.
+ * v1.1.0: Removed permission (3-layer guard) — no longer part of foundation.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
 import secrets from "./secrets/secrets.ts";
-import permission from "./permission/permission.ts";
 import contextMonitor from "./context-monitor/index.ts";
 
 export default function (pi: ExtensionAPI) {
@@ -21,7 +19,7 @@ export default function (pi: ExtensionAPI) {
 		t.register({
 			name: "foundation",
 			version: "0.5.0",
-			description: "Safety guards: secrets, permission (3-layer), context-monitor",
+			description: "Safety guards: secrets, context-monitor",
 			tools: ["read", "edit", "write", "bash"],
 			events: ["tool_call", "input", "session_start", "session_shutdown"],
 		});
@@ -30,6 +28,5 @@ export default function (pi: ExtensionAPI) {
 
 	// secrets is async — fire-and-forget
 	void secrets(pi);
-	permission(pi);
 	contextMonitor(pi);
 }

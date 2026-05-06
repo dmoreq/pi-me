@@ -2,14 +2,13 @@
  * session-lifecycle — Umbrella entry point.
  *
  * Profile: dev / full (skipped for "minimal").
- * Registers: checkpoint, welcome, skill-args.
+ * Registers: welcome, skill-args.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getTelemetry } from "pi-telemetry";
 import { readProfile } from "../shared/profile.ts";
 
-import checkpoint from "./git-checkpoint/checkpoint.ts";
 import welcome from "./welcome/welcome.ts";
 import { registerArgsHandler } from "./skill-args.ts";
 
@@ -26,13 +25,12 @@ export default function (pi: ExtensionAPI) {
 		t.register({
 			name: "session-lifecycle",
 			version: "0.9.0",
-			description: "Session lifecycle: checkpoint, welcome, skill-args",
+			description: "Session lifecycle: welcome, skill-args",
 			events: ["session_start", "session_shutdown", "session_before_*"] as string[],
 		});
 		t.heartbeat("session-lifecycle");
 	}
 
-	checkpoint(pi);
 	welcome(pi); // merged: welcome-overlay + session-name
 	registerArgsHandler(pi);
 }
