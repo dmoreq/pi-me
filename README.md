@@ -20,12 +20,6 @@ pi-me v1.0.0 — Unified Task & Plan
 
 foundation/              ← Always loaded
 ├── secrets/              Secret scanning (env vars, API keys)
-├── permission/           3-layer guard (safety → tiers → safe-ops)
-│   ├── permission.ts        /permission, /permission-mode
-│   ├── permission-core.ts   Command classification engine
-│   ├── safety-patterns.ts   Hard safety net patterns
-│   ├── safe-ops-layer.ts    Git/gh/rm protection
-│   └── path-guard.ts        Protected path matching
 └── context-monitor/       Unified context + usage monitor
     ├── context-widget.ts     Real-time context usage bar
     ├── usage-dashboard.ts    /usage, /cost commands
@@ -116,9 +110,6 @@ Add to your pi configuration:
 
 | Command | Extension | Description |
 |---------|-----------|-------------|
-| `/permission` | permission | Set permission level |
-| `/safegit` | permission | Toggle git protection |
-| `/saferm` | permission | Toggle rm→trash |
 | `/usage` | context-monitor | Usage statistics dashboard |
 | `/cost` | context-monitor | Cost report |
 | `/welcome-toggle` | welcome | Toggle welcome header |

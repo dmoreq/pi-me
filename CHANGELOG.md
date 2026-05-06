@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-05-06
+
+### Removed
+
+- **Permission feature removed**: `foundation/permission/` (9 files) and `skills/permission/` fully deleted. This includes the 3-layer guard (safety patterns, permission tiers, safe-ops), `/permission`, `/permission-mode`, `/safegit`, `/saferm` commands, path-guard, and all associated tests and skill documentation.
+
+---
+
 ## [1.0.0] - 2026-05-04 (Unified Task & Plan Management)
 
 ### BREAKING CHANGES
