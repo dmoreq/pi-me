@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **Permission feature removed**: `foundation/permission/` (9 files) and `skills/permission/` fully deleted. This includes the 3-layer guard (safety patterns, permission tiers, safe-ops), `/permission`, `/permission-mode`, `/safegit`, `/saferm` commands, path-guard, and all associated tests and skill documentation.
+- **Git checkpoint removed**: `session-lifecycle/git-checkpoint/` (3 files) fully deleted. Git-based checkpoint snapshots and restore functionality removed.
+- **pi-dialog dependency removed**: Removed from `package.json` dependencies and `pi.extensions` list.
 
 ---
 

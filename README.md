@@ -27,7 +27,6 @@ foundation/              ← Always loaded
 
 session-lifecycle/       ← dev/full profiles
 ├── welcome/              Welcome header + auto session naming
-├── git-checkpoint/       Git checkpoint snapshots
 └── skill-args/           $1/$2/$ARGUMENTS skill argument substitution
 
 core-tools/              ← dev/full profiles

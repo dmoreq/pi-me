@@ -16,8 +16,7 @@
       "./core-tools/index.ts",
       "./content-tools/index.ts",
       "./authoring/index.ts",
-      "pi-web-providers/dist/index.js",
-      "pi-dialog"
+      "pi-web-providers/dist/index.js"
     ],
     "skills": [
       "./skills"
@@ -33,7 +32,6 @@
     "linkedom": "^0.18.12",
     "lodash": "^4.18.1",
     "mime-types": "^3.0.2",
-    "pi-dialog": "github:dmoreq/pi-dialog",
     "pi-telemetry": "github:dmoreq/pi-telemetry",
     "pi-docparser": "^1.1.1",
     "pi-link": "^0.1.11",
