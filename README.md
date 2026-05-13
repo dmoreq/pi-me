@@ -1,14 +1,14 @@
 # π-me v1.0.0
 
-**Production-Grade AI Assistant Extension Suite** — unified task & plan management, 548+ tests, SOLID-refactored, telemetry-driven automation
+**Production-Grade AI Assistant Extension Suite** — unified task & plan management, 840+ tests, SOLID-refactored, telemetry-driven automation
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-548%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-840%20passing-brightgreen)]()
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](./CHANGELOG.md)
 
 A comprehensive extension suite for the [pi coding agent](https://github.com/mariozechner/pi-coding-agent). **Production-grade quality** with safety guards, session lifecycle management, code quality pipelines, persistent memory, and telemetry-driven automation.
 
-**20 extensions • 4 umbrellas • 540+ tests • 0 failures • MIT licensed.**
+**18 extensions • 4 umbrellas • 840+ tests • 0 failures • MIT licensed.**
 
 ---
 
@@ -20,10 +20,7 @@ pi-me v1.0.0 — Unified Task & Plan
 
 foundation/              ← Always loaded
 ├── secrets/              Secret scanning (env vars, API keys)
-└── context-monitor/       Unified context + usage monitor
-    ├── context-widget.ts     Real-time context usage bar
-    ├── usage-dashboard.ts    /usage, /cost commands
-    └── ...
+└── context-monitor/       Session stats & token usage tracking (passive hooks, no slash commands)
 
 session-lifecycle/       ← dev/full profiles
 ├── welcome/              Welcome header + auto session naming
@@ -109,8 +106,7 @@ Add to your pi configuration:
 
 | Command | Extension | Description |
 |---------|-----------|-------------|
-| `/usage` | context-monitor | Usage statistics dashboard |
-| `/cost` | context-monitor | Cost report |
+
 | `/welcome-toggle` | welcome | Toggle welcome header |
 | `/welcome-builtin` | welcome | Restore built-in header |
 | `/memory-consolidate` | memory | Manually trigger consolidation |
@@ -137,7 +133,7 @@ Add to your pi configuration:
 ## Test Suite
 
 ```bash
-npm test    # 548+ tests, all passing
+npm test    # 840+ tests, all passing
 ```
 
 ## License

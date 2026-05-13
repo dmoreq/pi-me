@@ -155,14 +155,19 @@ MODES (use exactly one action):
         return this.executeBackground(id, params);
       case "pi":
         return this.executePi(id, params);
-      case "list":
-        return { jobs: this.executor.listJobs().map(j => ({ jobId: j.jobId, status: j.status, label: j.task.label, createdAt: j.createdAt })) };
+      case "list": {
+        const jobs = this.executor.listJobs().map(j => ({ jobId: j.jobId, status: j.status, label: j.task.label, createdAt: j.createdAt }));
+        const output = JSON.stringify({ jobs }, null, 2);
+        return { content: [{ type: "text", text: output }], details: {} };
+      }
       case "status":
         return this.getJobStatus(params.id);
       case "plan":
         return this.executePlan(id);
-      default:
-        return { error: `Unknown action: ${params.action}` };
+      default: {
+        const output = JSON.stringify({ error: `Unknown action: ${params.action}` }, null, 2);
+        return { content: [{ type: "text", text: output }], details: {} };
+      }
     }
   }
 
@@ -190,7 +195,8 @@ MODES (use exactly one action):
     };
 
     const result = await this.executor.execute([task]);
-    return { ...result[0], _classifiedIntent: intent };
+    const output = JSON.stringify({ ...result[0], _classifiedIntent: intent }, null, 2);
+    return { content: [{ type: "text", text: output }], details: {} };
   }
 
   private async executeChain(id: string, params: any): Promise<any> {
@@ -202,7 +208,9 @@ MODES (use exactly one action):
         this.track("chain_classified", { intent: result.intent, stepCount: steps.length });
       } catch { /* ignore */ }
     }
-    return this.executor.executeChain(steps);
+    const chainResult = await this.executor.executeChain(steps);
+    const output = JSON.stringify(chainResult, null, 2);
+    return { content: [{ type: "text", text: output }], details: {} };
   }
 
   private async executeLoop(id: string, params: any): Promise<any> {
@@ -212,7 +220,8 @@ MODES (use exactly one action):
       maxIterations: params.maxIterations,
       interval: params.interval,
     });
-    return { ...result, _controlId: result.loopId };
+    const output = JSON.stringify({ ...result, _controlId: result.loopId }, null, 2);
+    return { content: [{ type: "text", text: output }], details: {} };
   }
 
   private async executeBackground(id: string, params: any): Promise<any> {
@@ -224,7 +233,9 @@ MODES (use exactly one action):
       label: params.label,
       notifyOnComplete: params.notifyOnComplete,
     });
-    return { jobId: handle.jobId, status: handle.status, message: `Job ${handle.jobId} started in background. Use { action: "status", id: "${handle.jobId}" } to check.` };
+    const result = { jobId: handle.jobId, status: handle.status, message: `Job ${handle.jobId} started in background. Use { action: "status", id: "${handle.jobId}" } to check.` };
+    const output = JSON.stringify(result, null, 2);
+    return { content: [{ type: "text", text: output }], details: {} };
   }
 
   private async executePi(id: string, params: any): Promise<any> {
@@ -236,25 +247,32 @@ MODES (use exactly one action):
       } catch { /* ignore */ }
     }
 
-    return this.executor.spawnPi({
+    const piResult = await this.executor.spawnPi({
       prompt: params.prompt,
       skill: params.skill,
       model: params.model,
       fork: params.fork,
     });
+    const output = JSON.stringify(piResult, null, 2);
+    return { content: [{ type: "text", text: output }], details: {} };
   }
 
   private async getJobStatus(jobId: string): Promise<any> {
     const job = this.executor.listJobs().find(j => j.jobId === jobId);
-    if (!job) return { error: `Job not found: ${jobId}` };
+    if (!job) {
+      const output = JSON.stringify({ error: `Job not found: ${jobId}` }, null, 2);
+      return { content: [{ type: "text", text: output }], details: {} };
+    }
     const result = await this.executor.watchJob(jobId);
-    return { jobId: job.jobId, status: job.status, result };
+    const output = JSON.stringify({ jobId: job.jobId, status: job.status, result }, null, 2);
+    return { content: [{ type: "text", text: output }], details: {} };
   }
 
   private async executePlan(id: string): Promise<any> {
     // Plan execution via normalizer — called when plan exists
     // This is a hook point; actual plan execution is triggered on agent_end
-    return { message: "Plan execution triggered. Use subprocess action 'single' for individual steps." };
+    const output = JSON.stringify({ message: "Plan execution triggered. Use subprocess action 'single' for individual steps." }, null, 2);
+    return { content: [{ type: "text", text: output }], details: {} };
   }
 
   /**

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Permission feature removed**: `foundation/permission/` (9 files) and `skills/permission/` fully deleted. This includes the 3-layer guard (safety patterns, permission tiers, safe-ops), `/permission`, `/permission-mode`, `/safegit`, `/saferm` commands, path-guard, and all associated tests and skill documentation.
 - **Git checkpoint removed**: `session-lifecycle/git-checkpoint/` (3 files) fully deleted. Git-based checkpoint snapshots and restore functionality removed.
+- **`/usage` and `/cost` commands removed**: `foundation/context-monitor/usage-dashboard.ts` never materialized as planned in v0.5.0. The `context-monitor` now tracks session stats passively via hooks — no slash commands for usage or cost are registered.
 - **pi-dialog dependency removed**: Removed from `package.json` dependencies and `pi.extensions` list.
 
 ---
@@ -94,7 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### BREAKING CHANGES
 
 - **Permission + Safe Ops merged**: `foundation/safe-ops.ts` removed. All safe-ops commands (/safegit, /saferm, etc.) still work — now loaded via `foundation/permission/` as `SafeOpsLayer`.
-- **Context Window + Usage merged**: `session-lifecycle/usage-extension/` removed. `/usage` and `/cost` commands moved to `foundation/context-monitor/`.
+- **Context Window + Usage merged**: `session-lifecycle/usage-extension/` and `foundation/context-window/` merged into `foundation/context-monitor/`. The `/usage` and `/cost` commands were **retired** in the process — context-monitor tracks session stats passively via hooks instead.
 - **Context Pruning → Plugin**: `session-lifecycle/context-pruning/` removed. Pruning rules are now plugins in `session-lifecycle/context-intel/plugins/`. Commands (/cp-stats, /cp-toggle) still work.
 - **Read Guard → Plugin**: `core-tools/read-guard/` removed. Now a plugin in `session-lifecycle/context-intel/plugins/`. `/trust-me` command still works.
 - **Formatter → Code Quality**: Formatter runners accessible via code-quality pipeline adapter. `/formatter` command remains.
