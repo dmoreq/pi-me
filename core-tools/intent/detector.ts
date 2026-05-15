@@ -31,11 +31,6 @@ async function notifyFallback(detectorType: string, errorMsg: string): Promise<v
   }
 }
 
-// Reset the throttle on module reload
-function resetFallbackNotified(): void {
-  _telemetryNotified = false;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // Shared AI infrastructure
 // ═══════════════════════════════════════════════════════════════════════════
@@ -508,11 +503,6 @@ function buildGroqConfig(): { apiKey: string } | null {
   const groqApiKey = process.env.GROQ_API_KEY;
   if (groqApiKey) return { apiKey: groqApiKey };
   return null;
-}
-
-// Expose reset for testing
-if (typeof globalThis !== "undefined") {
-  (globalThis as any).__resetIntentFallbackNotification?.();
 }
 
 /**
