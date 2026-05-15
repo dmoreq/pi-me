@@ -30,20 +30,28 @@ export class CodeQualityPipeline {
   async processFile(
     filePath: string,
     cwd: string,
-    exec: (cmd: string, args: string[], opts: any) => Promise<{ exitCode: number; stdout: string }>
+    exec: (cmd: string, args: string[], opts: any) => Promise<{ exitCode: number; stdout: string }>,
+    flags: { runFormat?: boolean; runFix?: boolean } = {}
   ): Promise<ProcessResult> {
+    const { runFormat = true, runFix = true } = flags;
     const startTime = Date.now();
     const runnerConfig: RunnerConfig = { cwd, timeoutMs: this.config.timeoutMs, exec };
 
     // Stage 1: Format (8 formatters)
-    const formatRunners = this.registry.getForFile(filePath, "format");
-    const formatResults = await this.runAll(formatRunners, filePath, runnerConfig);
-    const format = this.toStageResults(formatResults);
+    let format: StageResult[] = [];
+    if (runFormat) {
+      const formatRunners = this.registry.getForFile(filePath, "format");
+      const formatResults = await this.runAll(formatRunners, filePath, runnerConfig);
+      format = this.toStageResults(formatResults);
+    }
 
     // Stage 2: Fix (3 fixers)
-    const fixRunners = this.registry.getForFile(filePath, "fix");
-    const fixResults = await this.runAll(fixRunners, filePath, runnerConfig);
-    const fix = this.toStageResults(fixResults);
+    let fix: StageResult[] = [];
+    if (runFix) {
+      const fixRunners = this.registry.getForFile(filePath, "fix");
+      const fixResults = await this.runAll(fixRunners, filePath, runnerConfig);
+      fix = this.toStageResults(fixResults);
+    }
 
     const duration = Date.now() - startTime;
 

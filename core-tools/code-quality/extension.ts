@@ -10,6 +10,7 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
+import { registerToggleCommand, registerStatusCommand } from "../../shared/command-builder.ts";
 import { basename, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import { CodeQualityPipeline } from "./pipeline.ts";
@@ -28,6 +29,8 @@ export class CodeQualityExtension extends ExtensionLifecycle {
 
   private pipeline: CodeQualityPipeline;
   private fileStats = { formatted: 0, fixed: 0, totalDuration: 0 };
+  private autoFormat = true;
+  private autoFix = true;
 
   constructor(pi: ExtensionAPI) {
     super(pi);
@@ -56,8 +59,41 @@ export class CodeQualityExtension extends ExtensionLifecycle {
 
   register(): void {
     super.register();
-    // Expose memory store and other dependencies for tools
+    // Expose stats for tooling
     (this.pi as any).__codeQualityStats = this.fileStats;
+
+    // /cq-format — toggle auto-format on write/edit
+    registerToggleCommand(this.pi, {
+      name: "cq-format",
+      description: "Toggle auto-format on write/edit",
+      getState: () => this.autoFormat,
+      setState: v => { this.autoFormat = v; },
+      onLabel:  "cq-format: ON  (auto-format enabled)",
+      offLabel: "cq-format: OFF (auto-format disabled)",
+    });
+
+    // /cq-fix — toggle auto-fix on write/edit
+    registerToggleCommand(this.pi, {
+      name: "cq-fix",
+      description: "Toggle auto-fix (eslint --fix, biome, ruff) on write/edit",
+      getState: () => this.autoFix,
+      setState: v => { this.autoFix = v; },
+      onLabel:  "cq-fix: ON  (auto-fix enabled)",
+      offLabel: "cq-fix: OFF (auto-fix disabled)",
+    });
+
+    // /cq-status — show current session stats
+    registerStatusCommand(this.pi, {
+      name: "cq",
+      description: "Show code quality stats for this session",
+      getStatusLines: () => [
+        `Auto-format: ${this.autoFormat ? "✅ ON" : "❌ OFF"}`,
+        `Auto-fix:    ${this.autoFix    ? "✅ ON" : "❌ OFF"}`,
+        `Files formatted: ${this.fileStats.formatted}`,
+        `Files fixed:     ${this.fileStats.fixed}`,
+        `Total time:      ${this.fileStats.totalDuration}ms`,
+      ],
+    });
   }
 
   /**
@@ -66,6 +102,7 @@ export class CodeQualityExtension extends ExtensionLifecycle {
   async onToolCall(event: any): Promise<void> {
     const toolName = event.toolName ?? "";
     if (toolName !== "write" && toolName !== "edit") return;
+    if (!this.autoFormat && !this.autoFix) return;
 
     const filePath = event.input?.path;
     if (!filePath || !existsSync(filePath)) return;
@@ -73,7 +110,10 @@ export class CodeQualityExtension extends ExtensionLifecycle {
     const cwd = dirname(filePath);
 
     try {
-      const result = await this.pipeline.processFile(filePath, cwd, this.pi.exec);
+      const result = await this.pipeline.processFile(filePath, cwd, this.pi.exec, {
+        runFormat: this.autoFormat,
+        runFix: this.autoFix,
+      });
 
       // Track stats
       const anyFormatted = result.format.some(s => s.status === "succeeded");
