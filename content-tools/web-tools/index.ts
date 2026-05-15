@@ -8,6 +8,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
 import { registerPackage } from "../../shared/telemetry-helpers.ts";
+import { recordEvent } from "pi-telemetry/helpers";
 import { WebSearcher } from "./searcher.ts";
 import { WebFetcher } from "./fetcher.ts";
 
@@ -53,11 +54,7 @@ export class WebToolsExtension extends ExtensionLifecycle {
    * Search the web.
    */
   async search(query: string, limit: number = 10) {
-    // Fire telemetry automation trigger
-    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
-    const searchTrigger = TelemetryAutomation.webSearched(query);
-    TelemetryAutomation.fire(this, searchTrigger);
-
+    recordEvent(this.name, "web-search", `Searching: "${query}"`);
     this.track("web_search", { query, limit });
     return this.searcher.search({ query, limit });
   }
