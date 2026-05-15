@@ -23,6 +23,7 @@ import * as path from "node:path";
 import { completeSimple } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext, Theme } from "@mariozechner/pi-coding-agent";
 import { type TUI, Container, Text, matchesKey, Key, truncateToWidth, wrapTextWithAnsi } from "@mariozechner/pi-tui";
+import { getAgentDir } from "../shared/pi-config.ts";
 
 // Spinner frames for loading animation
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -548,15 +549,6 @@ Output the complete file content:`;
 			display: true,
 		});
 	}
-}
-
-function getAgentDir(): string {
-	const envDir = process.env.PI_CODING_AGENT_DIR;
-	if (envDir) {
-		return envDir;
-	}
-	const home = process.env.HOME || process.env.USERPROFILE || "";
-	return path.join(home, ".pi", "agent");
 }
 
 function ensureGitignore(cwd: string, filename: string): void {
