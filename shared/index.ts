@@ -11,6 +11,5 @@ export * from "./audio.ts";
 export * from "./terminal.ts";
 export * from "./bg-notify-config.ts";
 export * from "./lifecycle.ts";
-export * from "./telemetry-helpers.ts";
 export * from "./ext-state";
 export * from "./register-package.ts";

@@ -6,8 +6,8 @@
  */
 
 import type { ExtensionAPI, ToolDefinition } from "@mariozechner/pi-coding-agent";
+import { registerPackage } from "pi-telemetry/helpers";
 import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
-import { registerPackage } from "../../shared/telemetry-helpers.ts";
 import { readExtStateSync, writeExtStateSync } from "../../shared/ext-state.ts";
 import { Type } from "@sinclair/typebox";
 import { SubprocessExecutor } from "./executor.ts";

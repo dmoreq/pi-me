@@ -7,8 +7,7 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
-import { registerPackage } from "../../shared/telemetry-helpers.ts";
-import { recordEvent } from "pi-telemetry/helpers";
+import { registerPackage, recordEvent } from "pi-telemetry/helpers";
 import { WebSearcher } from "./searcher.ts";
 import { WebFetcher } from "./fetcher.ts";
 
