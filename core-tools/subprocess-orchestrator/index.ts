@@ -8,9 +8,9 @@
 import type { ExtensionAPI, ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { ExtensionLifecycle } from "../../shared/lifecycle.ts";
 import { registerPackage } from "../../shared/telemetry-helpers.ts";
+import { readExtStateSync, writeExtStateSync } from "../../shared/ext-state.ts";
 import { Type } from "@sinclair/typebox";
 import { SubprocessExecutor } from "./executor.ts";
-import { TaskNormalizer } from "./normalizer.ts";
 import type { SubprocessTask, SubprocessConfig, JobHandle } from "./types.ts";
 import { createCommandIntentDetector } from "../intent/detector.ts";
 import type { CommandIntent } from "../intent/types.ts";
@@ -76,10 +76,9 @@ export class SubprocessOrchestrationExtension extends ExtensionLifecycle {
   readonly version = "0.7.0";
   protected readonly description = "Execute subprocess tasks: single, chain, loop, background, pi subprocess. AI-powered command intent classification for smart timeouts and critical flags.";
   protected readonly tools = ["subprocess"];
-  protected readonly events = ["agent_end", "tool_call"];
+  protected readonly events = ["session_start", "session_shutdown", "agent_end", "tool_call"];
 
   private executor: SubprocessExecutor;
-  private normalizer = TaskNormalizer;
   private commandDetector = createCommandIntentDetector();
 
   constructor(pi: ExtensionAPI, config?: SubprocessConfig) {
@@ -276,20 +275,35 @@ MODES (use exactly one action):
   }
 
   /**
-   * Auto-detect when agent finishes planning and offer to run pending steps.
+   * Restore persisted job metadata on session start.
    */
-  async onAgentEnd(_: any, ctx: any) {
-    const plan = ctx.activePlan;
-    if (!plan || !plan.steps) return;
+  async onSessionStart(): Promise<void> {
+    const saved = readExtStateSync<{ jobs: Array<{ jobId: string; label?: string; status: string; createdAt: number }> }>("subprocess-orchestrator");
+    if (saved?.jobs && saved.jobs.length > 0) {
+      const stale = saved.jobs.filter(j => j.status === "running" || j.status === "queued");
+      if (stale.length > 0) {
+        this.notify(
+          `⚠️ ${stale.length} background job(s) from last session are no longer running (session ended). Use subprocess action=list to review.`,
+          { severity: "warning" },
+        );
+      }
+      this.track("jobs_restored", { count: saved.jobs.length });
+    }
+  }
 
-    const pendingSteps = plan.steps.filter((s: any) => s.status === "pending");
-    if (pendingSteps.length === 0) return;
-
-    const hasRecentPlan = plan.createdAt &&
-      Date.now() - new Date(plan.createdAt).getTime() < 5000;
-
-    if (hasRecentPlan) {
-      this.track("auto_execute_plan", { stepCount: pendingSteps.length });
+  /**
+   * Persist job metadata on session shutdown.
+   */
+  async onSessionShutdown(): Promise<void> {
+    const jobs = this.executor.listJobs().map(j => ({
+      jobId: j.jobId,
+      label: j.task.label,
+      status: j.status,
+      createdAt: j.createdAt,
+    }));
+    if (jobs.length > 0) {
+      writeExtStateSync("subprocess-orchestrator", { jobs, savedAt: new Date().toISOString() });
+      this.track("jobs_persisted", { count: jobs.length });
     }
   }
 
@@ -300,25 +314,6 @@ MODES (use exactly one action):
     return this.executor;
   }
 
-  /**
-   * Get the normalizer (for direct access).
-   */
-  getNormalizer() {
-    return this.normalizer;
-  }
-
-  /**
-   * Run plan steps as subprocess tasks.
-   */
-  async runPlanSteps(steps: any[], cwd?: string) {
-    const tasks = this.normalizer.normalizeMany(steps, cwd);
-
-    const { TelemetryAutomation } = await import("../../shared/telemetry-automation.ts");
-    const normalizeTrigger = TelemetryAutomation.tasksNormalized(tasks.length);
-    TelemetryAutomation.fire(this, normalizeTrigger);
-
-    return this.executor.execute(tasks);
-  }
 }
 
 /**
