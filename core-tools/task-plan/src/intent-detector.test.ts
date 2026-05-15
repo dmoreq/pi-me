@@ -4,10 +4,10 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { ManualIntentDetector } from "./intent-detector.ts";
+import { ManualTaskIntentDetector } from "./intent-detector.ts";
 
-describe("ManualIntentDetector", () => {
-  const detector = new ManualIntentDetector();
+describe("ManualTaskIntentDetector", () => {
+  const detector = new ManualTaskIntentDetector();
 
   it("should classify fix intent", () => {
     assert.strictEqual(detector.classify("fix login bug"), "fix");

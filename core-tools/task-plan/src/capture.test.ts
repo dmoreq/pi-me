@@ -5,11 +5,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { TaskCapture, createPlan } from "./capture.ts";
-import { ManualIntentDetector } from "./intent-detector.ts";
+import { ManualTaskIntentDetector } from "./intent-detector.ts";
 import type { Message } from "./types-external.ts";
 
 describe("TaskCapture", () => {
-  const detector = new ManualIntentDetector();
+  const detector = new ManualTaskIntentDetector();
   const capture = new TaskCapture(detector);
 
   it("should return empty for no messages", async () => {
