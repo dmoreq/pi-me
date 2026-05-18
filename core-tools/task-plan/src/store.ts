@@ -20,6 +20,7 @@ import type { Task, TaskEvent, TaskStatus, Priority, TaskIntent } from "./types.
 export const TASK_DIR_NAME = ".pi/tasks";
 export const TASK_PATH_ENV = "PI_TASK_PATH";
 export const LOCK_TTL_MS = 30 * 60 * 1000; // 30 minutes
+export const TASK_EVENTS_NAME = "events.jsonl";
 
 export interface LockInfo {
   id: string;
@@ -159,6 +160,7 @@ export class TaskStore {
     for (const entry of entries) {
       if (!entry.endsWith(".json")) continue;
       if (entry.endsWith(".lock.json")) continue;
+      if (entry === TASK_EVENTS_NAME) continue;
       const id = entry.slice(0, -5); // remove .json
       try {
         const raw = await fs.promises.readFile(path.join(this.dir, entry), "utf8");
@@ -267,11 +269,36 @@ export class TaskStore {
 
   async appendEvent(event: TaskEvent): Promise<void> {
     this.events.push(event);
+    const fp = path.join(this.dir, TASK_EVENTS_NAME);
+    await fs.promises.appendFile(fp, `${JSON.stringify(event)}\n`, "utf8");
   }
 
   async getEvents(taskId?: string): Promise<TaskEvent[]> {
-    if (taskId) return this.events.filter(e => e.taskId === taskId);
-    return [...this.events];
+    const fp = path.join(this.dir, TASK_EVENTS_NAME);
+    const persisted: TaskEvent[] = [];
+    try {
+      const raw = await fs.promises.readFile(fp, "utf8");
+      for (const line of raw.split(/\r?\n/)) {
+        if (!line.trim()) continue;
+        try {
+          persisted.push(JSON.parse(line) as TaskEvent);
+        } catch {
+          continue;
+        }
+      }
+    } catch {
+      // ignore missing file
+    }
+    const all = [...this.events, ...persisted];
+    const seen = new Set<string>();
+    const unique = all.filter((event) => {
+      const key = JSON.stringify(event);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (taskId) return unique.filter(e => e.taskId === taskId);
+    return unique;
   }
 
   // ─── Garbage Collection ────────────────────────────────────────────────
