@@ -85,7 +85,14 @@ export function createTaskPlanTool(deps: ToolDeps) {
       const id = params.id as string | undefined;
       const sessionId = getSessionId();
 
+      const shouldLock = Boolean(id) && [
+        "add-step", "complete-step", "claim", "release", "execute",
+        "skip", "retry", "review", "next-step", "skip-step",
+      ].includes(action);
+      let release: (() => Promise<void>) | null = null;
+
       try {
+        release = shouldLock ? await acquireLock(store.getDir(), id!, sessionId) : null;
         switch (action) {
           case "list": return handleList(store, sessionId);
           case "get": return handleGet(store, id);
@@ -110,6 +117,8 @@ export function createTaskPlanTool(deps: ToolDeps) {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { content: [{ type: "text" as const, text: `Error: ${msg}` }] };
+      } finally {
+        await release?.();
       }
     },
   };
