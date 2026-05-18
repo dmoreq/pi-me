@@ -310,16 +310,18 @@ async function handleExecute(
   // Execute
   track("task_execute", { id: task.id });
 
-  // If the task has steps, execute each step
+  // If the task has steps, activate the plan and return remaining work
   if (task.steps && task.steps.length > 0) {
+    task.status = "active" as TaskStatus;
+    await store.save(task);
     const remaining = task.steps.filter(s => !s.done);
     if (remaining.length === 0) {
-      return { content: [{ type: "text" as const, text: "All steps complete! Mark the task as completed." }] };
+      return { content: [{ type: "text" as const, text: "Plan activated. All steps are already complete." }] };
     }
     return {
       content: [{
         type: "text" as const,
-        text: `Executing task ${id}. Remaining steps:\n${remaining.map(s => `${s.id}. ${s.text}`).join("\n")}`,
+        text: `Plan activated: ${task.title ?? task.id}. Remaining steps:\n${remaining.map(s => `${s.id}. ${s.text}`).join("\n")}`,
       }],
     };
   }
