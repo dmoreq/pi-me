@@ -20,7 +20,7 @@ import { getTelemetry } from "pi-telemetry";
 import { TaskStore } from "./store.ts";
 import { TaskCapture } from "./capture.ts";
 import { TaskExecutor, type ExecutorConfig } from "./executor.ts";
-import { createIntentDetector } from "./intent-detector.ts";
+import { createTaskIntentDetector as createIntentDetector } from "./intent-detector.ts";
 import {
   createTaskPlanTool,
   registerTaskPlanCommands,
@@ -83,10 +83,20 @@ export class TaskPlanExtension extends ExtensionLifecycle {
     const messages = (ctx as any)?.messages ?? [];
     if (messages.length === 0) return;
 
-    const result = await this.capture.capture(messages);
+    const latestUserMessages = this.getLatestUserMessages(messages);
+    if (latestUserMessages.length === 0) return;
+
+    const result = await this.capture.capture(latestUserMessages);
     if (result.tasks.length === 0) return;
 
+    const existing = await this.store.getAll();
+    const existingTexts = new Set(existing.map((task) => this.normalizeCaptureText(task.text ?? task.title ?? "")));
+
+    let saved = 0;
     for (const task of result.tasks) {
+      const normalized = this.normalizeCaptureText(task.text ?? task.title ?? "");
+      if (!normalized || existingTexts.has(normalized)) continue;
+      existingTexts.add(normalized);
       await this.store.save(task);
       await this.store.appendEvent({
         type: "created",
@@ -94,10 +104,24 @@ export class TaskPlanExtension extends ExtensionLifecycle {
         task,
         timestamp: new Date().toISOString(),
       });
+      saved++;
     }
 
-    this.notify(`📋 Captured ${result.tasks.length} task(s) from conversation`, { severity: "info" });
-    getTelemetry()?.heartbeat(this.name);
+    if (saved > 0) {
+      this.notify(`📋 Captured ${saved} task(s) from conversation`, { severity: "info" });
+      getTelemetry()?.heartbeat(this.name);
+    }
+  }
+
+  private getLatestUserMessages(messages: any[]): any[] {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]?.role === "user") return [messages[i]];
+    }
+    return [];
+  }
+
+  private normalizeCaptureText(text: string): string {
+    return text.toLowerCase().replace(/\s+/g, " ").trim();
   }
 
   async onBeforeAgentStart(_event: unknown, ctx: ExtensionContext): Promise<unknown> {
