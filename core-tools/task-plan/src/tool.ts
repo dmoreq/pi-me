@@ -26,7 +26,7 @@ const ActionEnum = [
   "add-step", "complete-step",
   "claim", "release",
   "execute", "skip", "retry",
-  "review", "search",
+  "review", "dedupe", "search",
 ] as const;
 
 export const TaskPlanParams = Type.Object({
@@ -51,6 +51,7 @@ export const TaskPlanParams = Type.Object({
   reject: Type.Optional(Type.Boolean({ description: "Reject and delete a task/plan from review" })),
   archive: Type.Optional(Type.Boolean({ description: "Archive a task/plan from review" })),
   bulk: Type.Optional(Type.Boolean({ description: "Apply review action to all matching tasks" })),
+  preview: Type.Optional(Type.Boolean({ description: "Preview dedupe/cleanup without applying changes" })),
   olderThanDays: Type.Optional(Type.Number({ description: "Limit bulk review action to tasks older than N days" })),
   source: Type.Optional(Type.String({ description: "Source filter: auto/manual/migrated" })),
   query: Type.Optional(Type.String({ description: "Search query (for search action)" })),
@@ -99,6 +100,7 @@ export function createTaskPlanTool(deps: ToolDeps) {
           case "skip": return handleSkip(store, executor, id, notify);
           case "retry": return handleRetry(store, executor, id, notify);
           case "review": return handleReview(store, id, params, notify);
+          case "dedupe": return handleDedupe(store, params, notify);
           case "search": return handleSearch(store, params);
           default: return { content: [{ type: "text" as const, text: `Unknown action: ${action}` }] };
         }
@@ -504,6 +506,57 @@ function formatReviewQueue(tasks: Task[]): string {
   if (tasks.length > 20) lines.push(`- ... and ${tasks.length - 20} more`);
   lines.push("", "Bulk cleanup example: action=review archive=true bulk=true source=auto olderThanDays=7");
   return lines.join("\n");
+}
+
+function normalizeTaskText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function handleDedupe(
+  store: TaskStore,
+  params: Record<string, unknown>,
+  notify: (text: string, variant: "info" | "success" | "warning" | "error") => void,
+) {
+  const preview = params.preview !== false;
+  const tasks = (await store.getAll()).filter(t => t.requiresReview && t.status !== "archived");
+  const groups = new Map<string, Task[]>();
+  for (const task of tasks) {
+    const key = normalizeTaskText(task.title ?? task.text);
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(task);
+  }
+
+  const duplicateGroups = Array.from(groups.values()).filter(group => group.length > 1);
+  const duplicates = duplicateGroups.flatMap(group => group.slice(1));
+
+  if (!preview) {
+    for (const task of duplicates) {
+      task.status = "archived";
+      task.requiresReview = false;
+      task.completedAt = new Date().toISOString();
+      await store.save(task);
+    }
+    notify(`Archived ${duplicates.length} duplicate task(s)`, duplicates.length > 0 ? "success" : "info");
+  }
+
+  const lines = [
+    preview ? "## Duplicate Review Tasks (preview)" : "## Duplicate Review Tasks Archived",
+    "",
+    `${duplicateGroups.length} duplicate group(s), ${duplicates.length} duplicate task(s).`,
+  ];
+  for (const group of duplicateGroups.slice(0, 20)) {
+    const [keep, ...dupes] = group;
+    lines.push("", `Keep: ${keep.id}: ${keep.title ?? keep.text}`);
+    for (const duplicate of dupes) lines.push(`Archive: ${duplicate.id}: ${duplicate.title ?? duplicate.text}`);
+  }
+  if (duplicateGroups.length > 20) lines.push("", `... and ${duplicateGroups.length - 20} more group(s)`);
+  if (preview) lines.push("", "Apply with: action=dedupe preview=false");
+  return { content: [{ type: "text" as const, text: lines.join("\n") }] };
 }
 
 function isExecutableTask(task: Task): boolean {

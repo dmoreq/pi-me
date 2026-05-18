@@ -163,6 +163,21 @@ describe("createTaskPlanTool", () => {
     assert.equal((await store.get("task-new"))?.status, "pending");
   });
 
+  it("previews and applies duplicate review cleanup", async () => {
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "dedupe"));
+    await store.save({ id: "task-dupe-1", text: "Fix API bug!", status: "pending", priority: "normal", source: "auto", createdAt: new Date().toISOString(), requiresReview: true });
+    await store.save({ id: "task-dupe-2", text: "fix api bug", status: "pending", priority: "normal", source: "auto", createdAt: new Date().toISOString(), requiresReview: true });
+
+    const preview = await tool.execute("1", { action: "dedupe", preview: true }, null as any, null as any, null as any);
+    assert.ok(preview.content[0].text.includes("preview"));
+    assert.equal((await store.get("task-dupe-2"))?.status, "pending");
+
+    const applied = await tool.execute("1", { action: "dedupe", preview: false }, null as any, null as any, null as any);
+    assert.ok(applied.content[0].text.includes("Archived"));
+    assert.equal((await store.get("task-dupe-2"))?.status, "archived");
+  });
+
   it("searches by query text", async () => {
     const dir = await makeTempDir();
     const { tool, store } = await makeTool(path.join(dir, "h"));
