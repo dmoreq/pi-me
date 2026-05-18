@@ -161,12 +161,9 @@ export class WelcomeModule {
       const muted = (text: string) => theme.fg("muted", text);
 
       const block = "█";
-      const pupil = "▌";
-      const eye = `${block}${pupil}`;
-      const lineEyes = `     ${eye}  ${eye}`;
       const lineBar = `  ${piBlue(block.repeat(14))}`;
       const lineLeg = `     ${piBlue(block.repeat(2))}    ${piBlue(block.repeat(2))}`;
-      const mascot = ["", lineEyes, lineBar, lineLeg, lineLeg, lineLeg, lineLeg];
+      const mascot = ["", lineBar, lineLeg, lineLeg, lineLeg, lineLeg];
 
       const shortcuts = [
         `${dim("Shortcuts:")}  ${yellow("Ctrl+I")} interrupt  ${yellow("Ctrl+L")} clear  ${yellow("Ctrl+D")} exit  ${yellow("/")} commands  ${yellow("!")} bash  ${green("Ctrl+O")} expand tools  ${cyan("Tab")} cycle model`,
