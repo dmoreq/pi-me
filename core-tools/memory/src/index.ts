@@ -181,7 +181,14 @@ export default function (pi: ExtensionAPI) {
       const stats = store.stats();
       if (stats.semantic + stats.lessons > 0) {
         ctx.ui.setStatus("pi-memory", `Memory: ${stats.semantic} facts, ${stats.lessons} lessons`);
-        setTimeout(() => ctx.ui.setStatus("pi-memory", ""), 5000);
+        setTimeout(() => {
+          try {
+            ctx.ui.setStatus("pi-memory", "");
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (!msg.includes("extension ctx is stale")) throw err;
+          }
+        }, 5000);
       }
     } catch (err: any) {
       ctx.ui.notify(`pi-memory: failed to open store: ${err.message}`, "warning");
