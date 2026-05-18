@@ -394,13 +394,22 @@ async function handleReview(
 }
 
 async function handleSearch(store: TaskStore, params: Record<string, unknown>) {
-  const queryStr = params.query as string | undefined;
-  if (!queryStr) {
+  const query: SearchQuery = {
+    text: params.query as string | undefined,
+    status: params.status as TaskStatus | undefined,
+    intent: params.intent as Task["intent"],
+    priority: params.priority as Task["priority"],
+    tags: params.tags as string[] | undefined,
+    source: params.source as SearchQuery["source"],
+    assignedToSession: params.assignedToSession as string | undefined,
+    hasReview: params.hasReview as boolean | undefined,
+  };
+
+  if (!Object.values(query).some(v => v !== undefined)) {
     const tasks = await store.getAll();
     return { content: [{ type: "text" as const, text: JSON.stringify(tasks, null, 2) }] };
   }
 
-  const query: SearchQuery = { text: queryStr };
   const results = await store.search(query);
   return { content: [{ type: "text" as const, text: JSON.stringify(results, null, 2) }] };
 }
