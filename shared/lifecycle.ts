@@ -35,6 +35,7 @@ export interface LifecycleHooks {
   onTurnEnd?(event: any, ctx: ExtensionContext): Promise<void>;
   onAgentStart?(event: any, ctx: ExtensionContext): Promise<void>;
   onAgentEnd?(event: any, ctx: ExtensionContext): Promise<void>;
+  onBeforeAgentStart?(event: any, ctx: ExtensionContext): Promise<any>;
   onToolCall?(event: any, ctx: ExtensionContext): Promise<any>;
   onToolResult?(event: any, ctx: ExtensionContext): Promise<void>;
 }
@@ -48,6 +49,7 @@ const HOOK_EVENT_MAP: Array<[keyof LifecycleHooks, string]> = [
   ["onTurnEnd",         "turn_end"],
   ["onAgentStart",      "agent_start"],
   ["onAgentEnd",        "agent_end"],
+  ["onBeforeAgentStart", "before_agent_start"],
   ["onToolCall",        "tool_call"],
   ["onToolResult",      "tool_result"],
 ];
