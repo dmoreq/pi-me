@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "node:test";
+import { describe, it } from "node:test";
+import { strict as assert } from "node:assert";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
@@ -6,7 +7,6 @@ import { TaskStore } from "./store.ts";
 import { TaskExecutor } from "./executor.ts";
 import { createTaskPlanTool, TaskPlanParams } from "./tool.ts";
 import type { Task } from "./types.ts";
-import { strict as assert } from "node:assert";
 
 const makeTempDir = async () => fs.mkdtemp(path.join(os.tmpdir(), "task-plan-tool-"));
 
@@ -42,14 +42,9 @@ describe("TaskPlanParams", () => {
 });
 
 describe("createTaskPlanTool", () => {
-  let tmpDir = "";
-
-  beforeEach(async () => {
-    tmpDir = await makeTempDir();
-  });
-
   it("creates a task", async () => {
-    const { tool, store, notifications, tracks } = await makeTool(path.join(tmpDir, "a"));
+    const dir = await makeTempDir();
+    const { tool, store, notifications, tracks } = await makeTool(path.join(dir, "a"));
     const result = await tool.execute("1", { action: "create", title: "Task A", text: "Do thing" }, null as any, null as any, null as any);
     const saved = await store.getAll();
     assert.equal(saved.length, 1);
@@ -60,7 +55,8 @@ describe("createTaskPlanTool", () => {
   });
 
   it("creates a plan with steps and requires review", async () => {
-    const { tool, store } = await makeTool(path.join(tmpDir, "b"));
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "b"));
     await tool.execute("1", { action: "create", title: "Plan A", text: "Plan A", steps: ["one", "two"] }, null as any, null as any, null as any);
     const saved = await store.getAll();
     assert.equal(saved[0].steps?.length, 2);
@@ -68,14 +64,16 @@ describe("createTaskPlanTool", () => {
   });
 
   it("lists task summary counts", async () => {
-    const { tool, store } = await makeTool(path.join(tmpDir, "c"));
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "c"));
     await store.save({ id: "a", text: "A", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
     const result = await tool.execute("1", { action: "list" }, null as any, null as any, null as any);
     assert.ok(result.content[0].text.includes('"pending": 1'));
   });
 
   it("adds and completes a step", async () => {
-    const { tool, store } = await makeTool(path.join(tmpDir, "d"));
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "d"));
     await store.save({ id: "plan-1", title: "Plan", text: "Plan", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), steps: [{ id: 1, text: "one", done: false }], requiresReview: true });
     await tool.execute("1", { action: "add-step", id: "plan-1", stepText: "two" }, null as any, null as any, null as any);
     await tool.execute("1", { action: "complete-step", id: "plan-1", stepId: 1 }, null as any, null as any, null as any);
@@ -85,7 +83,8 @@ describe("createTaskPlanTool", () => {
   });
 
   it("claims and releases a task", async () => {
-    const { tool, store } = await makeTool(path.join(tmpDir, "e"));
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "e"));
     await store.save({ id: "task-1", text: "T", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
     await tool.execute("1", { action: "claim", id: "task-1" }, null as any, null as any, null as any);
     assert.equal((await store.get("task-1"))?.assignedToSession, "session-1");
@@ -94,14 +93,16 @@ describe("createTaskPlanTool", () => {
   });
 
   it("rejects execute when assigned to another session", async () => {
-    const { tool, store } = await makeTool(path.join(tmpDir, "f"));
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "f"));
     await store.save({ id: "task-2", text: "T", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), assignedToSession: "other", requiresReview: false });
     const result = await tool.execute("1", { action: "execute", id: "task-2" }, null as any, null as any, null as any);
     assert.ok(result.content[0].text.includes("assigned to session other"));
   });
 
   it("approves a task for execution", async () => {
-    const { tool, store } = await makeTool(path.join(tmpDir, "g"));
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "g"));
     await store.save({ id: "task-3", text: "T", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: true });
     const result = await tool.execute("1", { action: "review", id: "task-3", approve: true }, null as any, null as any, null as any);
     assert.equal((await store.get("task-3"))?.requiresReview, false);
@@ -109,7 +110,8 @@ describe("createTaskPlanTool", () => {
   });
 
   it("searches by query text", async () => {
-    const { tool, store } = await makeTool(path.join(tmpDir, "h"));
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "h"));
     await store.save({ id: "task-4", text: "Search me", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
     const result = await tool.execute("1", { action: "search", query: "Search" }, null as any, null as any, null as any);
     assert.ok(result.content[0].text.includes("Search me"));
