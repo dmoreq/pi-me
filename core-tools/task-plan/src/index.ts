@@ -18,7 +18,7 @@ import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-age
 import { ExtensionLifecycle } from "../../../shared/lifecycle.ts";
 import { getTelemetry } from "pi-telemetry";
 import { TaskStore } from "./store.ts";
-import { TaskCapture } from "./capture.ts";
+import { TaskCapture, isActionableTaskText, type AutoCaptureMode } from "./capture.ts";
 import { TaskExecutor, type ExecutorConfig } from "./executor.ts";
 import { createTaskIntentDetector as createIntentDetector } from "./intent-detector.ts";
 import { formatActivePlanStatus } from "./ui.ts";
@@ -39,6 +39,7 @@ export class TaskPlanExtension extends ExtensionLifecycle {
   private capture!: TaskCapture;
   private executor!: TaskExecutor;
   private safetyMode = true;
+  private autoCaptureMode: AutoCaptureMode = "explicit";
 
   async onSessionStart(_event: unknown, ctx: ExtensionContext): Promise<void> {
     const dir = ctx.cwd ? `${ctx.cwd}/.pi/tasks` : ".pi/tasks";
@@ -78,7 +79,13 @@ export class TaskPlanExtension extends ExtensionLifecycle {
         const trimmed = (args ?? "").trim();
         if (trimmed === "on" || trimmed === "off") {
           this.setSafetyMode(trimmed === "on");
-          ctx.ui.notify(`Planning mode ${trimmed === "on" ? "enabled" : "disabled"}`, trimmed === "on" ? "info" : "info");
+          ctx.ui.notify(`Planning mode ${trimmed === "on" ? "enabled" : "disabled"}`, "info");
+          return;
+        }
+        const captureMatch = trimmed.match(/^capture\s+(off|explicit|smart|all)$/i);
+        if (captureMatch) {
+          this.setAutoCaptureMode(captureMatch[1].toLowerCase() as AutoCaptureMode);
+          ctx.ui.notify(`Task auto-capture set to ${this.autoCaptureMode}`, "info");
           return;
         }
         ctx.ui.setEditorText(trimmed ? `Review plan: ${trimmed}` : "Review current plans");
@@ -105,6 +112,8 @@ export class TaskPlanExtension extends ExtensionLifecycle {
 
     const latestUserMessages = this.getLatestUserMessages(messages);
     if (latestUserMessages.length === 0) return;
+
+    if (!latestUserMessages.some(message => isActionableTaskText(String(message.content ?? ""), this.autoCaptureMode))) return;
 
     const result = await this.capture.capture(latestUserMessages);
     if (result.tasks.length === 0) return;
@@ -202,6 +211,12 @@ export class TaskPlanExtension extends ExtensionLifecycle {
     this.safetyMode = enabled;
     this.executor?.setSafetyMode(enabled);
     this.notify(`Safety mode ${enabled ? "enabled" : "disabled"}`, { severity: "info" });
+    getTelemetry()?.heartbeat(this.name);
+  }
+
+  setAutoCaptureMode(mode: AutoCaptureMode): void {
+    this.autoCaptureMode = mode;
+    this.notify(`Task auto-capture set to ${mode}`, { severity: "info" });
     getTelemetry()?.heartbeat(this.name);
   }
 }

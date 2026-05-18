@@ -22,6 +22,24 @@ export interface CaptureResult {
   sources: Array<"ai" | "manual">;
 }
 
+export type AutoCaptureMode = "off" | "explicit" | "smart" | "all";
+
+export function isActionableTaskText(text: string, mode: AutoCaptureMode = "explicit"): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || mode === "off") return false;
+  if (mode === "all") return true;
+
+  const explicit = /\b(todo|remember to|follow up|next step|add task|create a plan|we should|need to|please (implement|fix|add|update|create))\b/i.test(trimmed) ||
+    /^\s*(?:[-*]\s+|\d+[.)]\s+).+/m.test(trimmed);
+  if (explicit) return true;
+  if (mode === "explicit") return false;
+
+  const informational = /^(help me |can you |could you )?(analy[sz]e|explain|tell me|what is|how does|show me|review)\b/i.test(trimmed);
+  if (informational) return false;
+
+  return /\b(fix|implement|refactor|test|document|deploy|build|create|update|remove|investigate)\b/i.test(trimmed);
+}
+
 export class TaskCapture {
   private classifier: IIntentClassifier;
   private aiCount = 0;
