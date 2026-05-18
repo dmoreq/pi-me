@@ -17,6 +17,7 @@ import type { Task, TaskStatus } from "./types.ts";
 import type { TaskStore, SearchQuery } from "./store.ts";
 import { TaskDAG } from "./types.ts";
 import { TaskExecutor } from "./executor.ts";
+import { acquireLock } from "./store.ts";
 
 // ─── Tool Parameter Schema ──────────────────────────────────────────────────
 
@@ -181,6 +182,8 @@ async function handleUpdate(
   params: Record<string, unknown>,
   notify: (text: string, variant: "info" | "success" | "warning" | "error") => void,
 ) {
+  const release = await acquireLock(store.getDir(), id ?? "", undefined).catch(() => null);
+  try {
   if (!id) return { content: [{ type: "text" as const, text: "Error: id required" }] };
   const task = await store.get(id);
   if (!task) return { content: [{ type: "text" as const, text: `Task ${id} not found` }] };
@@ -195,6 +198,9 @@ async function handleUpdate(
   await store.save(task);
   notify(`Updated: ${task.title ?? task.id}`, "info");
   return { content: [{ type: "text" as const, text: JSON.stringify(task, null, 2) }] };
+  } finally {
+    await release?.();
+  }
 }
 
 async function handleDelete(
@@ -202,10 +208,15 @@ async function handleDelete(
   id: string | undefined,
   notify: (text: string, variant: "info" | "success" | "warning" | "error") => void,
 ) {
+  const release = await acquireLock(store.getDir(), id ?? "", undefined).catch(() => null);
+  try {
   if (!id) return { content: [{ type: "text" as const, text: "Error: id required" }] };
   await store.delete(id);
   notify(`Deleted: ${id}`, "info");
   return { content: [{ type: "text" as const, text: `Deleted ${id}` }] };
+  } finally {
+    await release?.();
+  }
 }
 
 async function handleAddStep(
