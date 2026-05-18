@@ -21,6 +21,7 @@ import { TaskStore } from "./store.ts";
 import { TaskCapture } from "./capture.ts";
 import { TaskExecutor, type ExecutorConfig } from "./executor.ts";
 import { createTaskIntentDetector as createIntentDetector } from "./intent-detector.ts";
+import { formatActivePlanStatus } from "./ui.ts";
 import {
   createTaskPlanTool,
   registerTaskPlanCommands,
@@ -71,10 +72,14 @@ export class TaskPlanExtension extends ExtensionLifecycle {
 
     const taskCount = await this.store.count();
     const pendingCount = await this.store.count("pending");
+    const activeCount = await this.store.count("in_progress");
     getTelemetry()?.heartbeat(this.name);
 
     if (pendingCount > 0) {
       this.notify(`📋 ${pendingCount} pending task(s) loaded`, { severity: "info" });
+    }
+    if (activeCount > 0) {
+      this.notify(`📋 ${activeCount} active task(s) in progress`, { severity: "info" });
     }
   }
 
