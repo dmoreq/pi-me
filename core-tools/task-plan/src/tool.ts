@@ -110,6 +110,7 @@ async function handleList(store: TaskStore, sessionId: string) {
   const summary = {
     total: tasks.length,
     pending: tasks.filter(t => t.status === "pending").length,
+    active: tasks.filter(t => t.status === "active").length,
     inProgress: tasks.filter(t => t.status === "in_progress").length,
     completed: tasks.filter(t => t.status === "completed").length,
     failed: tasks.filter(t => t.status === "failed").length,
@@ -312,7 +313,7 @@ async function handleExecute(
 
   // If the task has steps, activate the plan and return remaining work
   if (task.steps && task.steps.length > 0) {
-    task.status = "active" as TaskStatus;
+    task.status = "active";
     await store.save(task);
     const remaining = task.steps.filter(s => !s.done);
     if (remaining.length === 0) {

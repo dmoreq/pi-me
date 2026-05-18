@@ -21,6 +21,7 @@ export type { TaskIntent } from "../../intent/types.ts";
 
 export const STATUSES = [
   "pending",
+  "active",
   "in_progress",
   "completed",
   "failed",

@@ -84,7 +84,7 @@ export class TaskPlanExtension extends ExtensionLifecycle {
 
     const taskCount = await this.store.count();
     const pendingCount = await this.store.count("pending");
-    const activeCount = await this.store.count("in_progress");
+    const activeCount = (await this.store.count("in_progress")) + (await this.store.count("active"));
     getTelemetry()?.heartbeat(this.name);
 
     if (pendingCount > 0) {
@@ -145,11 +145,21 @@ export class TaskPlanExtension extends ExtensionLifecycle {
     if (!this.store) return;
     const tasks = await this.store.getAll();
     const pending = tasks.filter(t => t.status === "pending");
+    const activePlans = tasks.filter(t => t.status === "active" && t.steps?.length);
     const needsReview = tasks.filter(t => t.requiresReview && t.status === "pending");
 
     if (tasks.length === 0 || (pending.length === 0 && needsReview.length === 0)) return;
 
     const lines: string[] = ["\n### Active Tasks & Plans"];
+    if (activePlans.length > 0) {
+      lines.push("\n📋 **Active Plans**");
+      for (const t of activePlans.slice(0, 3)) {
+        const done = t.steps!.filter(s => s.done).length;
+        const total = t.steps!.length;
+        lines.push(`  - ${t.id}: ${t.title ?? t.text.slice(0, 60)} [${done}/${total}]`);
+      }
+      if (activePlans.length > 3) lines.push(`  - ... and ${activePlans.length - 3} more`);
+    }
     if (needsReview.length > 0) {
       lines.push(`\n⚠️ **${needsReview.length} task(s) awaiting review** — use \`task\` tool with action=review`);
       for (const t of needsReview.slice(0, 5)) {
