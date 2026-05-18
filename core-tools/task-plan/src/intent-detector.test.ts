@@ -4,7 +4,16 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { ManualTaskIntentDetector } from "./intent-detector.ts";
+import { ManualTaskIntentDetector, createIntentDetector } from "./intent-detector.ts";
+
+describe("task-plan intent-detector re-exports", () => {
+  it("should expose the legacy createIntentDetector factory alias", () => {
+    const result = createIntentDetector();
+
+    assert.equal(typeof result.detector.classify, "function");
+    assert.equal(typeof result.hasAI, "boolean");
+  });
+});
 
 describe("ManualTaskIntentDetector", () => {
   const detector = new ManualTaskIntentDetector();

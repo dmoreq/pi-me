@@ -11,4 +11,5 @@ export {
   ManualTaskIntentDetector,
   FallbackTaskIntentDetector,
   createTaskIntentDetector,
+  createTaskIntentDetector as createIntentDetector,
 } from "../../intent/detector.ts";
