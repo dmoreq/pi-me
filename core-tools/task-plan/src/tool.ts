@@ -44,6 +44,7 @@ export const TaskPlanParams = Type.Object({
   priority: Type.Optional(Type.String({ description: "Priority: low/normal/high" })),
   tags: Type.Optional(Type.Array(Type.String())),
   force: Type.Optional(Type.Boolean({ description: "Override session assignment" })),
+  approve: Type.Optional(Type.Boolean({ description: "Approve task/plan for execution" })),
   query: Type.Optional(Type.String({ description: "Search query (for search action)" })),
 });
 
@@ -79,7 +80,7 @@ export function createTaskPlanTool(deps: ToolDeps) {
         switch (action) {
           case "list": return handleList(store, sessionId);
           case "get": return handleGet(store, id);
-          case "create": return handleCreate(store, id, params, sessionId, notify);
+          case "create": return handleCreate(store, id, params, sessionId, notify, track);
           case "update": return handleUpdate(store, id, params, notify);
           case "delete": return handleDelete(store, id, notify);
           case "add-step": return handleAddStep(store, id, params);
@@ -143,6 +144,7 @@ async function handleCreate(
   params: Record<string, unknown>,
   sessionId: string,
   notify: (text: string, variant: "info" | "success" | "warning" | "error") => void,
+  track: (event: string, data?: Record<string, unknown>) => void,
 ) {
   const now = new Date().toISOString();
   const stepTexts = params.steps as string[] | undefined;

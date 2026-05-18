@@ -1,0 +1,117 @@
+import { describe, it, expect, beforeEach } from "node:test";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import { TaskStore } from "./store.ts";
+import { TaskExecutor } from "./executor.ts";
+import { createTaskPlanTool, TaskPlanParams } from "./tool.ts";
+import type { Task } from "./types.ts";
+import { strict as assert } from "node:assert";
+
+const makeTempDir = async () => fs.mkdtemp(path.join(os.tmpdir(), "task-plan-tool-"));
+
+const makeStore = async (dir: string) => {
+  const store = new TaskStore({ dir, gcEnabled: false });
+  await store.init();
+  return store;
+};
+
+const makeTool = async (dir: string) => {
+  const store = await makeStore(dir);
+  const executor = new TaskExecutor(store, {
+    safetyMode: false,
+    dryRun: true,
+    onExecute: async (task: Task) => ({ exitCode: 0, stdout: task.text }),
+  });
+  const notifications: Array<{ text: string; variant: string }> = [];
+  const tracks: Array<{ event: string; data?: Record<string, unknown> }> = [];
+  const tool = createTaskPlanTool({
+    store,
+    executor,
+    getSessionId: () => "session-1",
+    notify: (text, variant) => notifications.push({ text, variant }),
+    track: (event, data) => tracks.push({ event, data }),
+  });
+  return { store, executor, tool, notifications, tracks };
+};
+
+describe("TaskPlanParams", () => {
+  it("includes approve in the review schema", () => {
+    assert.ok(TaskPlanParams.properties.approve);
+  });
+});
+
+describe("createTaskPlanTool", () => {
+  let tmpDir = "";
+
+  beforeEach(async () => {
+    tmpDir = await makeTempDir();
+  });
+
+  it("creates a task", async () => {
+    const { tool, store, notifications, tracks } = await makeTool(path.join(tmpDir, "a"));
+    const result = await tool.execute("1", { action: "create", title: "Task A", text: "Do thing" }, null as any, null as any, null as any);
+    const saved = await store.getAll();
+    assert.equal(saved.length, 1);
+    assert.equal(saved[0].title, "Task A");
+    assert.ok(notifications[0]?.text.includes("Created task"));
+    assert.equal(tracks[0]?.event, "task_created");
+    assert.ok(result.content[0].text.includes("Task A"));
+  });
+
+  it("creates a plan with steps and requires review", async () => {
+    const { tool, store } = await makeTool(path.join(tmpDir, "b"));
+    await tool.execute("1", { action: "create", title: "Plan A", text: "Plan A", steps: ["one", "two"] }, null as any, null as any, null as any);
+    const saved = await store.getAll();
+    assert.equal(saved[0].steps?.length, 2);
+    assert.equal(saved[0].requiresReview, true);
+  });
+
+  it("lists task summary counts", async () => {
+    const { tool, store } = await makeTool(path.join(tmpDir, "c"));
+    await store.save({ id: "a", text: "A", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
+    const result = await tool.execute("1", { action: "list" }, null as any, null as any, null as any);
+    assert.ok(result.content[0].text.includes('"pending": 1'));
+  });
+
+  it("adds and completes a step", async () => {
+    const { tool, store } = await makeTool(path.join(tmpDir, "d"));
+    await store.save({ id: "plan-1", title: "Plan", text: "Plan", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), steps: [{ id: 1, text: "one", done: false }], requiresReview: true });
+    await tool.execute("1", { action: "add-step", id: "plan-1", stepText: "two" }, null as any, null as any, null as any);
+    await tool.execute("1", { action: "complete-step", id: "plan-1", stepId: 1 }, null as any, null as any, null as any);
+    const updated = await store.get("plan-1");
+    assert.equal(updated?.steps?.[0].done, true);
+    assert.equal(updated?.steps?.length, 2);
+  });
+
+  it("claims and releases a task", async () => {
+    const { tool, store } = await makeTool(path.join(tmpDir, "e"));
+    await store.save({ id: "task-1", text: "T", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
+    await tool.execute("1", { action: "claim", id: "task-1" }, null as any, null as any, null as any);
+    assert.equal((await store.get("task-1"))?.assignedToSession, "session-1");
+    await tool.execute("1", { action: "release", id: "task-1" }, null as any, null as any, null as any);
+    assert.equal((await store.get("task-1"))?.assignedToSession, undefined);
+  });
+
+  it("rejects execute when assigned to another session", async () => {
+    const { tool, store } = await makeTool(path.join(tmpDir, "f"));
+    await store.save({ id: "task-2", text: "T", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), assignedToSession: "other", requiresReview: false });
+    const result = await tool.execute("1", { action: "execute", id: "task-2" }, null as any, null as any, null as any);
+    assert.ok(result.content[0].text.includes("assigned to session other"));
+  });
+
+  it("approves a task for execution", async () => {
+    const { tool, store } = await makeTool(path.join(tmpDir, "g"));
+    await store.save({ id: "task-3", text: "T", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: true });
+    const result = await tool.execute("1", { action: "review", id: "task-3", approve: true }, null as any, null as any, null as any);
+    assert.equal((await store.get("task-3"))?.requiresReview, false);
+    assert.ok(result.content[0].text.includes("Approved"));
+  });
+
+  it("searches by query text", async () => {
+    const { tool, store } = await makeTool(path.join(tmpDir, "h"));
+    await store.save({ id: "task-4", text: "Search me", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
+    const result = await tool.execute("1", { action: "search", query: "Search" }, null as any, null as any, null as any);
+    assert.ok(result.content[0].text.includes("Search me"));
+  });
+});
