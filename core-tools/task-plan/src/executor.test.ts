@@ -151,6 +151,22 @@ describe("TaskExecutor", () => {
     assert.strictEqual(updated?.status, "skipped");
   });
 
+  it("should update safety mode after construction", async () => {
+    const executor = new TaskExecutor(store, {
+      safetyMode: true,
+      onExecute: async () => ({ exitCode: 0, stdout: "ran" }),
+    });
+    assert.strictEqual(executor.getSafetyMode(), true);
+
+    executor.setSafetyMode(false);
+    assert.strictEqual(executor.getSafetyMode(), false);
+
+    const task = makeTask("exec-safety-toggle", { requiresReview: true });
+    await store.save(task);
+    const result = await executor.executeOne(task);
+    assert.strictEqual(result.stdout, "ran");
+  });
+
   it("should dispatch DAG", async () => {
     const executor = new TaskExecutor(store, {
       safetyMode: false,

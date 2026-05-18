@@ -192,6 +192,14 @@ export class TaskExecutor {
     this.emit("task_skipped", task);
   }
 
+  setSafetyMode(enabled: boolean): void {
+    this.config.safetyMode = enabled;
+  }
+
+  getSafetyMode(): boolean {
+    return this.config.safetyMode;
+  }
+
   // ─── Event System ──────────────────────────────────────────────────────
 
   on(event: ExecutorEvent, handler: ExecutorEventHandler): void {

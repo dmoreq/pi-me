@@ -197,6 +197,7 @@ export class TaskPlanExtension extends ExtensionLifecycle {
 
   setSafetyMode(enabled: boolean): void {
     this.safetyMode = enabled;
+    this.executor?.setSafetyMode(enabled);
     this.notify(`Safety mode ${enabled ? "enabled" : "disabled"}`, { severity: "info" });
     getTelemetry()?.heartbeat(this.name);
   }
