@@ -49,6 +49,8 @@ describe("createTaskPlanTool", () => {
     const saved = await store.getAll();
     assert.equal(saved.length, 1);
     assert.equal(saved[0].title, "Task A");
+    assert.equal(saved[0].executor, "none");
+    assert.equal(saved[0].requiresReview, true);
     assert.ok(notifications[0]?.text.includes("Created task"));
     assert.equal(tracks[0]?.event, "task_created");
     assert.ok(result.content[0].text.includes("Task A"));
@@ -98,6 +100,22 @@ describe("createTaskPlanTool", () => {
     await store.save({ id: "task-2", text: "T", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), assignedToSession: "other", requiresReview: false });
     const result = await tool.execute("1", { action: "execute", id: "task-2" }, null as any, null as any, null as any);
     assert.ok(result.content[0].text.includes("assigned to session other"));
+  });
+
+  it("does not execute text-only tasks as shell commands", async () => {
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "safe"));
+    await store.save({ id: "task-safe", text: "Fix the API", status: "pending", priority: "normal", executor: "none", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
+    const result = await tool.execute("1", { action: "execute", id: "task-safe" }, null as any, null as any, null as any);
+    assert.ok(result.content[0].text.includes("not directly executable"));
+  });
+
+  it("executes only tasks with explicit shell commands", async () => {
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "cmd"));
+    await store.save({ id: "task-cmd", text: "Run tests", command: "npm test", executor: "shell", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), requiresReview: false });
+    const result = await tool.execute("1", { action: "execute", id: "task-cmd" }, null as any, null as any, null as any);
+    assert.ok(result.content[0].text.includes("Completed"));
   });
 
   it("approves a task for execution", async () => {

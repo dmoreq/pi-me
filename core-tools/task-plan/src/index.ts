@@ -50,8 +50,11 @@ export class TaskPlanExtension extends ExtensionLifecycle {
     this.executor = new TaskExecutor(this.store, {
       safetyMode: this.safetyMode,
       onExecute: async task => {
+        if (task.executor !== "shell" || !task.command?.trim()) {
+          return { exitCode: 1, error: "Task has no explicit shell command" };
+        }
         try {
-          const result = await this.pi.exec("bash", ["-c", task.text]);
+          const result = await this.pi.exec("bash", ["-c", task.command]);
           return { exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
         } catch (err) {
           return { exitCode: 1, error: (err as Error).message };

@@ -73,6 +73,7 @@ export interface Task {
 
   // Execution
   executor?: "subprocess" | "shell" | "pi" | "none";
+  command?: string;            // Explicit command for shell/subprocess execution
   result?: TaskResult;
 
   // Metadata

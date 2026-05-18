@@ -37,6 +37,8 @@ export const TaskPlanParams = Type.Object({
   id: Type.Optional(Type.String({ description: "Task/plan ID" })),
   title: Type.Optional(Type.String({ description: "Title (for create/update)" })),
   text: Type.Optional(Type.String({ description: "Task text (for create/update)" })),
+  command: Type.Optional(Type.String({ description: "Explicit command to execute for shell/subprocess tasks" })),
+  executor: Type.Optional(Type.String({ description: "Executor: none/shell/subprocess/pi" })),
   status: Type.Optional(Type.String({ description: "New status" })),
   steps: Type.Optional(Type.Array(Type.String(), { description: "Step texts (for create)" })),
   stepText: Type.Optional(Type.String({ description: "Step text (for add-step)" })),
@@ -160,11 +162,13 @@ async function handleCreate(
     intent: params.intent as Task["intent"],
     priority: (params.priority as Task["priority"]) ?? "normal",
     steps,
+    executor: (params.executor as Task["executor"]) ?? "none",
+    command: params.command as string | undefined,
     tags: params.tags as string[] | undefined,
     source: "manual",
     createdAt: now,
     assignedToSession: sessionId,
-    requiresReview: Boolean(steps && steps.length > 0), // Plans require review
+    requiresReview: true,
   };
 
   if (!task.text && !task.title) {
@@ -194,6 +198,8 @@ async function handleUpdate(
   if (params.status !== undefined) task.status = params.status as TaskStatus;
   if (params.intent !== undefined) task.intent = params.intent as Task["intent"];
   if (params.priority !== undefined) task.priority = params.priority as Task["priority"];
+  if (params.executor !== undefined) task.executor = params.executor as Task["executor"];
+  if (params.command !== undefined) task.command = params.command as string;
   if (params.tags !== undefined) task.tags = params.tags as string[];
 
   await store.save(task);
@@ -327,6 +333,15 @@ async function handleExecute(
     };
   }
 
+  if (!isExecutableTask(task)) {
+    return {
+      content: [{
+        type: "text" as const,
+        text: `This task is not directly executable.\n\nTask:\n${task.title ?? task.text}\n\nReason:\nNo explicit shell command is attached.\n\nSuggested:\nAsk the agent to work on it, or attach a command with action=update, executor=shell, command=\"...\".`,
+      }],
+    };
+  }
+
   // Single task — run through executor
   const result = await executor.executeOne(task);
   track("task_completed", { id: task.id, status: task.status, duration: task.result?.duration });
@@ -362,6 +377,14 @@ async function handleRetry(
   if (!id) return { content: [{ type: "text" as const, text: "Error: id required" }] };
   const task = await store.get(id);
   if (!task) return { content: [{ type: "text" as const, text: `Task ${id} not found` }] };
+  if (!isExecutableTask(task)) {
+    return {
+      content: [{
+        type: "text" as const,
+        text: `This task is not directly executable. Attach executor=shell and command=\"...\" before retrying.`,
+      }],
+    };
+  }
   const result = await executor.retry(task);
   notify(`Retry ${result.exitCode === 0 ? "succeeded" : "failed"}: ${task.title ?? task.id}`, result.exitCode === 0 ? "success" : "warning");
   return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
@@ -394,6 +417,10 @@ async function handleReview(
         : `Task ${id} is already approved.`,
     }],
   };
+}
+
+function isExecutableTask(task: Task): boolean {
+  return task.executor === "shell" && Boolean(task.command?.trim());
 }
 
 async function handleSearch(store: TaskStore, params: Record<string, unknown>) {
@@ -484,6 +511,7 @@ export function registerTaskPlanCommands(pi: ExtensionAPI, deps: ToolDeps) {
         text: text.trim(),
         status: "pending",
         priority: "normal",
+        executor: "none",
         source: "manual",
         createdAt: new Date().toISOString(),
         requiresReview: true,
