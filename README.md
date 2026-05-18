@@ -72,14 +72,14 @@ shared/                  ← Infrastructure
 - **AI-powered intent detection** with regex fallback
 - **DAG-based execution** with retry, timeout, dry-run
 - **Persistent store** with locking, GC, search, event audit log
-- **Commands**: `/tasks`, `/tasks-review`, `/task <description>`
-- **58 new tests** — all passing
+- **Commands**: `/tasks`, `/tasks-review`, `/task <description>`, `/plan`
+- **223+ tests** — all passing
 
 ### Removed
 
 - `core-tools/task-orchestration/` — merged into task-plan
-- `core-tools/planning/` — merged into task-plan
-- `core-tools/intent/` — merged into task-plan
+- `core-tools/planning/` — legacy planner kept during migration
+- `core-tools/intent/` — shared infrastructure retained
 - `plan` tool and `task_control` tool — replaced by unified `task` tool
 
 ---

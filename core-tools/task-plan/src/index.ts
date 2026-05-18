@@ -69,6 +69,18 @@ export class TaskPlanExtension extends ExtensionLifecycle {
 
     this.pi.registerTool(createTaskPlanTool(deps) as any);
     registerTaskPlanCommands(this.pi, deps);
+    this.pi.registerCommand("plan", {
+      description: "Plan manager alias: /plan [on|off|query]",
+      handler: async (args, ctx) => {
+        const trimmed = (args ?? "").trim();
+        if (trimmed === "on" || trimmed === "off") {
+          this.setSafetyMode(trimmed === "on");
+          ctx.ui.notify(`Planning mode ${trimmed === "on" ? "enabled" : "disabled"}`, trimmed === "on" ? "info" : "info");
+          return;
+        }
+        ctx.ui.setEditorText(trimmed ? `Review plan: ${trimmed}` : "Review current plans");
+      },
+    });
 
     const taskCount = await this.store.count();
     const pendingCount = await this.store.count("pending");
