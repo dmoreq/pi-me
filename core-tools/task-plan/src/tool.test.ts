@@ -127,6 +127,42 @@ describe("createTaskPlanTool", () => {
     assert.ok(result.content[0].text.includes("Approved"));
   });
 
+  it("lists tasks awaiting review when review has no id", async () => {
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "review-list"));
+    await store.save({ id: "task-review", text: "Review me", status: "pending", priority: "normal", source: "auto", createdAt: new Date().toISOString(), requiresReview: true });
+    const result = await tool.execute("1", { action: "review" }, null as any, null as any, null as any);
+    assert.ok(result.content[0].text.includes("Review Queue"));
+    assert.ok(result.content[0].text.includes("task-review"));
+  });
+
+  it("archives and rejects review tasks", async () => {
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "review-actions"));
+    await store.save({ id: "task-archive", text: "Archive me", status: "pending", priority: "normal", source: "auto", createdAt: new Date().toISOString(), requiresReview: true });
+    await store.save({ id: "task-reject", text: "Reject me", status: "pending", priority: "normal", source: "auto", createdAt: new Date().toISOString(), requiresReview: true });
+
+    await tool.execute("1", { action: "review", id: "task-archive", archive: true }, null as any, null as any, null as any);
+    await tool.execute("1", { action: "review", id: "task-reject", reject: true }, null as any, null as any, null as any);
+
+    assert.equal((await store.get("task-archive"))?.status, "archived");
+    assert.equal(await store.get("task-reject"), undefined);
+  });
+
+  it("bulk archives old auto-captured review tasks", async () => {
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "review-bulk"));
+    const oldDate = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    await store.save({ id: "task-old", text: "Old", status: "pending", priority: "normal", source: "auto", createdAt: oldDate, requiresReview: true });
+    await store.save({ id: "task-new", text: "New", status: "pending", priority: "normal", source: "auto", createdAt: new Date().toISOString(), requiresReview: true });
+
+    const result = await tool.execute("1", { action: "review", archive: true, bulk: true, source: "auto", olderThanDays: 7 }, null as any, null as any, null as any);
+
+    assert.ok(result.content[0].text.includes("Archived 1"));
+    assert.equal((await store.get("task-old"))?.status, "archived");
+    assert.equal((await store.get("task-new"))?.status, "pending");
+  });
+
   it("searches by query text", async () => {
     const dir = await makeTempDir();
     const { tool, store } = await makeTool(path.join(dir, "h"));

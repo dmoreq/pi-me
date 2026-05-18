@@ -48,6 +48,11 @@ export const TaskPlanParams = Type.Object({
   tags: Type.Optional(Type.Array(Type.String())),
   force: Type.Optional(Type.Boolean({ description: "Override session assignment" })),
   approve: Type.Optional(Type.Boolean({ description: "Approve task/plan for execution" })),
+  reject: Type.Optional(Type.Boolean({ description: "Reject and delete a task/plan from review" })),
+  archive: Type.Optional(Type.Boolean({ description: "Archive a task/plan from review" })),
+  bulk: Type.Optional(Type.Boolean({ description: "Apply review action to all matching tasks" })),
+  olderThanDays: Type.Optional(Type.Number({ description: "Limit bulk review action to tasks older than N days" })),
+  source: Type.Optional(Type.String({ description: "Source filter: auto/manual/migrated" })),
   query: Type.Optional(Type.String({ description: "Search query (for search action)" })),
 });
 
@@ -396,16 +401,59 @@ async function handleReview(
   params: Record<string, unknown>,
   notify: (text: string, variant: "info" | "success" | "warning" | "error") => void,
 ) {
-  if (!id) return { content: [{ type: "text" as const, text: "Error: id required" }] };
+  const approve = params.approve as boolean | undefined;
+  const reject = params.reject as boolean | undefined;
+  const archive = params.archive as boolean | undefined;
+  const bulk = params.bulk as boolean | undefined;
+
+  if (!id && bulk === true && (approve || reject || archive)) {
+    const matches = filterReviewTasks(await store.getAll(), params);
+    for (const task of matches) {
+      if (approve) {
+        task.requiresReview = false;
+        await store.save(task);
+      } else if (archive) {
+        task.status = "archived";
+        task.requiresReview = false;
+        task.completedAt = new Date().toISOString();
+        await store.save(task);
+      } else if (reject) {
+        await store.delete(task.id);
+      }
+    }
+    const verb = approve ? "Approved" : archive ? "Archived" : "Rejected";
+    notify(`${verb} ${matches.length} task(s)`, matches.length > 0 ? "success" : "info");
+    return { content: [{ type: "text" as const, text: `${verb} ${matches.length} matching review task(s).` }] };
+  }
+
+  if (!id) {
+    const queue = filterReviewTasks(await store.getAll(), params);
+    return { content: [{ type: "text" as const, text: formatReviewQueue(queue) }] };
+  }
+
   const task = await store.get(id);
   if (!task) return { content: [{ type: "text" as const, text: `Task ${id} not found` }] };
 
-  const approve = params.approve as boolean | undefined;
   if (approve === true) {
     task.requiresReview = false;
     await store.save(task);
-    notify(`Approved: ${task.title ?? task.id}`, "success");
-    return { content: [{ type: "text" as const, text: `Approved ${id} for execution` }] };
+    notify(`✅ Approved: ${task.title ?? task.id}`, "success");
+    return { content: [{ type: "text" as const, text: `✅ Approved ${id}: ${task.title ?? task.text}` }] };
+  }
+
+  if (archive === true) {
+    task.status = "archived";
+    task.requiresReview = false;
+    task.completedAt = new Date().toISOString();
+    await store.save(task);
+    notify(`🗄️ Archived: ${task.title ?? task.id}`, "info");
+    return { content: [{ type: "text" as const, text: `🗄️ Archived ${id}: ${task.title ?? task.text}` }] };
+  }
+
+  if (reject === true) {
+    await store.delete(id);
+    notify(`Rejected: ${task.title ?? task.id}`, "info");
+    return { content: [{ type: "text" as const, text: `Rejected and deleted ${id}: ${task.title ?? task.text}` }] };
   }
 
   // Just show review status
@@ -413,10 +461,49 @@ async function handleReview(
     content: [{
       type: "text" as const,
       text: task.requiresReview
-        ? `Task ${id} requires review. Use approve=true to approve.`
+        ? `Task ${id} requires review. Use approve=true to approve, archive=true to archive, or reject=true to delete.`
         : `Task ${id} is already approved.`,
     }],
   };
+}
+
+function filterReviewTasks(tasks: Task[], params: Record<string, unknown>): Task[] {
+  const source = params.source as Task["source"] | undefined;
+  const olderThanDays = params.olderThanDays as number | undefined;
+  const query = (params.query as string | undefined)?.toLowerCase();
+  const cutoff = typeof olderThanDays === "number"
+    ? Date.now() - olderThanDays * 24 * 60 * 60 * 1000
+    : undefined;
+
+  return tasks.filter(task => {
+    if (!task.requiresReview) return false;
+    if (task.status === "archived") return false;
+    if (source && task.source !== source) return false;
+    if (cutoff !== undefined) {
+      const created = Date.parse(task.createdAt);
+      if (!Number.isFinite(created) || created >= cutoff) return false;
+    }
+    if (query) {
+      const haystack = `${task.id} ${task.title ?? ""} ${task.text} ${(task.tags ?? []).join(" ")}`.toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+}
+
+function formatReviewQueue(tasks: Task[]): string {
+  if (tasks.length === 0) return "No tasks awaiting review.";
+  const lines = [`## Review Queue`, "", `${tasks.length} task(s) awaiting review.`, ""];
+  for (const task of tasks.slice(0, 20)) {
+    const label = task.title ?? task.text.slice(0, 80);
+    const steps = task.steps ? ` — ${task.steps.filter(s => s.done).length}/${task.steps.length} steps` : "";
+    lines.push(`- ${task.id}: ${label}${steps}`);
+    lines.push(`  Source: ${task.source ?? "unknown"}; Intent: ${task.intent ?? "unknown"}; Status: ${task.status}`);
+    lines.push(`  Actions: approve=true | archive=true | reject=true`);
+  }
+  if (tasks.length > 20) lines.push(`- ... and ${tasks.length - 20} more`);
+  lines.push("", "Bulk cleanup example: action=review archive=true bulk=true source=auto olderThanDays=7");
+  return lines.join("\n");
 }
 
 function isExecutableTask(task: Task): boolean {
