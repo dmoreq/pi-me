@@ -660,34 +660,37 @@ export function registerTaskPlanCommands(pi: ExtensionAPI, deps: ToolDeps) {
     description: "List all tasks and plans. Usage: /tasks",
     handler: async (_args, ctx) => {
       const tasks = await store.getAll();
-      const active = tasks.filter(t => ["pending", "in_progress"].includes(t.status));
+      const activePlans = tasks.filter(t => t.status === "active" && t.steps?.length);
+      const active = tasks.filter(t => ["pending", "active", "in_progress"].includes(t.status));
       const completed = tasks.filter(t => t.status === "completed");
-      const needsReview = tasks.filter(t => t.requiresReview);
+      const needsReview = tasks.filter(t => t.requiresReview && t.status !== "archived");
 
-      let text = "## Tasks & Plans\n\n";
-      if (needsReview.length > 0) {
-        text += `### ⚠️ Need Review (${needsReview.length})\n`;
-        for (const t of needsReview) {
-          text += `- ${t.id}: ${t.title ?? t.text.slice(0, 60)} ${t.steps ? `[${t.steps.filter(s => s.done).length}/${t.steps.length}]` : ""}\n`;
+      let text = "## Tasks\n\n";
+      text += `Active plans: ${activePlans.length}\n`;
+      text += `Review queue: ${needsReview.length}\n`;
+      text += `Pending/active tasks: ${active.length}\n`;
+      text += `Completed: ${completed.length}\n\n`;
+
+      if (activePlans.length > 0) {
+        text += "### Active Plans\n";
+        for (const t of activePlans.slice(0, 5)) {
+          const current = t.steps?.find(s => s.id === t.currentStepId);
+          const steps = `${t.steps!.filter(s => s.done).length}/${t.steps!.length}`;
+          text += `- ${t.id}: ${t.title ?? t.text.slice(0, 60)} — ${steps}${current ? `; current: ${current.id}. ${current.text}` : ""}\n`;
         }
         text += "\n";
       }
 
-      text += `### Active (${active.length})\n`;
-      for (const t of active) {
-        const review = t.requiresReview ? " [requires review]" : "";
-        const steps = t.steps ? ` [${t.steps.filter(s => s.done).length}/${t.steps.length}]` : "";
-        text += `- ${t.id}: ${t.title ?? t.text.slice(0, 60)} (${t.status})${steps}${review}\n`;
+      if (needsReview.length > 0) {
+        text += `### ⚠️ Needs Review (${needsReview.length})\n`;
+        for (const t of needsReview.slice(0, 10)) {
+          text += `- ${t.id}: ${t.title ?? t.text.slice(0, 60)} (${t.source ?? "unknown"})\n`;
+        }
+        if (needsReview.length > 10) text += `- ... and ${needsReview.length - 10} more\n`;
+        text += "\nCommands: /tasks-review, /plan current, /plan capture explicit\n";
       }
-      text += "\n";
 
-      text += `### Completed (${completed.length})\n`;
-      for (const t of completed.slice(0, 10)) {
-        text += `- ${t.id}: ${t.title ?? t.text.slice(0, 60)}\n`;
-      }
-      if (completed.length > 10) text += `  ... and ${completed.length - 10} more\n`;
-
-      ctx.ui.notify(`Tasks: ${active.length} active, ${completed.length} done`, "info");
+      ctx.ui.notify(`Tasks: ${active.length} active, ${needsReview.length} review`, "info");
       return { content: [{ type: "text", text }] };
     },
   });
@@ -695,14 +698,25 @@ export function registerTaskPlanCommands(pi: ExtensionAPI, deps: ToolDeps) {
   pi.registerCommand("tasks-review", {
     description: "List tasks awaiting review. Usage: /tasks-review",
     handler: async (_args, ctx) => {
-      const tasks = await store.search({ hasReview: true });
+      const tasks = (await store.search({ hasReview: true })).filter(t => t.status !== "archived");
       if (tasks.length === 0) {
         ctx.ui.notify("No tasks awaiting review", "success");
         return { content: [{ type: "text", text: "No tasks awaiting review." }] };
       }
-      const text = tasks.map(t => `- ${t.id}: ${t.title ?? t.text.slice(0, 60)} (${t.intent ?? "no intent"})`).join("\n");
+      const likelyNonTasks = tasks.filter(t => /^(help me |what is|how does|explain|tell me)/i.test(t.text));
+      const likelyTasks = tasks.filter(t => !likelyNonTasks.includes(t));
+      let text = "## Review Queue\n\n";
+      if (likelyTasks.length > 0) {
+        text += "### Likely tasks\n";
+        text += likelyTasks.map(t => `- ${t.id}: ${t.title ?? t.text.slice(0, 60)} (${t.intent ?? "no intent"})`).join("\n") + "\n\n";
+      }
+      if (likelyNonTasks.length > 0) {
+        text += "### Likely non-tasks\n";
+        text += likelyNonTasks.map(t => `- ${t.id}: ${t.title ?? t.text.slice(0, 60)} — recommended archive`).join("\n") + "\n\n";
+      }
+      text += "Suggested cleanup: task action=review archive=true bulk=true source=auto olderThanDays=7";
       ctx.ui.notify(`${tasks.length} task(s) awaiting review`, "warning");
-      return { content: [{ type: "text", text: `## Tasks Awaiting Review\n\n${text}` }] };
+      return { content: [{ type: "text", text }] };
     },
   });
 

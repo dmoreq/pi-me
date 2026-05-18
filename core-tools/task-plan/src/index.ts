@@ -21,7 +21,6 @@ import { TaskStore } from "./store.ts";
 import { TaskCapture, isActionableTaskText, type AutoCaptureMode } from "./capture.ts";
 import { TaskExecutor, type ExecutorConfig } from "./executor.ts";
 import { createTaskIntentDetector as createIntentDetector } from "./intent-detector.ts";
-import { formatActivePlanStatus } from "./ui.ts";
 import {
   createTaskPlanTool,
   registerTaskPlanCommands,
@@ -86,6 +85,18 @@ export class TaskPlanExtension extends ExtensionLifecycle {
         if (captureMatch) {
           this.setAutoCaptureMode(captureMatch[1].toLowerCase() as AutoCaptureMode);
           ctx.ui.notify(`Task auto-capture set to ${this.autoCaptureMode}`, "info");
+          return;
+        }
+        if (trimmed === "current") {
+          ctx.ui.setEditorText("Show current active plan and next step");
+          return;
+        }
+        if (trimmed === "review") {
+          ctx.ui.setEditorText("Show task review queue and suggest cleanup");
+          return;
+        }
+        if (trimmed === "list") {
+          ctx.ui.setEditorText("List active plans and pending tasks");
           return;
         }
         ctx.ui.setEditorText(trimmed ? `Review plan: ${trimmed}` : "Review current plans");
@@ -162,15 +173,18 @@ export class TaskPlanExtension extends ExtensionLifecycle {
 
     if (tasks.length === 0 || (pending.length === 0 && needsReview.length === 0)) return;
 
-    const lines: string[] = ["\n### Active Tasks & Plans"];
+    const lines: string[] = ["\n### Task Plan"];
     if (activePlans.length > 0) {
-      lines.push("\n📋 **Active Plans**");
-      for (const t of activePlans.slice(0, 3)) {
-        const done = t.steps!.filter(s => s.done).length;
-        const total = t.steps!.length;
-        lines.push(`  - ${t.id}: ${t.title ?? t.text.slice(0, 60)} [${done}/${total}]`);
+      const plan = activePlans[0];
+      const done = plan.steps!.filter(s => s.done).length;
+      const total = plan.steps!.length;
+      const current = plan.steps!.find(s => s.id === plan.currentStepId) ?? plan.steps!.find(s => !s.done && s.status !== "skipped");
+      lines.push(`\n📋 **Active plan:** ${plan.title ?? plan.text.slice(0, 60)} — ${done}/${total} complete`);
+      if (current) {
+        lines.push(`Current step: ${current.id}. ${current.text}`);
+        lines.push(`When done: \`task action=complete-step id=${plan.id} stepId=${current.id}\``);
       }
-      if (activePlans.length > 3) lines.push(`  - ... and ${activePlans.length - 3} more`);
+      if (activePlans.length > 1) lines.push(`Additional active plans: ${activePlans.length - 1}`);
     }
     if (needsReview.length > 0) {
       lines.push(`\n⚠️ **${needsReview.length} task(s) awaiting review** — use \`task\` tool with action=review`);
