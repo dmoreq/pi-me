@@ -2,7 +2,7 @@
  * Unified Task/Plan Tool — the single tool + commands for all task & plan operations.
  *
  * Merges:
- * - planning/plan-mode.ts (plan tool: list/get/create/update/add-step/complete-step/delete/claim/release/execute)
+ * - legacy plan tool actions: list/get/create/update/add-step/complete-step/delete/claim/release/execute
  * - task-orchestration/src/index.ts (task_control tool: skip/retry/prioritize)
  *
  * Actions: list, get, create, update, delete, add-step, complete-step,

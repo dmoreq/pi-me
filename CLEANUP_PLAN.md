@@ -83,38 +83,17 @@ core-tools/task-orchestration/tests/ui/renderer.test.ts
 
 ---
 
-### 2. `core-tools/planning/` — Partial Delete
+### 2. `core-tools/planning/` — Deleted
 
-**Status:** Mixed. `plan-mode.ts` and `plan-mode-core.ts` are the **real, active plan UI** registered by `task-plan`. The surrounding `PlanningExtension` wrapper (`index.ts`) and DAG utilities (`dag.ts`, `executor.ts`, `types.ts`) are orphaned stubs.
+**Status:** Complete. The legacy planning directory was removed after the active behavior moved into `core-tools/task-plan/`.
 
-**What to KEEP:**
-- `core-tools/planning/plan-mode.ts` (902 lines) — active TUI extension imported by task-plan
-- `core-tools/planning/plan-mode-core.ts` (997 lines) — imported by plan-mode.ts and task-plan/src/store.ts
-
-**Files to delete (~489 lines):**
+**Removed:**
 ```
-core-tools/planning/index.ts       (152 lines) — PlanningExtension stub; never registered in core-tools/index.ts
-core-tools/planning/dag.ts         (151 lines) — "Ported from task-orchestration" comment; DAG logic exists in task-plan
-core-tools/planning/executor.ts    (92 lines)  — placeholder executeStep does `setTimeout(resolve, 100)`; no real logic
-core-tools/planning/types.ts       (46 lines)  — superseded by task-plan/src/types.ts
-# plus test files
-core-tools/planning/dag.test.ts    (178 lines)
-core-tools/planning/executor.test.ts (75 lines)
+core-tools/planning/plan-mode.ts
+core-tools/planning/plan-mode-core.ts
 ```
 
-**Dependency fix needed:**
-- `core-tools/subprocess-orchestrator/normalizer.ts` imports `PlanStep` from `../planning/types.ts`.
-- After deletion, update the import to `../task-plan/src/types.ts` (which has `Step` — rename accordingly), or delete `normalizer.ts` entirely (see item #9).
-
-**Action:**
-```bash
-rm core-tools/planning/index.ts
-rm core-tools/planning/dag.ts
-rm core-tools/planning/executor.ts
-rm core-tools/planning/types.ts
-rm core-tools/planning/dag.test.ts
-rm core-tools/planning/executor.test.ts
-```
+Active replacement lives in `core-tools/task-plan/` with the unified `task` tool and `/plan` command alias.
 
 ---
 
@@ -190,7 +169,7 @@ rm core-tools/web-providers-integration.test.ts
 **Status:** `TelemetryAutomation` is a class of 9 static methods that fire badge notifications. Analysis:
 
 - **`contextDepth` / `highActivityDetected` / `fileInvolvementDetected`** — defined but **never called** anywhere in production code
-- **`planCreated`** — called from `core-tools/planning/index.ts` (being deleted in item #2)
+- **`planCreated`** — legacy planning caller removed with `core-tools/planning/`
 - **`fileIndexed`** — called from `core-tools/file-intelligence/index.ts` (being deleted in item #3)
 - **`tasksNormalized`** — called from `subprocess-orchestrator/index.ts` (fires on every `runPlanSteps` — but `runPlanSteps` is never called by anyone)
 - **`webSearched`** — called from `content-tools/web-tools/index.ts` — fires a badge notification on every search. Low value: just says "Searching web for: X" but pi already shows tool calls in context
@@ -317,8 +296,6 @@ Run `npm test` after each step.
 
 | Module | Reason to Keep |
 |--------|---------------|
-| `core-tools/planning/plan-mode.ts` | Active TUI — the real `/plan` command UI |
-| `core-tools/planning/plan-mode-core.ts` | Core plan data model + lock/GC used by task-plan |
 | `core-tools/intent/detector.ts` | Cross-cutting: imported by `session-lifecycle/welcome`, `code-review`, `subprocess-orchestrator` |
 | `shared/telemetry-helpers.ts` | Active wrappers; imported by subprocess, planning, file-intelligence, web-tools |
 | `shared/lazy-package.ts` | Utility; has tests; may be used by adopters |

@@ -30,7 +30,7 @@ Primary outcomes:
 - Do not stage unrelated existing changes. Current known pre-existing change to leave untouched unless intentionally included:
   - `core-tools/task-plan/src/index.ts`
 - Prefer small commits over broad commits.
-- Keep legacy `core-tools/planning/` as source material only until its useful UI behavior is migrated.
+- Legacy `core-tools/planning/` has been removed after migrating active behavior into task-plan.
 
 ## Current architecture summary
 
@@ -48,7 +48,7 @@ Active registered user surface:
 - Tool: `task`
 - Commands: `/tasks`, `/tasks-review`, `/task <description>`
 
-Legacy planning assets available for migration:
+Legacy planning assets migrated and removed:
 
 - `core-tools/planning/plan-mode.ts`
 - `core-tools/planning/plan-mode-core.ts`
@@ -663,8 +663,8 @@ Files:
 
 Port concepts from:
 
-- `core-tools/planning/plan-mode.ts` `updateStatus`
-- `core-tools/planning/plan-mode.ts` `updateWidget`
+- Legacy `updateStatus` behavior from the removed planner
+- Legacy `updateWidget` behavior from the removed planner
 
 Changes:
 
@@ -993,7 +993,7 @@ git commit -m "docs(task-plan): document unified task plan workflow"
 
 ### Problem
 
-After migration, `core-tools/planning/` may be redundant. Removing it too early risks losing useful UI code.
+After migration, `core-tools/planning/` became redundant and has been removed.
 
 ### Implementation
 

@@ -1,7 +1,7 @@
 /**
  * Task & Plan Extension — Unified task + plan management.
  *
- * Replaces: core-tools/task-orchestration/, core-tools/planning/, core-tools/intent/
+ * Replaces: legacy task orchestration, planning, and intent entrypoints.
  *
  * Features:
  * - Auto-capture tasks from conversation (agent_end hook)

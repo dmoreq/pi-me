@@ -3,7 +3,7 @@
  *
  * Single type system replacing:
  * - task-orchestration/src/types.ts (Task, TaskStatus, etc.)
- * - planning/types.ts + plan-mode-core.ts (PlanRecord, PlanStep, etc.)
+ * - legacy planning types (PlanRecord, PlanStep, etc.)
  * - intent/types.ts (TaskIntent, IIntentClassifier)
  *
  * Design: one Task type that works for both auto-captured tasks

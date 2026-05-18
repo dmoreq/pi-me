@@ -3,7 +3,7 @@
  *
  * Merges:
  * - task-orchestration/src/core/executor.ts (TaskExecutor)
- * - planning/plan-mode-core.ts (execute action in plan tool)
+ * - legacy planning execution flow (execute/activate plan steps)
  *
  * Features:
  * - DAG-based batch execution (parallel within batch, sequential across)

@@ -78,7 +78,7 @@ shared/                  ← Infrastructure
 ### Removed
 
 - `core-tools/task-orchestration/` — merged into task-plan
-- `core-tools/planning/` — legacy planner kept during migration
+- `core-tools/planning/` — removed after migration into task-plan
 - `core-tools/intent/` — shared infrastructure retained
 - `plan` tool and `task_control` tool — replaced by unified `task` tool
 

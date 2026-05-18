@@ -3,7 +3,7 @@
  *
  * Merges:
  * - task-orchestration/src/persistence/state.ts (TaskStore, EventLog, StateManager)
- * - planning/plan-mode-core.ts (file-based plan read/write, locking, GC)
+ * - legacy planning persistence (file-based plan read/write, locking, GC)
  *
  * Features:
  * - JSON file persistence per task (for simplicity) or single file store
