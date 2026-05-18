@@ -201,7 +201,7 @@ export function createPlan(
     status: options?.status ?? "pending",
     priority: "normal",
     executor: "none",
-    steps: steps.map((text, i) => ({ id: i + 1, text, done: false })),
+    steps: steps.map((text, i) => ({ id: i + 1, text, done: false, status: "pending" as const })),
     source: "manual",
     createdAt: now,
     assignedToSession: options?.assignedToSession,

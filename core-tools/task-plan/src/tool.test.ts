@@ -81,7 +81,25 @@ describe("createTaskPlanTool", () => {
     await tool.execute("1", { action: "complete-step", id: "plan-1", stepId: 1 }, null as any, null as any, null as any);
     const updated = await store.get("plan-1");
     assert.equal(updated?.steps?.[0].done, true);
+    assert.equal(updated?.steps?.[0].status, "done");
     assert.equal(updated?.steps?.length, 2);
+  });
+
+  it("tracks current and next steps for active plans", async () => {
+    const dir = await makeTempDir();
+    const { tool, store } = await makeTool(path.join(dir, "steps"));
+    await store.save({ id: "plan-steps", title: "Plan", text: "Plan", status: "pending", priority: "normal", source: "manual", createdAt: new Date().toISOString(), steps: [{ id: 1, text: "one", done: false }, { id: 2, text: "two", done: false }], requiresReview: true });
+
+    await tool.execute("1", { action: "execute", id: "plan-steps" }, null as any, null as any, null as any);
+    assert.equal((await store.get("plan-steps"))?.currentStepId, 1);
+
+    const current = await tool.execute("1", { action: "current-plan", id: "plan-steps" }, null as any, null as any, null as any);
+    assert.ok(current.content[0].text.includes("Current step: 1"));
+
+    await tool.execute("1", { action: "complete-step", id: "plan-steps", stepId: 1 }, null as any, null as any, null as any);
+    const next = await tool.execute("1", { action: "next-step", id: "plan-steps" }, null as any, null as any, null as any);
+    assert.ok(next.content[0].text.includes("2/2"));
+    assert.equal((await store.get("plan-steps"))?.currentStepId, 2);
   });
 
   it("claims and releases a task", async () => {

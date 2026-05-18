@@ -23,7 +23,7 @@ import { acquireLock } from "./store.ts";
 
 const ActionEnum = [
   "list", "get", "create", "update", "delete",
-  "add-step", "complete-step",
+  "add-step", "complete-step", "current-plan", "next-step", "skip-step",
   "claim", "release",
   "execute", "skip", "retry",
   "review", "dedupe", "search",
@@ -94,6 +94,9 @@ export function createTaskPlanTool(deps: ToolDeps) {
           case "delete": return handleDelete(store, id, notify);
           case "add-step": return handleAddStep(store, id, params);
           case "complete-step": return handleCompleteStep(store, id, params);
+          case "current-plan": return handleCurrentPlan(store, id);
+          case "next-step": return handleNextStep(store, id);
+          case "skip-step": return handleSkipStep(store, id, params);
           case "claim": return handleClaim(store, id, sessionId);
           case "release": return handleRelease(store, id);
           case "execute": return handleExecute(store, executor, id, sessionId, params, notify, track);
@@ -159,7 +162,7 @@ async function handleCreate(
 ) {
   const now = new Date().toISOString();
   const stepTexts = params.steps as string[] | undefined;
-  const steps = stepTexts?.map((text, i) => ({ id: i + 1, text, done: false }));
+  const steps = stepTexts?.map((text, i) => ({ id: i + 1, text, done: false, status: "pending" as const }));
 
   const task: Task = {
     id: id ?? `task-${Date.now()}`,
@@ -246,7 +249,7 @@ async function handleAddStep(
   if (!stepText) return { content: [{ type: "text" as const, text: "Error: stepText required" }] };
 
   if (!task.steps) task.steps = [];
-  task.steps.push({ id: task.steps.length + 1, text: stepText, done: false });
+  task.steps.push({ id: task.steps.length + 1, text: stepText, done: false, status: "pending" });
   await store.save(task);
   return { content: [{ type: "text" as const, text: JSON.stringify(task, null, 2) }] };
 }
@@ -267,15 +270,73 @@ async function handleCompleteStep(
   if (!step) return { content: [{ type: "text" as const, text: `Step ${stepId} not found` }] };
 
   step.done = true;
+  step.status = "done";
+  step.completedAt = new Date().toISOString();
+
+  const next = task.steps?.find(s => !s.done && s.status !== "skipped");
+  task.currentStepId = next?.id;
+  if (next && task.status === "active") {
+    next.status = "active";
+    next.startedAt = next.startedAt ?? new Date().toISOString();
+  }
 
   // Auto-complete the task if all steps done
   if (task.steps?.every(s => s.done)) {
     task.status = "completed";
+    task.currentStepId = undefined;
     task.completedAt = new Date().toISOString();
   }
 
   await store.save(task);
   return { content: [{ type: "text" as const, text: JSON.stringify(task, null, 2) }] };
+}
+
+async function handleCurrentPlan(store: TaskStore, id: string | undefined) {
+  const task = id ? await store.get(id) : (await store.getAll()).find(t => t.status === "active" && t.steps?.length);
+  if (!task) return { content: [{ type: "text" as const, text: id ? `Task ${id} not found` : "No active plan." }] };
+  if (!task.steps?.length) return { content: [{ type: "text" as const, text: `Task ${task.id} has no plan steps.` }] };
+  const done = task.steps.filter(s => s.done).length;
+  const current = task.steps.find(s => s.id === task.currentStepId) ?? task.steps.find(s => !s.done && s.status !== "skipped");
+  const lines = [`## Current Plan: ${task.title ?? task.text}`, "", `Progress: ${done}/${task.steps.length} complete`, ""];
+  if (current) {
+    lines.push(`Current step: ${current.id}. ${current.text}`);
+    lines.push(`Complete with: action=complete-step id=${task.id} stepId=${current.id}`);
+  } else {
+    lines.push("No remaining steps.");
+  }
+  return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+}
+
+async function handleNextStep(store: TaskStore, id: string | undefined) {
+  const task = id ? await store.get(id) : (await store.getAll()).find(t => t.status === "active" && t.steps?.length);
+  if (!task) return { content: [{ type: "text" as const, text: id ? `Task ${id} not found` : "No active plan." }] };
+  if (!task.steps?.length) return { content: [{ type: "text" as const, text: `Task ${task.id} has no plan steps.` }] };
+  const next = task.steps.find(s => !s.done && s.status !== "skipped");
+  if (!next) return { content: [{ type: "text" as const, text: `Plan ${task.id} has no remaining steps.` }] };
+  for (const step of task.steps) if (step.status === "active" && step.id !== next.id) step.status = "pending";
+  task.status = "active";
+  task.currentStepId = next.id;
+  next.status = "active";
+  next.startedAt = next.startedAt ?? new Date().toISOString();
+  await store.save(task);
+  const done = task.steps.filter(s => s.done).length;
+  return { content: [{ type: "text" as const, text: `Next step for ${task.title ?? task.id}:\n\n${next.id}/${task.steps.length} — ${next.text}\n\nProgress: ${done}/${task.steps.length} complete` }] };
+}
+
+async function handleSkipStep(store: TaskStore, id: string | undefined, params: Record<string, unknown>) {
+  if (!id) return { content: [{ type: "text" as const, text: "Error: id required" }] };
+  const task = await store.get(id);
+  if (!task) return { content: [{ type: "text" as const, text: `Task ${id} not found` }] };
+  const stepId = params.stepId as number | undefined;
+  if (!stepId) return { content: [{ type: "text" as const, text: "Error: stepId required" }] };
+  const step = task.steps?.find(s => s.id === stepId);
+  if (!step) return { content: [{ type: "text" as const, text: `Step ${stepId} not found` }] };
+  step.status = "skipped";
+  step.done = true;
+  step.completedAt = new Date().toISOString();
+  task.currentStepId = task.steps?.find(s => !s.done && s.status !== "skipped")?.id;
+  await store.save(task);
+  return { content: [{ type: "text" as const, text: `Skipped step ${stepId} for ${id}` }] };
 }
 
 async function handleClaim(store: TaskStore, id: string | undefined, sessionId: string) {
@@ -327,8 +388,14 @@ async function handleExecute(
   // If the task has steps, activate the plan and return remaining work
   if (task.steps && task.steps.length > 0) {
     task.status = "active";
+    const current = task.steps.find(s => !s.done && s.status !== "skipped");
+    if (current) {
+      task.currentStepId = current.id;
+      current.status = "active";
+      current.startedAt = current.startedAt ?? new Date().toISOString();
+    }
     await store.save(task);
-    const remaining = task.steps.filter(s => !s.done);
+    const remaining = task.steps.filter(s => !s.done && s.status !== "skipped");
     if (remaining.length === 0) {
       return { content: [{ type: "text" as const, text: "Plan activated. All steps are already complete." }] };
     }

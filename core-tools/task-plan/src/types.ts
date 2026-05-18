@@ -38,6 +38,9 @@ export interface Step {
   id: number;
   text: string;
   done: boolean;
+  status?: "pending" | "active" | "done" | "skipped" | "failed";
+  startedAt?: string;
+  completedAt?: string;
 }
 
 // ─── Priority ───────────────────────────────────────────────────────────────
@@ -61,6 +64,7 @@ export interface Task {
 
   // Steps (for plans)
   steps?: Step[];
+  currentStepId?: number;
 
   // Dependencies
   blockedBy?: string[];
