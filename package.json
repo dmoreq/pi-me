@@ -15,7 +15,6 @@
       "./session-lifecycle/index.ts",
       "./core-tools/index.ts",
       "./content-tools/index.ts",
-      "./authoring/index.ts",
       "pi-web-providers/dist/index.js"
     ],
     "skills": [
@@ -27,18 +26,9 @@
     ]
   },
   "dependencies": {
-    "defuddle": "^0.18.1",
     "jsonc-parser": "^3.3.1",
-    "linkedom": "^0.18.12",
-    "lodash": "^4.18.1",
-    "mime-types": "^3.0.2",
     "pi-telemetry": "github:dmoreq/pi-telemetry",
-    "pi-docparser": "^1.1.1",
-    "pi-link": "^0.1.11",
-    "pi-markdown-preview": "^0.9.7",
     "pi-web-providers": "^2.4.2",
-    "shell-quote": "^1.8.3",
-    "wreq-js": "^2.3.0",
     "zod": "^4.4.1"
   },
   "peerDependencies": {
@@ -54,6 +44,6 @@
     "tsx": "^4.21.0"
   },
   "scripts": {
-    "test": "tsx --test \"shared/**/*.test.ts\" \"foundation/**/*.test.ts\" \"session-lifecycle/**/*.test.ts\" \"core-tools/**/*.test.ts\" \"content-tools/**/*.test.ts\" \"authoring/**/*.test.ts\""
+    "test": "tsx --test \"foundation/**/*.test.ts\" \"session-lifecycle/**/*.test.ts\" \"core-tools/**/*.test.ts\" \"content-tools/**/*.test.ts\""
   }
 }

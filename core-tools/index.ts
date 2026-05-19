@@ -9,6 +9,8 @@ import { getTelemetry } from "pi-telemetry";
 import smartCommit from "./smart-commit/index.ts";
 import workflow from "./workflow/index.ts";
 import { registerClipboard } from "./clipboard.ts";
+import memory from "./memory/index.ts";
+import thinkingSteps from "./thinking-steps/thinking-steps.ts";
 
 import fileCollector from "./file-collector/index.ts";
 import codeReview from "./code-review/index.ts";
@@ -31,6 +33,8 @@ export default function (pi: ExtensionAPI) {
   smartCommit(pi);
   workflow(pi);
   registerClipboard(pi);
+  memory(pi);
+  thinkingSteps(pi);
 
   if (profile === "full") {
     fileCollector(pi);

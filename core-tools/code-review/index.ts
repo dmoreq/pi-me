@@ -192,9 +192,8 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			// Filter files by focus patterns if scope has them
-			let filteredFiles = sourceFiles;
 			if (scope.focusPatterns && scope.focusPatterns.length > 0) {
-				filteredFiles = sourceFiles.filter(f =>
+				const filteredFiles = sourceFiles.filter(f =>
 					scope.focusPatterns!.some(p => p.test(f)),
 				);
 				if (filteredFiles.length > 0) {
@@ -234,7 +233,6 @@ export default function (pi: ExtensionAPI) {
 			const reportPath = saveReport(report, cwd);
 
 			// Notify user
-			const emoji = tdi.score <= 30 ? "🔴" : tdi.score <= 60 ? "🟡" : "✅";
 			ctx.ui.notify(
 				`${scope.emoji} ${tdi.score ? `TDI: ${tdi.score}/100 (${tdi.grade}). ` : ""}Report saved to ${reportPath}`,
 				"info",

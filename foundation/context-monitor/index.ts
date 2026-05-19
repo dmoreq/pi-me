@@ -67,10 +67,19 @@ export default function (pi: ExtensionAPI) {
     resetFiredFlags();
   });
 
+  pi.on("message_end", async (_event, _ctx) => {
+    monitor.recordMessage();
+    checkTriggers(pi);
+  });
+
+  pi.on("turn_end", async (_event, _ctx) => {
+    monitor.recordTurn();
+    checkTriggers(pi);
+  });
+
   pi.on("tool_result", async (event, _ctx) => {
     monitor.recordToolCall(event.name || "unknown");
     if (event.name === "edit" || event.name === "write") {
-      // Track file writes from tool results
       const content = event.content?.[0];
       if (content?.type === "text" && content.text) {
         const match = content.text.match(/(?:wrote|written to|edit|modified):\s*(\S+)/i);
