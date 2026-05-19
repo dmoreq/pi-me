@@ -30,7 +30,7 @@ core-tools/              ← dev/full profiles
 ├── subset A (always on)
 │   ├── task-plan/            Unified task & plan management (replaces task-orch + planning)
 │   ├── memory/               Persistent memory + project-context scanner
-│   ├── code-quality/         Auto-format (8) + auto-fix (3) pipeline
+│   ├── smart-commit/         Group→Format→Fix→Commit pipeline (replaces commit-helper + code-quality)
 │   ├── subprocess-orchestrator/  Subprocess execution (single/chain/loop/bg/pi)
 │   ├── thinking-steps/       Structured reasoning TUI (3 modes)
 │   ├── file-intelligence/    File summarization & indexing
@@ -75,9 +75,26 @@ shared/                  ← Infrastructure
 - **Commands**: `/tasks`, `/tasks-review`, `/task <description>`, `/plan`
 - **223+ tests** — all passing
 
+### Smart Group-Aware Commits
+
+**Commit Helper** and **Code Quality** are now merged into `smart-commit` (`core-tools/smart-commit/`):
+
+- **`/commit` command** discovers all dirty files and intelligently groups them by scope (first two path segments)
+- **Auto-format & auto-fix** runs on each file before staging (biome, prettier, eslint-format, ruff-format, eslint --fix, ruff --fix)
+- **LLM-powered commit messages** generated from diff context, file statuses, and quality changes
+- **`commit_message` tool** validates messages and executes `git commit`
+- **Deterministic grouping** — same files always produce same groups
+- **Sequential multi-group workflow** — one message per group, multiple `/commit` invocations for multiple groups
+- **83 tests** covering grouping, validation, prompts, integration, and error handling
+- **Documentation**: README, QUICKSTART, ARCHITECTURE
+- See [core-tools/smart-commit/QUICKSTART.md](./core-tools/smart-commit/QUICKSTART.md)
+
 ### Removed
 
 - `core-tools/task-orchestration/` — merged into task-plan
+- `authoring/commit-helper/` — merged into smart-commit
+- `core-tools/code-quality/` — merged into smart-commit
+- `content-tools/github.ts` — not part of core commit workflow
 - `core-tools/planning/` — removed after migration into task-plan
 - `core-tools/intent/` — shared infrastructure retained
 - `plan` tool and `task_control` tool — replaced by unified `task` tool
