@@ -4,8 +4,10 @@
  * - semantic: key-value facts (preferences, project patterns, corrections)
  * - lessons: learned corrections with dedup
  * - events: audit log of all memory operations
+ *
+ * All prepared statements are cached as class fields to avoid recompilation on every call.
  */
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, StatementSync } from "node:sqlite";
 import { mkdirSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 
@@ -43,8 +45,41 @@ export interface MemoryEvent {
 
 export class MemoryStore {
   private db: DatabaseSync;
-  private writeLock: Promise<void> = Promise.resolve();
   private hasFTS5: boolean = false;
+
+  // ── Semantic statements ──────────────────────────────────────────
+  private stmtGetSemantic!: StatementSync;
+  private stmtGetSemanticConfidence!: StatementSync;
+  private stmtUpsertSemantic!: StatementSync;
+  private stmtDeleteSemantic!: StatementSync;
+  private stmtListSemanticAll!: StatementSync;
+  private stmtListSemanticPrefix!: StatementSync;
+  private stmtTouchAccessed!: StatementSync;
+  private stmtSearchSemanticFTS!: StatementSync | null;
+  private stmtListAllSemantic!: StatementSync;
+
+  // ── Lesson statements ────────────────────────────────────────────
+  private stmtExactDupLesson!: StatementSync;
+  private stmtAllLessonRules!: StatementSync;
+  private stmtInsertLesson!: StatementSync;
+  private stmtGetLesson!: StatementSync;
+  private stmtListLessonsAll!: StatementSync;
+  private stmtListLessonsByCategory!: StatementSync;
+  private stmtSearchLessonsFTS!: StatementSync | null;
+  private stmtDeleteLesson!: StatementSync;
+  private stmtDeleteLessonPrefix!: StatementSync;
+
+  // ── Event + stats statements ─────────────────────────────────────
+  private stmtLogEvent!: StatementSync;
+  private stmtListEvents!: StatementSync;
+  private stmtCountSemantic!: StatementSync;
+  private stmtCountLessons!: StatementSync;
+  private stmtCountEvents!: StatementSync;
+
+  // ── Pending consolidation ────────────────────────────────────────
+  private stmtGetPendingConsolidation!: StatementSync;
+  private stmtUpsertPendingConsolidation!: StatementSync;
+  private stmtDeletePendingConsolidation!: StatementSync;
 
   constructor(dbPath: string) {
     const dir = dirname(dbPath);
@@ -55,6 +90,7 @@ export class MemoryStore {
     this.db.exec("PRAGMA busy_timeout = 5000");
     this.db.exec("PRAGMA foreign_keys = ON");
     this.migrate();
+    this.prepareStatements();
   }
 
   private migrate(): void {
@@ -65,7 +101,8 @@ export class MemoryStore {
         confidence REAL NOT NULL DEFAULT 0.8,
         source TEXT NOT NULL DEFAULT 'consolidation',
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        last_accessed TEXT
       );
 
       CREATE TABLE IF NOT EXISTS lessons (
@@ -86,14 +123,11 @@ export class MemoryStore {
         details TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
-    `);
 
-    // Migration: add last_accessed column if missing
-    try {
-      this.db.exec(`ALTER TABLE semantic ADD COLUMN last_accessed TEXT`);
-    } catch {
-      // Column already exists — ignore
-    }
+      CREATE INDEX IF NOT EXISTS idx_lessons_rule_lower
+      ON lessons (LOWER(TRIM(rule)))
+      WHERE is_deleted = 0;
+    `);
 
     // FTS5 virtual tables for semantic + lesson search (optional — node:sqlite may lack FTS5)
     try {
@@ -138,6 +172,108 @@ export class MemoryStore {
     }
   }
 
+  private prepareStatements(): void {
+    // ── Semantic statements ──────────────────────────────────────────
+    this.stmtGetSemantic = this.db.prepare("SELECT * FROM semantic WHERE key = ?");
+    this.stmtGetSemanticConfidence = this.db.prepare("SELECT confidence FROM semantic WHERE key = ?");
+    this.stmtUpsertSemantic = this.db.prepare(`
+      INSERT INTO semantic (key, value, confidence, source, updated_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        confidence = excluded.confidence,
+        source = excluded.source,
+        updated_at = datetime('now')
+    `);
+    this.stmtDeleteSemantic = this.db.prepare("DELETE FROM semantic WHERE key = ?");
+    this.stmtListSemanticAll = this.db.prepare("SELECT * FROM semantic ORDER BY updated_at DESC LIMIT ?");
+    this.stmtListSemanticPrefix = this.db.prepare(
+      "SELECT * FROM semantic WHERE key LIKE ? ORDER BY updated_at DESC LIMIT ?"
+    );
+    this.stmtTouchAccessed = this.db.prepare(
+      "UPDATE semantic SET last_accessed = datetime('now') WHERE key = ?"
+    );
+    this.stmtListAllSemantic = this.db.prepare("SELECT * FROM semantic");
+
+    if (this.hasFTS5) {
+      this.stmtSearchSemanticFTS = this.db.prepare(`
+        SELECT s.key, s.value, s.confidence, s.source, s.created_at, s.updated_at, s.last_accessed
+        FROM semantic s
+        JOIN semantic_fts fts ON s.rowid = fts.rowid
+        WHERE semantic_fts MATCH ?
+        ORDER BY bm25(semantic_fts)
+        LIMIT ?
+      `);
+    }
+
+    // ── Lesson statements ────────────────────────────────────────────
+    this.stmtExactDupLesson = this.db.prepare(
+      "SELECT id FROM lessons WHERE LOWER(TRIM(rule)) = LOWER(?) AND is_deleted = 0"
+    );
+    this.stmtAllLessonRules = this.db.prepare(
+      "SELECT id, rule FROM lessons WHERE is_deleted = 0"
+    );
+    this.stmtInsertLesson = this.db.prepare(
+      "INSERT INTO lessons (id, rule, category, source, negative) VALUES (?, ?, ?, ?, ?)"
+    );
+    this.stmtGetLesson = this.db.prepare(
+      "SELECT * FROM lessons WHERE id = ? AND is_deleted = 0"
+    );
+    this.stmtListLessonsAll = this.db.prepare(
+      "SELECT * FROM lessons WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT ?"
+    );
+    this.stmtListLessonsByCategory = this.db.prepare(
+      "SELECT * FROM lessons WHERE category = ? AND is_deleted = 0 ORDER BY created_at DESC LIMIT ?"
+    );
+    this.stmtDeleteLesson = this.db.prepare(
+      "UPDATE lessons SET is_deleted = 1 WHERE id = ? AND is_deleted = 0"
+    );
+    this.stmtDeleteLessonPrefix = this.db.prepare(
+      "SELECT id FROM lessons WHERE id LIKE ? AND is_deleted = 0"
+    );
+
+    if (this.hasFTS5) {
+      this.stmtSearchLessonsFTS = this.db.prepare(`
+        SELECT l.id, l.rule, l.category, l.source, l.negative, l.created_at
+        FROM lessons l
+        JOIN lessons_fts fts ON l.rowid = fts.rowid
+        WHERE lessons_fts MATCH ? AND l.is_deleted = 0
+        ORDER BY bm25(lessons_fts)
+        LIMIT ?
+      `);
+    }
+
+    // ── Event + stats statements ─────────────────────────────────────
+    this.stmtLogEvent = this.db.prepare(
+      "INSERT INTO events (event_type, memory_type, memory_key, details) VALUES (?, ?, ?, ?)"
+    );
+    this.stmtListEvents = this.db.prepare(
+      "SELECT * FROM events ORDER BY id DESC LIMIT ?"
+    );
+    this.stmtCountSemantic = this.db.prepare(
+      "SELECT COUNT(*) as c FROM semantic"
+    );
+    this.stmtCountLessons = this.db.prepare(
+      "SELECT COUNT(*) as c FROM lessons WHERE is_deleted = 0"
+    );
+    this.stmtCountEvents = this.db.prepare(
+      "SELECT COUNT(*) as c FROM events"
+    );
+
+    // ── Pending consolidation ────────────────────────────────────────
+    this.stmtGetPendingConsolidation = this.db.prepare(
+      "SELECT value FROM semantic WHERE key = '_pending_consolidation' LIMIT 1"
+    );
+    this.stmtUpsertPendingConsolidation = this.db.prepare(`
+      INSERT INTO semantic (key, value, confidence, source)
+      VALUES ('_pending_consolidation', ?, 1.0, 'system')
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `);
+    this.stmtDeletePendingConsolidation = this.db.prepare(
+      "DELETE FROM semantic WHERE key = '_pending_consolidation'"
+    );
+  }
+
   /**
    * Serialize async callers so concurrent read-modify-write cycles
    * (e.g. two consolidation calls) don't clobber each other.
@@ -160,25 +296,16 @@ export class MemoryStore {
 
   getSemantic(key: string): SemanticEntry | undefined {
     const normalized = key.toLowerCase();
-    return this.db.prepare("SELECT * FROM semantic WHERE key = ?").get(normalized) as unknown as SemanticEntry | undefined;
+    return this.stmtGetSemantic.get(normalized) as unknown as SemanticEntry | undefined;
   }
 
   setSemantic(key: string, value: string, confidence: number = 0.8, source: SemanticEntry["source"] = "consolidation"): void {
     const normalized = key.toLowerCase();
     this.withLock(() => {
-      const existing = this.db.prepare("SELECT * FROM semantic WHERE key = ?").get(normalized) as unknown as SemanticEntry | undefined;
+      const existing = this.stmtGetSemanticConfidence.get(normalized) as { confidence: number } | undefined;
       if (existing && existing.confidence > confidence) return; // higher confidence wins
 
-      this.db.prepare(`
-        INSERT INTO semantic (key, value, confidence, source, updated_at)
-        VALUES (?, ?, ?, ?, datetime('now'))
-        ON CONFLICT(key) DO UPDATE SET
-          value = excluded.value,
-          confidence = excluded.confidence,
-          source = excluded.source,
-          updated_at = datetime('now')
-      `).run(normalized, value, confidence, source);
-
+      this.stmtUpsertSemantic.run(normalized, value, confidence, source);
       this.logEvent(existing ? "update" : "create", "semantic", normalized);
     });
   }
@@ -186,7 +313,7 @@ export class MemoryStore {
   deleteSemantic(key: string): boolean {
     const normalized = key.toLowerCase();
     return this.withLock(() => {
-      const result = this.db.prepare("DELETE FROM semantic WHERE key = ?").run(normalized);
+      const result = this.stmtDeleteSemantic.run(normalized);
       if (result.changes > 0) this.logEvent("delete", "semantic", normalized);
       return result.changes > 0;
     });
@@ -194,32 +321,22 @@ export class MemoryStore {
 
   listSemantic(prefix?: string, limit: number = 100): SemanticEntry[] {
     if (prefix) {
-      return this.db.prepare("SELECT * FROM semantic WHERE key LIKE ? ORDER BY updated_at DESC LIMIT ?")
-        .all(`${prefix}%`, limit) as unknown as SemanticEntry[];
+      return this.stmtListSemanticPrefix.all(`${prefix}%`, limit) as unknown as SemanticEntry[];
     }
-    return this.db.prepare("SELECT * FROM semantic ORDER BY updated_at DESC LIMIT ?")
-      .all(limit) as unknown as SemanticEntry[];
+    return this.stmtListSemanticAll.all(limit) as unknown as SemanticEntry[];
   }
 
   searchSemantic(query: string, limit: number = 10): SemanticEntry[] {
     const terms = query.trim().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
 
-    if (!this.hasFTS5) return this._searchSemanticFallback(query, limit);
+    if (!this.hasFTS5 || !this.stmtSearchSemanticFTS) return this._searchSemanticFallback(query, limit);
 
     // Build FTS5 query — quote each term for safety
     const ftsQuery = terms.map(t => `"${t.replace(/"/g, '""')}"`).join(" OR ");
 
     try {
-      const rows = this.db.prepare(`
-        SELECT s.key, s.value, s.confidence, s.source, s.created_at, s.updated_at, s.last_accessed
-        FROM semantic s
-        JOIN semantic_fts fts ON s.rowid = fts.rowid
-        WHERE semantic_fts MATCH ?
-        ORDER BY bm25(semantic_fts)
-        LIMIT ?
-      `).all(ftsQuery, limit) as unknown as SemanticEntry[];
-
+      const rows = this.stmtSearchSemanticFTS!.all(ftsQuery, limit) as unknown as SemanticEntry[];
       return rows;
     } catch {
       // FTS query failed — fall back to substring matching
@@ -231,12 +348,17 @@ export class MemoryStore {
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
 
-    const all = this.db.prepare("SELECT * FROM semantic").all() as unknown as SemanticEntry[];
+    const now = Date.now();
+    const all = this.stmtListAllSemantic.all() as unknown as SemanticEntry[];
     return all
       .map(entry => {
         const text = `${entry.key} ${entry.value}`.toLowerCase();
-        const matches = terms.filter(t => text.includes(t)).length;
-        return { entry, score: matches / terms.length };
+        const matchScore = terms.filter(t => text.includes(t)).length / terms.length;
+        // Recency bonus: accessed within 7 days gets +0.1 boost
+        const lastAccessed = entry.last_accessed ? new Date(entry.last_accessed).getTime() : 0;
+        const daysSinceAccess = (now - lastAccessed) / 86_400_000;
+        const recencyBonus = daysSinceAccess < 7 ? 0.1 : 0;
+        return { entry, score: matchScore + recencyBonus };
       })
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
@@ -246,9 +368,8 @@ export class MemoryStore {
 
   touchAccessed(keys: string[]): void {
     if (keys.length === 0) return;
-    const stmt = this.db.prepare("UPDATE semantic SET last_accessed = datetime('now') WHERE key = ?");
     for (const key of keys) {
-      stmt.run(key.toLowerCase());
+      this.stmtTouchAccessed.run(key.toLowerCase());
     }
   }
 
@@ -260,33 +381,32 @@ export class MemoryStore {
 
     const normalizedCategory = category.trim().toLowerCase() || "general";
 
-    return this.withLock(() => {
-      // Exact-match dedup (case-insensitive)
-      const existing = this.db.prepare(
-        "SELECT id FROM lessons WHERE LOWER(TRIM(rule)) = LOWER(?) AND is_deleted = 0"
-      ).get(trimmed.toLowerCase()) as { id: string } | undefined;
-      if (existing) return { success: false as const, reason: "duplicate" as const, id: existing.id };
+    // Phase 1: read — no lock, no transaction
+    const exactMatch = this.stmtExactDupLesson.get(trimmed.toLowerCase()) as { id: string } | undefined;
+    if (exactMatch) return { success: false as const, reason: "duplicate" as const, id: exactMatch.id };
 
-      // Jaccard dedup
-      const allRules = this.db.prepare("SELECT id, rule FROM lessons WHERE is_deleted = 0").all() as { id: string; rule: string }[];
-      for (const r of allRules) {
-        if (jaccard(trimmed, r.rule) >= 0.7) {
-          return { success: false as const, reason: "similar" as const, id: r.id };
-        }
+    const allRules = this.stmtAllLessonRules.all() as { id: string; rule: string }[];
+    for (const r of allRules) {
+      if (jaccard(trimmed, r.rule) >= 0.7) {
+        return { success: false as const, reason: "similar" as const, id: r.id };
       }
+    }
+
+    // Phase 2: write — lock only for the insert (tiny critical section)
+    return this.withLock(() => {
+      // Re-check exact dedup inside the lock (TOCTOU guard)
+      const recheck = this.stmtExactDupLesson.get(trimmed.toLowerCase()) as { id: string } | undefined;
+      if (recheck) return { success: false as const, reason: "duplicate" as const, id: recheck.id };
 
       const id = crypto.randomUUID();
-      this.db.prepare(
-        "INSERT INTO lessons (id, rule, category, source, negative) VALUES (?, ?, ?, ?, ?)"
-      ).run(id, trimmed, normalizedCategory, source, negative ? 1 : 0);
-
+      this.stmtInsertLesson.run(id, trimmed, normalizedCategory, source, negative ? 1 : 0);
       this.logEvent("create", "lesson", id, trimmed.slice(0, 100));
       return { success: true as const, id };
     });
   }
 
   getLesson(id: string): LessonEntry | undefined {
-    const row = this.db.prepare("SELECT * FROM lessons WHERE id = ? AND is_deleted = 0").get(id) as any;
+    const row = this.stmtGetLesson.get(id) as any;
     if (!row) return undefined;
     return { ...row, negative: !!row.negative };
   }
@@ -295,11 +415,9 @@ export class MemoryStore {
     let rows: any[];
     if (category) {
       const normalizedCategory = category.trim().toLowerCase();
-      rows = this.db.prepare("SELECT * FROM lessons WHERE category = ? AND is_deleted = 0 ORDER BY created_at DESC LIMIT ?")
-        .all(normalizedCategory, limit);
+      rows = this.stmtListLessonsByCategory.all(normalizedCategory, limit);
     } else {
-      rows = this.db.prepare("SELECT * FROM lessons WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT ?")
-        .all(limit);
+      rows = this.stmtListLessonsAll.all(limit);
     }
     return rows.map(r => ({ ...r, negative: !!r.negative }));
   }
@@ -312,20 +430,12 @@ export class MemoryStore {
     const terms = query.trim().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
 
-    if (!this.hasFTS5) return this._searchLessonsFallback(query, limit);
+    if (!this.hasFTS5 || !this.stmtSearchLessonsFTS) return this._searchLessonsFallback(query, limit);
 
     const ftsQuery = terms.map(t => `"${t.replace(/"/g, '""')}"`).join(" OR ");
 
     try {
-      const rows = this.db.prepare(`
-        SELECT l.id, l.rule, l.category, l.source, l.negative, l.created_at
-        FROM lessons l
-        JOIN lessons_fts fts ON l.rowid = fts.rowid
-        WHERE lessons_fts MATCH ? AND l.is_deleted = 0
-        ORDER BY bm25(lessons_fts)
-        LIMIT ?
-      `).all(ftsQuery, limit) as any[];
-
+      const rows = this.stmtSearchLessonsFTS!.all(ftsQuery, limit) as any[];
       return rows.map(r => ({ ...r, negative: !!r.negative }));
     } catch {
       return this._searchLessonsFallback(query, limit);
@@ -352,12 +462,12 @@ export class MemoryStore {
   deleteLesson(id: string): boolean {
     return this.withLock(() => {
       // Support both full UUIDs and prefix matches (e.g. first 8 chars)
-      let result = this.db.prepare("UPDATE lessons SET is_deleted = 1 WHERE id = ? AND is_deleted = 0").run(id);
+      let result = this.stmtDeleteLesson.run(id);
       if (result.changes === 0 && id.length < 36) {
         // Try prefix match — ensure it's unambiguous
-        const matches = this.db.prepare("SELECT id FROM lessons WHERE id LIKE ? AND is_deleted = 0").all(`${id}%`) as { id: string }[];
+        const matches = this.stmtDeleteLessonPrefix.all(`${id}%`) as { id: string }[];
         if (matches.length === 1) {
-          result = this.db.prepare("UPDATE lessons SET is_deleted = 1 WHERE id = ? AND is_deleted = 0").run(matches[0].id);
+          result = this.stmtDeleteLesson.run(matches[0].id);
           if (result.changes > 0) this.logEvent("delete", "lesson", matches[0].id);
           return true;
         }
@@ -367,24 +477,47 @@ export class MemoryStore {
     });
   }
 
+  // ─── Pending Consolidation ───────────────────────────────────────
+
+  savePendingConsolidation(userMsgs: string[], assistantMsgs: string[], cwd: string): void {
+    this.withLock(() => {
+      const payload = JSON.stringify({ userMsgs, assistantMsgs, cwd });
+      this.stmtUpsertPendingConsolidation.run(payload);
+    });
+  }
+
+  loadPendingConsolidation(): { userMsgs: string[]; assistantMsgs: string[]; cwd: string } | null {
+    try {
+      const row = this.stmtGetPendingConsolidation.get() as { value: string } | undefined;
+      if (!row) return null;
+      return JSON.parse(row.value);
+    } catch {
+      return null;
+    }
+  }
+
+  clearPendingConsolidation(): void {
+    this.withLock(() => {
+      this.stmtDeletePendingConsolidation.run();
+    });
+  }
+
   // ─── Events ──────────────────────────────────────────────────────
 
   private logEvent(eventType: string, memoryType: string, key: string, details: string = ""): void {
-    this.db.prepare(
-      "INSERT INTO events (event_type, memory_type, memory_key, details) VALUES (?, ?, ?, ?)"
-    ).run(eventType, memoryType, key, details);
+    this.stmtLogEvent.run(eventType, memoryType, key, details);
   }
 
   listEvents(limit: number = 50): MemoryEvent[] {
-    return this.db.prepare("SELECT * FROM events ORDER BY id DESC LIMIT ?").all(limit) as unknown as MemoryEvent[];
+    return this.stmtListEvents.all(limit) as unknown as MemoryEvent[];
   }
 
   // ─── Stats ───────────────────────────────────────────────────────
 
   stats(): { semantic: number; lessons: number; events: number } {
-    const semantic = (this.db.prepare("SELECT COUNT(*) as c FROM semantic").get() as any).c;
-    const lessons = (this.db.prepare("SELECT COUNT(*) as c FROM lessons WHERE is_deleted = 0").get() as any).c;
-    const events = (this.db.prepare("SELECT COUNT(*) as c FROM events").get() as any).c;
+    const semantic = (this.stmtCountSemantic.get() as any).c;
+    const lessons = (this.stmtCountLessons.get() as any).c;
+    const events = (this.stmtCountEvents.get() as any).c;
     return { semantic, lessons, events };
   }
 
