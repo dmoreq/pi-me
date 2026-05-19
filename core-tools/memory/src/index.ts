@@ -59,7 +59,6 @@ import {
 
 const DEFAULT_MEMORY_DIR = join(homedir(), ".pi", "memory");
 const DEFAULT_DB_PATH = join(DEFAULT_MEMORY_DIR, "memory.db");
-const GLOBAL_SETTINGS_PATH = join(homedir(), ".pi", "agent", "settings.json");
 
 /**
  * Resolve the memory DB path for a given working directory.
@@ -84,6 +83,13 @@ function resolveDbPath(cwd: string): string {
   return DEFAULT_DB_PATH;
 }
 
+interface GlobalSettings {
+  memory?: {
+    disableAutoInject?: boolean;
+    lessonInjection?: "all" | "selective";
+  };
+}
+
 /**
  * Read pi-memory config from settings.json.
  * Looks for a "memory" key with extension-specific settings.
@@ -95,21 +101,12 @@ function resolveDbPath(cwd: string): string {
  *   }
  * }
  */
-function readSettingsConfig(cwd?: string): InjectorConfig {
+function readSettingsConfig(globalSettings: GlobalSettings, cwd?: string): InjectorConfig {
   const config: InjectorConfig = {};
 
-  // Read global settings
-  try {
-    const raw = readFileSync(GLOBAL_SETTINGS_PATH, "utf-8");
-    const settings = JSON.parse(raw);
-    const memorySettings = settings?.memory;
-    if (memorySettings && typeof memorySettings === "object") {
-      if (memorySettings.lessonInjection === "all" || memorySettings.lessonInjection === "selective") {
-        config.lessonInjection = memorySettings.lessonInjection;
-      }
-    }
-  } catch {
-    // no global settings
+  // Use pre-read global settings (avoid duplicate file reads)
+  if (globalSettings?.memory?.lessonInjection === "all" || globalSettings?.memory?.lessonInjection === "selective") {
+    config.lessonInjection = globalSettings.memory.lessonInjection;
   }
 
   // Override with local project settings if available
@@ -131,51 +128,57 @@ function readSettingsConfig(cwd?: string): InjectorConfig {
   return config;
 }
 
-export default function (pi: ExtensionAPI) {
+export default function (pi: ExtensionAPI, globalSettings?: GlobalSettings) {
   let store: MemoryStore | null = null;
   let pendingUserMessages: string[] = [];
   let pendingAssistantMessages: string[] = [];
   let sessionCwd: string = "";
   let sessionId: string | undefined;
-  let cachedCtx: any = null;
   let resolvedDbPath: string = DEFAULT_DB_PATH;
-  let injectorConfig: InjectorConfig = readSettingsConfig();
+  let injectorConfig: InjectorConfig = readSettingsConfig(globalSettings ?? {});
 
   // ─── Lifecycle ───────────────────────────────────────────────────
 
   pi.on("session_start", async (_event, ctx) => {
     try {
       sessionCwd = ctx.cwd;
-      cachedCtx = ctx;
       sessionId = (ctx as any).sessionId ?? (ctx as any).session?.id;
 
       // Resolve per-agent DB path from local settings or cwd
       resolvedDbPath = resolveDbPath(sessionCwd);
-      injectorConfig = readSettingsConfig(sessionCwd);
+      injectorConfig = readSettingsConfig(globalSettings ?? {}, sessionCwd);
 
       store = new MemoryStore(resolvedDbPath);
+
+      // Load pending consolidation from previous failed session
+      const pending = store.loadPendingConsolidation();
+      if (pending) {
+        pendingUserMessages = [...pending.userMsgs].slice(-60);
+        pendingAssistantMessages = [...pending.assistantMsgs].slice(-60);
+        store.clearPendingConsolidation();
+      }
 
       // Seed pending messages from existing session history so that
       // /memory-consolidate works even when resuming a session (the
       // historical messages never fire agent_end).  See #5.
-      pendingUserMessages = [];
-      pendingAssistantMessages = [];
-      try {
-        const branch = ctx.sessionManager.getBranch();
-        for (const entry of branch) {
-          if (entry.type !== "message") continue;
-          const msg = (entry as any).message;
-          if (!msg) continue;
-          if (msg.role === "user") {
-            const text = extractText(msg.content);
-            if (text) pendingUserMessages.push(text);
-          } else if (msg.role === "assistant") {
-            const text = extractText(msg.content);
-            if (text) pendingAssistantMessages.push(text);
+      if (pendingUserMessages.length === 0 || pendingAssistantMessages.length === 0) {
+        try {
+          const branch = ctx.sessionManager.getBranch();
+          for (const entry of branch) {
+            if (entry.type !== "message") continue;
+            const msg = (entry as any).message;
+            if (!msg) continue;
+            if (msg.role === "user") {
+              const text = extractText(msg.content);
+              if (text) pendingUserMessages.push(text);
+            } else if (msg.role === "assistant") {
+              const text = extractText(msg.content);
+              if (text) pendingAssistantMessages.push(text);
+            }
           }
+        } catch {
+          // Session may not have entries yet (brand-new session)
         }
-      } catch {
-        // Session may not have entries yet (brand-new session)
       }
 
       const stats = store.stats();
@@ -213,23 +216,26 @@ export default function (pi: ExtensionAPI) {
         const text = extractText(msg.content);
         if (text) {
           pendingUserMessages.push(text);
-          if (pendingUserMessages.length > 60) pendingUserMessages.shift();
+          if (pendingUserMessages.length > 60) pendingUserMessages = pendingUserMessages.slice(-60);
         }
       } else if (msg.role === "assistant" && "content" in msg) {
         const text = extractText(msg.content);
         if (text) {
           pendingAssistantMessages.push(text);
-          if (pendingAssistantMessages.length > 60) pendingAssistantMessages.shift();
+          if (pendingAssistantMessages.length > 60) pendingAssistantMessages = pendingAssistantMessages.slice(-60);
         }
       }
     }
   });
 
+  // Named constant for consolidation threshold
+  const MIN_MESSAGES_TO_CONSOLIDATE = 3;
+
   // Consolidate memory when switching sessions (/new, /resume)
   pi.on("session_before_switch", async (_event, ctx) => {
     if (!store) return;
 
-    if (pendingUserMessages.length >= 3) {
+    if (pendingUserMessages.length >= MIN_MESSAGES_TO_CONSOLIDATE) {
       ctx.ui.setStatus("pi-memory", "🧠 Consolidating memory...");
       try {
         await consolidateSession();
@@ -247,17 +253,14 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_shutdown", async () => {
     if (!store) return;
 
-    // Immediate visual feedback — user sees this as soon as C-c C-c fires
-    if (cachedCtx) {
-      cachedCtx.ui.setStatus("pi-memory", "🧠 Consolidating memory...");
-    }
-
     // Consolidate if we have enough conversation
-    if (pendingUserMessages.length >= 3) {
+    if (pendingUserMessages.length >= MIN_MESSAGES_TO_CONSOLIDATE) {
       try {
         await consolidateSession();
+        store.clearPendingConsolidation();
       } catch {
-        // Best-effort — don't crash on shutdown
+        // Save for next session on failure
+        store.savePendingConsolidation(pendingUserMessages, pendingAssistantMessages, sessionCwd);
       }
     }
 
@@ -320,7 +323,8 @@ export default function (pi: ExtensionAPI) {
     async execute(_id, params, _signal, _update, _ctx) {
       if (!store) return ok("Memory store not initialized");
 
-      const results = store.searchSemantic(params.query, params.limit ?? 10);
+      const query = stripQuotes(params.query);
+      const results = store.searchSemantic(query, params.limit ?? 10);
       if (results.length === 0) {
         return ok("No matching memories found.");
       }
@@ -433,7 +437,8 @@ export default function (pi: ExtensionAPI) {
     async execute(_id, params, _signal, _update, _ctx) {
       if (!store) return ok("Memory store not initialized");
 
-      const lessons = store.listLessons(params.category, params.limit ?? 50);
+      const category = params.category ? stripQuotes(params.category) : undefined;
+      const lessons = store.listLessons(category, params.limit ?? 50);
       if (lessons.length === 0) {
         return ok("No lessons learned yet.");
       }
@@ -470,8 +475,8 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      if (pendingUserMessages.length < 2) {
-        ctx.ui.notify("Not enough conversation to consolidate (need at least 2 user messages)", "warning");
+      if (pendingUserMessages.length < MIN_MESSAGES_TO_CONSOLIDATE) {
+        ctx.ui.notify(`Not enough conversation to consolidate (need at least ${MIN_MESSAGES_TO_CONSOLIDATE} user messages)`, "warning");
         return;
       }
 
@@ -487,7 +492,7 @@ export default function (pi: ExtensionAPI) {
   });
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────
 
 function extractText(content: unknown): string {
   if (typeof content === "string") return content;
