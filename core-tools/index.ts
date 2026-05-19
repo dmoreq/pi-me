@@ -16,7 +16,7 @@ import { getTelemetry } from "pi-telemetry";
 import taskPlan from "./task-plan/index.ts";
 import memory from "./memory/index.ts";
 import thinkingSteps from "./thinking-steps/thinking-steps.ts";
-import codeQuality from "./code-quality/index.ts";
+import smartCommit from "./smart-commit/index.ts";
 
 import subprocessOrchestrator from "./subprocess-orchestrator/index.ts";
 import { registerClipboard } from "./clipboard.ts";
@@ -38,7 +38,7 @@ export default function (pi: ExtensionAPI) {
 			name: "core-tools",
 			version: "1.0.0",
 			description: "Unified task & plan management, memory, thinking-steps, code quality (8 formatters + 3 fixers), subprocess orchestration",
-			tools: ["read", "edit", "write", "bash", "search", "copy_to_clipboard", "subprocess", "task"],
+			tools: ["read", "edit", "write", "bash", "search", "copy_to_clipboard", "subprocess", "task", "commit_message"],
 			events: ["session_start", "tool_call", "message_end", "session_shutdown"],
 		});
 	}
@@ -47,7 +47,7 @@ export default function (pi: ExtensionAPI) {
 	taskPlan(pi);
 	memory(pi);
 	thinkingSteps(pi);
-	codeQuality(pi);
+	smartCommit(pi);
 	registerClipboard(pi);
 	subprocessOrchestrator(pi);
 
