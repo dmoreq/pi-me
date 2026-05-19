@@ -1,18 +1,12 @@
 /**
  * smart-commit — quality runner
  *
- * Runs format + lint-fix on a list of files before staging.
- * Deliberately never throws — quality failures are warnings, not blockers.
- *
- * Reuses:
- *   - FIX_RUNNERS (biome, eslint, ruff) from core-tools/code-quality/runners/fix/index.ts
+ * Quality tooling is optional in this package. When no formatter/fixer bundle is
+ * present, smart-commit continues without blocking commits.
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { FIX_RUNNERS } from "../code-quality/runners/fix/index.ts";
 import type { DirtyFile, QualityResult } from "./types.ts";
-
-const QUALITY_TIMEOUT_MS = 30_000;
 
 /**
  * Run format + fix on a single file.
@@ -20,38 +14,16 @@ const QUALITY_TIMEOUT_MS = 30_000;
  */
 async function runQualityOnFile(
   file: DirtyFile,
-  repoRoot: string,
-  pi: ExtensionAPI,
+  _repoRoot: string,
+  _pi: ExtensionAPI,
 ): Promise<QualityResult> {
-  const result: QualityResult = {
+  return {
     file: file.relPath,
     formatted: false,
     fixed: false,
     fixCount: 0,
     errors: [],
   };
-
-  // ── Format ──────────────────────────────────────────────────────────────
-  // The formatter pipeline is not available in this build, so keep quality
-  // checks limited to fix runners that are already shipped here.
-
-  // ── Fix ─────────────────────────────────────────────────────────────────
-  for (const runner of FIX_RUNNERS) {
-    try {
-      if (!runner.isAvailable(file.absPath, repoRoot)) continue;
-      const fr = await runner.fix(file.absPath, QUALITY_TIMEOUT_MS);
-      if (fr.status === "succeeded") {
-        result.fixed = true;
-        result.fixCount += fr.changes ?? 0;
-      } else if (fr.status === "failed") {
-        result.errors.push(`${runner.name}: ${fr.detail}`);
-      }
-    } catch (err: any) {
-      result.errors.push(`${runner.name} error: ${err?.message ?? String(err)}`);
-    }
-  }
-
-  return result;
 }
 
 /**
