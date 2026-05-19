@@ -5,12 +5,10 @@
  * Deliberately never throws — quality failures are warnings, not blockers.
  *
  * Reuses:
- *   - formatFile() from core-tools/code-quality/runners/formatter/dispatch.ts
  *   - FIX_RUNNERS (biome, eslint, ruff) from core-tools/code-quality/runners/fix/index.ts
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { formatFile } from "../code-quality/runners/formatter/dispatch.ts";
 import { FIX_RUNNERS } from "../code-quality/runners/fix/index.ts";
 import type { DirtyFile, QualityResult } from "./types.ts";
 
@@ -34,23 +32,8 @@ async function runQualityOnFile(
   };
 
   // ── Format ──────────────────────────────────────────────────────────────
-  try {
-    const summaries: string[] = [];
-    await formatFile(
-      pi,
-      repoRoot,
-      file.absPath,
-      QUALITY_TIMEOUT_MS,
-      (summary) => {
-        if (summary.status === "succeeded") result.formatted = true;
-        else if (summary.failureMessage) summaries.push(summary.failureMessage);
-      },
-      (warning) => result.errors.push(`format warning: ${warning}`),
-    );
-    if (summaries.length > 0) result.errors.push(...summaries);
-  } catch (err: any) {
-    result.errors.push(`format error: ${err?.message ?? String(err)}`);
-  }
+  // The formatter pipeline is not available in this build, so keep quality
+  // checks limited to fix runners that are already shipped here.
 
   // ── Fix ─────────────────────────────────────────────────────────────────
   for (const runner of FIX_RUNNERS) {
