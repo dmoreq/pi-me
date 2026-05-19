@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   buildConsolidationPrompt,
   parseConsolidationResponse,
+  isDerivableOrEphemeral,
+  isDerivableLesson,
 } from "./consolidator.ts";
 
 describe("buildConsolidationPrompt", () => {
@@ -149,5 +151,46 @@ describe("parseConsolidationResponse", () => {
     }));
     assert.equal(result.semantic.length, 0);
     assert.equal(result.lessons.length, 0);
+  });
+});
+
+describe("isDerivableOrEphemeral", () => {
+  it("does not filter pref.commit_style (workflow preference)", () => {
+    assert.equal(isDerivableOrEphemeral("pref.commit_style", "conventional commits"), false);
+  });
+
+  it("does not filter tool.commit (tool preference)", () => {
+    assert.equal(isDerivableOrEphemeral("tool.commit", "always use --amend"), false);
+  });
+
+  it("does not filter pref.git_commit_format (git preference)", () => {
+    assert.equal(isDerivableOrEphemeral("pref.git_commit_format", "short"), false);
+  });
+
+  it("filters actual git history keys", () => {
+    assert.equal(isDerivableOrEphemeral("git.history", "..."), true);
+    assert.equal(isDerivableOrEphemeral("git.recent", "..."), true);
+    assert.equal(isDerivableOrEphemeral("git.log", "..."), true);
+    assert.equal(isDerivableOrEphemeral("git.blame", "..."), true);
+  });
+
+  it("filters project commit hash", () => {
+    assert.equal(isDerivableOrEphemeral("project.foo.commit_hash", "abc123"), true);
+  });
+});
+
+describe("isDerivableLesson", () => {
+  it("filters file path lessons", () => {
+    assert.equal(isDerivableLesson("File config.ts is at path src/config.ts"), true);
+  });
+
+  it("filters 'project uses X' lessons", () => {
+    assert.equal(isDerivableLesson("The project uses TypeScript"), true);
+    assert.equal(isDerivableLesson("The codebase is written in Python"), true);
+  });
+
+  it("filters activity logs", () => {
+    assert.equal(isDerivableLesson("We fixed the bug today"), true);
+    assert.equal(isDerivableLesson("The agent deployed the app"), true);
   });
 });

@@ -161,6 +161,18 @@ describe("MemoryStore", () => {
       const results = store.searchLessons("xyzzy12345 qqqqq", 10);
       assert.equal(results.length, 0);
     });
+
+    it("addLesson with many existing lessons completes quickly", () => {
+      // Insert 500 lessons as baseline
+      for (let i = 0; i < 500; i++) {
+        store.addLesson(`Unique lesson rule number ${i} about topic ${i}`, "perf-test", "test");
+      }
+      const start = Date.now();
+      store.addLesson("A brand new lesson that should not match any of the 500", "perf-test", "test");
+      const elapsed = Date.now() - start;
+      assert.ok(elapsed < 200, `addLesson took ${elapsed}ms, expected < 200ms`);
+    });
+
   });
 
   describe("events", () => {

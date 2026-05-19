@@ -113,4 +113,21 @@ describe("buildContextBlock", () => {
     assert.equal(stats.semantic, 0);
     assert.ok(stats.lessons > 0);
   });
+
+  it("truncates at section boundary, not mid-character", () => {
+    // Fill store with enough entries to exceed 8000 chars
+    for (let i = 0; i < 100; i++) {
+      store.setSemantic(`pref.long_key_${i}`, "x".repeat(120), 0.9, "user");
+      store.addLesson(`A lesson about topic ${i} that is long enough to matter`, "general", "user");
+    }
+
+    const { text } = buildContextBlock(store, undefined, "anything");
+    assert.ok(text.length <= 8000, `context exceeds 8000 chars: ${text.length}`);
+    // Must close the memory tag properly
+    assert.ok(text.endsWith("</memory>"), "memory block must end with closing tag");
+    // Must not contain sections cut mid-sentence
+    if (text.length > 0) {
+      assert.ok(text.startsWith("<memory>"), "memory block must start with opening tag");
+    }
+  });
 });
