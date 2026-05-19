@@ -10,7 +10,6 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import memory from "./src/index.ts";
-import registerMemoryMode from "../memory-mode.ts";
 
 function isAutoInjectDisabled(): boolean {
   try {
@@ -24,24 +23,35 @@ function isAutoInjectDisabled(): boolean {
   }
 }
 
+interface GlobalSettings {
+  memory?: {
+    disableAutoInject?: boolean;
+    lessonInjection?: "all" | "selective";
+  };
+}
+
+function readGlobalSettings(): GlobalSettings {
+  try {
+    const settingsPath = join(getAgentDir(), "settings.json");
+    if (!existsSync(settingsPath)) return {};
+    return JSON.parse(readFileSync(settingsPath, "utf-8"));
+  } catch {
+    return {};
+  }
+}
+
 export default function (pi: ExtensionAPI) {
-  if (isAutoInjectDisabled()) {
+  const globalSettings = readGlobalSettings();
+
+  if (globalSettings.memory?.disableAutoInject === true) {
     // memory is installed but dormant — no context injection.
     // Enable by setting { "memory": { "disableAutoInject": false } }
     // in ~/.pi/agent/settings.json
     return;
   }
 
-  // Register /mem and /remember commands (merged from memory-mode)
-  registerMemoryMode(pi);
-
-  pi.on("session_start", async (_event, ctx) => {
-    try {
-      memory(pi);
-      ctx.ui.setStatus("memory", "ready");
-    } catch (err) {
-      console.error("[memory] Failed to load:", err);
-      ctx.ui.notify("memory failed to load", "error");
-    }
-  });
+  // Call memory(pi) at registration time — NOT inside a session_start handler.
+  // This ensures inner event handlers (session_start, before_agent_start, etc.)
+  // are registered before any session begins.
+  memory(pi, globalSettings);
 }
