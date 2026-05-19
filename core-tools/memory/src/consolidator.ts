@@ -31,6 +31,7 @@ export interface ExtractedMemory {
   lessons: Array<{ rule: string; category: string; negative: boolean }>;
 }
 
+// System prompts are exported for reuse by bootstrap
 export const CONSOLIDATION_PROMPT = `You are a memory extraction system. Analyze this conversation and extract structured knowledge.
 
 Extract ONLY concrete, reusable facts — not summaries of what happened. Focus on:
@@ -78,6 +79,71 @@ Respond with ONLY valid JSON matching this schema:
 
 If nothing worth extracting, return: { "semantic": [], "lessons": [] }`;
 
+/**
+ * Build memory state section for inclusion in consolidation or bootstrap prompts.
+ * Helps the LLM avoid duplicating existing facts and lessons.
+ */
+function buildMemoryStateSection(
+  currentFacts?: { key: string; value: string }[],
+  currentLessons?: { rule: string; category: string }[]
+): string {
+  if ((!currentFacts || currentFacts.length === 0) && (!currentLessons || currentLessons.length === 0)) {
+    return "";
+  }
+
+  const parts: string[] = ["## Current Memory State"];
+  if (currentFacts && currentFacts.length > 0) {
+    parts.push("The user already has these facts stored (avoid duplicating, update if changed):");
+    let chars = 0;
+    for (const f of currentFacts) {
+      const line = `- ${f.key}: ${f.value.length > 120 ? f.value.slice(0, 120) + "…" : f.value}`;
+      if (chars + line.length > 1500) {
+        parts.push("- ... (truncated)");
+        break;
+      }
+      parts.push(line);
+      chars += line.length;
+    }
+  }
+  if (currentLessons && currentLessons.length > 0) {
+    parts.push("\nAnd these lessons (avoid duplicating):");
+    let chars = 0;
+    for (const l of currentLessons) {
+      const line = `- [${l.category}] ${l.rule.length > 120 ? l.rule.slice(0, 120) + "…" : l.rule}`;
+      if (chars + line.length > 500) {
+        parts.push("- ... (truncated)");
+        break;
+      }
+      parts.push(line);
+      chars += line.length;
+    }
+  }
+  return parts.join("\n") + "\n\n";
+}
+
+/**
+ * Build consolidation prompt for bootstrap script.
+ * Frames input as "past session summaries" rather than "current conversation".
+ */
+export function buildBootstrapPrompt(
+  batches: string[][],
+  batchIndex: number,
+  currentFacts?: { key: string; value: string }[],
+  currentLessons?: { rule: string; category: string }[]
+): string {
+  const batch = batches[batchIndex];
+  const memorySection = buildMemoryStateSection(currentFacts, currentLessons);
+
+  return `${CONSOLIDATION_PROMPT}
+
+${memorySection}You are analyzing summaries from ${batch.length} past coding sessions (batch ${batchIndex + 1} of ${batches.length}).
+Focus on patterns that appear across multiple sessions — these are more likely to be lasting preferences.
+
+## Session Summaries
+
+${batch.map((s, j) => `### Session ${j + 1}\n${s}`).join("\n\n")}`;
+}
+
 // ─── Consolidation ───────────────────────────────────────────────────
 
 /**
@@ -89,33 +155,7 @@ export function buildConsolidationPrompt(
   currentLessons?: { rule: string; category: string }[]
 ): string {
   const messages: string[] = [];
-
-  // Current memory state section — helps the LLM avoid duplicates
-  let memorySection = "";
-  if ((currentFacts && currentFacts.length > 0) || (currentLessons && currentLessons.length > 0)) {
-    const parts: string[] = ["## Current Memory State"];
-    if (currentFacts && currentFacts.length > 0) {
-      parts.push("The user already has these facts stored (avoid duplicating, update if changed):");
-      let chars = 0;
-      for (const f of currentFacts) {
-        const line = `- ${f.key}: ${f.value.length > 120 ? f.value.slice(0, 120) + "…" : f.value}`;
-        if (chars + line.length > 1500) { parts.push("- ... (truncated)"); break; }
-        parts.push(line);
-        chars += line.length;
-      }
-    }
-    if (currentLessons && currentLessons.length > 0) {
-      parts.push("\nAnd these lessons (avoid duplicating):");
-      let chars = 0;
-      for (const l of currentLessons) {
-        const line = `- [${l.category}] ${l.rule.length > 120 ? l.rule.slice(0, 120) + "…" : l.rule}`;
-        if (chars + line.length > 500) { parts.push("- ... (truncated)"); break; }
-        parts.push(line);
-        chars += line.length;
-      }
-    }
-    memorySection = parts.join("\n") + "\n\n";
-  }
+  const memorySection = buildMemoryStateSection(currentFacts, currentLessons);
 
   // Interleave user/assistant messages for context
   const maxPairs = 30; // cap to avoid huge prompts
@@ -209,7 +249,7 @@ function isValidKey(key: string): boolean {
  * Reject semantic entries that store derivable or ephemeral information.
  * These pollute memory — the project itself is the source of truth.
  */
-function isDerivableOrEphemeral(key: string, value: string): boolean {
+export function isDerivableOrEphemeral(key: string, value: string): boolean {
   const kl = key.toLowerCase();
   const vl = value.toLowerCase();
 
@@ -217,8 +257,9 @@ function isDerivableOrEphemeral(key: string, value: string): boolean {
   if (kl.includes("filepath") || kl.includes("file_path") || kl.includes("directory")) return true;
   if (/^project\.\w+\.(path|dir|location|structure|layout|architecture)$/.test(kl)) return true;
 
-  // Git history — git log/blame is authoritative
-  if (kl.includes("commit") || kl.includes("git.history") || kl.includes("git.recent")) return true;
+  // Git history — git log/blame is authoritative (not commit preferences like pref.commit_style)
+  if (/^git\.(history|recent|log|blame)$/.test(kl)) return true;
+  if (/^project\.[\w.]+\.commit_hash$/.test(kl)) return true;
 
   // Activity summaries — "today we worked on X" is not a lasting fact
   if (vl.startsWith("today ") || vl.startsWith("we worked on") || vl.startsWith("this session")) return true;
@@ -235,7 +276,7 @@ function isDerivableOrEphemeral(key: string, value: string): boolean {
 /**
  * Reject lesson entries that are derivable from code or too ephemeral.
  */
-function isDerivableLesson(rule: string): boolean {
+export function isDerivableLesson(rule: string): boolean {
   const rl = rule.toLowerCase();
 
   // "File X is at path Y" — derivable
