@@ -1,121 +1,65 @@
 ---
 name: plugin-guide
-description: Decision guide for choosing the right pi tool, extension, or skill for each task category
+description: Use when choosing between Pi tools, skills, extensions, or workflows for a task.
 ---
 
 # Plugin Guide
 
-Use this guide to determine which tool, extension, or skill to use for a given task.
+Use this guide to pick the current Pi-native tool or skill.
 
 ## Task-to-Tool Mapping
 
-### Task Management & Progress
+### Progress & planning
 
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Track in-session task progress | `plan_tracker` tool | Live overlay, survives branch replay |
-| Create persistent tasks & plans with locking | `task` tool (task-plan) | Unified task/plan manager, auto-capture, safety mode |
-| Decompose complex work into steps | `writing-plans` skill | Called automatically when spec is clear |
-| View all plans | `/plans` command | Lists plans in `.pi/plans/` directory |
-| Track 4-state todo tasks | `todo` tool | Pending → in_progress → completed + deleted |
+| Task | Tool / Skill |
+|---|---|
+| Track in-session progress | `workflow` |
+| Create/update workflows | `workflow` |
+| Run command/background job as tracked work | `workflow run-command` / `workflow run-bg` |
+| Review jobs | `workflow job-list` / `job-status` / `job-cancel` |
 
-### Code & Development
+### Code work
 
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Search file contents by regex | `search` tool (builtin ripgrep) | Fastest option for regex |
-| Search file contents by relevance | `search_tool_bm25` tool | BM25 ranking for conceptual queries |
-| Read file contents | `read` tool | Text + image support |
-| Edit files precisely | `edit` tool | Exact text replacement |
-| Create/overwrite files | `write` tool | Auto-creates parent dirs |
-| Run bash commands | `bash` tool | Shell execution |
-| Execute Python code | `eval` tool | IPython kernel |
-| Get real-time LSP diagnostics | pi-lens | Code feedback on save |
-| Format code on save | pi-formatter | Auto-formatting |
-| Browse rendered markdown | pi-markdown-preview | Terminal/browser/PDF |
-| Parse PDF/Office docs | pi-docparser | Document parsing |
+| Task | Tool |
+|---|---|
+| Search file contents by regex | `search` |
+| Search by meaning | `concept_search` |
+| Find file paths | `find_files` / `fuzzy_find` |
+| Read structured files | `read_enhanced` |
+| Read images/text | `read` |
+| Edit files | `edit` |
+| Write files | `write` |
+| Run shell commands | `bash` |
+| Structural code refactors | `ast_grep` |
+| Security/code-smell checks | `semgrep` |
 
-### Subprocess Orchestration
+### Web + external info
 
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Run a single subprocess | `subprocess` tool (action: single) | Preferred for most delegation |
-| Run chain of subprocesses | `subprocess` tool (action: chain) | Pipeline where each step passes context |
-| Run parallel subprocesses | `subprocess` tool (action: single, run concurrently) | Concurrent independent tasks |
-| Run subprocess in a loop | `subprocess` tool (action: loop) | Polling/iteration loops with condition |
-| Spawn isolated pi session | `subprocess` tool (action: pi) | When you need a fresh pi subprocess |
-| List active jobs | `subprocess` tool (action: list) | Status of background jobs |
+| Task | Tool |
+|---|---|
+| Search the web | `web_search` |
+| Fetch a known URL | `web_fetch` |
 
-### Knowledge & Memory
+### Commit + replay
 
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Search web for current info | `web_search` tool | Fastest. Requires `EXA_API_KEY`, `TAVILY_API_KEY`, or `VALIYU_API_KEY` |
-| AI-engine-specific search | (removed — `web_search` covers this) | Uses Exa/Tavily/Valiyu API |
-| Save/recall session patterns | pi-memory | Automatic, learns passively |
-| Build explicit knowledge graph | memex | Zettelkasten with bidirectional links |
-| Retrieve context when full | context-mode | MCP-based context optimization |
-| Get second opinion from another model | `oracle` tool (oracle.ts) | `/oracle <prompt>` |
-| Ask a side question mid-session | BTW (btw) | `/btw <question>` |
+| Task | Tool |
+|---|---|
+| Generate/perform commit | `/commit` + `commit_message` |
+| Replay a prior bash/edit/write call | `/repeat` |
 
-### File & Resource Utilities
+### Skills
 
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Edit Jupyter notebooks | `notebook` tool | .ipynb cell management |
-| Render Mermaid diagrams | `render_mermaid` tool | SVG or PNG output |
-| Interact with GitHub | `github` tool | Issues, PRs, code search |
-| Copy text to clipboard | `copy_to_clipboard` tool | OSC52 escape sequences |
-| Collect file paths from tool results | file-collector | Regex-based collection |
-| Fetch web content | web-fetch | Page fetching utility |
-| Command output replay | repeat | Re-run captured commands |
-| File browser widget | files-widget | Browse files in terminal |
-
-### Session Lifecycle
-
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| View token usage/rate | token-rate | TUI status bar display |
-| Set session name | session-name | `/session-name <name>` |
-| Compact context automatically | auto-compact | Triggers at configurable threshold |
-| Configure compaction | compact-config | Settings for auto-compact |
-| Session branding/recap | session-recap | End-of-session summary |
-| Warp terminal notifications | warp-notify | OSC 777 notifications |
-| Manage session presets | preset | Model/preset management |
-| Model filtering | model-filter | Restrict available models |
-| Agent guidance injection | agent-guidance | Custom instructions per session |
-
-### UI & Display
-
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Render thinking steps | pi-thinking-steps | TUI thinking display |
-| Two-pane browser workspace | pi-studio | Prompt/response editing workspace |
-| Terminal minigames | arcade | Spice Invaders, Picman, Ping, Tetris, Mario-Not |
-| Speed reading | speedreading | `/speedread` RSVP reader |
-| Animated display effects | flicker-corp | Terminal animation |
-
-### Authoring & Docs
-
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Generate commit messages | `commit_message` tool | Conventional commits from git diff |
-| Save artifacts for later | output-artifacts | Truncated output to disk |
-| Bootstrap project skills | skill-bootstrap | `/bootstrap-skill` for SKILL.md |
-| Interactive plan annotation | plannotator | Browser-based code review |
-
-### Communication
-
-| Task | Tool / Extension | Notes |
-|---|---|---|
-| Inter-terminal communication | pi-link | WebSocket between pi terminals |
-| Structured user questions | `ask_user_question` tool | Multi-question UI with previews |
-| User notification | `notify` | Beep, speak, bring-to-front |
+| Task | Skill |
+|---|---|
+| Create or update skills | `writing-skills` |
+| Debug bugs/tests | `systematic-debugging` |
+| Write tests first | `test-driven-development` |
+| Extend Pi | `extending-pi` |
 
 ## Choosing between similar tools
 
-**`subprocess` tool actions:** Use `single` for one-off tasks, `chain` for sequential pipelines, `loop` for polling, `bg` for fire-and-forget, `pi` for isolated pi subprocesses. List active jobs with `list`.
-
-**`plan_tracker` vs `task` tool:** `plan_tracker` is for in-session task lists (like a todo overlay). `task` (task-plan) is the unified task & plan manager that handles persistent plans, auto-capture from conversation, AI intent detection, safety/review mode, and DAG-based execution.
-
-**`pi-memory` vs `memex` vs `context-mode`:** `pi-memory` is automatic (learns from you passively). `memex` is explicit (you build a knowledge graph). `context-mode` is retrieval (searches your knowledge base when context is full).
+- Use `concept_search` for questions like “where is auth handled?”
+- Use `search` when you know the exact pattern.
+- Use `read_enhanced` for JSON/YAML/manifests and large files.
+- Use `workflow` instead of old todo/task/subprocess references.
+- Use `web_search` first, then `web_fetch` for the source URL.

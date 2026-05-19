@@ -210,7 +210,7 @@ For reference files longer than 100 lines, include a table of contents at the to
 
 ### Use workflows for complex tasks
 
-Break complex operations into clear, sequential steps. For complex workflows, provide a checklist that can be tracked with the `plan_tracker` tool.
+Break complex operations into clear, sequential steps. For complex workflows, provide a checklist that can be tracked with the `workflow` tool.
 
 ### Implement feedback loops
 

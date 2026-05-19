@@ -1,6 +1,6 @@
 ---
 name: development-workflow
-description: Use when building a feature, fixing a bug, or making any code change that needs more than a trivial edit — covers the full lifecycle from brainstorming through to merge/PR
+description: Use when building a feature, fixing a bug, or making any code change that needs more than a trivial edit.
 ---
 
 > **Alternative workflows:** For pure discipline needs: `/skill:test-driven-development`, `/skill:systematic-debugging`.
@@ -14,6 +14,8 @@ A complete lifecycle for building features: explore, plan, isolate, implement, v
 **Core principle:** Match the process to the change size. A one-line fix doesn't need brainstorming. A new module does.
 
 **Announce at start:** "I'm using the development-workflow skill."
+
+> Prefer `workflow` for tracked work, `test-driven-development` for implementation discipline, and `systematic-debugging` for bugs.
 
 ## Phase Selector
 
@@ -83,10 +85,7 @@ Execute the plan. Choose the right approach:
 - Stop for feedback between logical groups
 
 ### For subprocess-driven execution (complex multi-task):
-Dispatch a fresh subprocess per task with two-stage review:
-1. **Implementer** — builds the task, self-reviews, commits
-2. **Spec reviewer** — verifies code matches spec (nothing more, nothing less)
-3. **Code quality reviewer** — checks architecture, testing, maintainability
+Dispatch a fresh subprocess per task with two-stage review when the runtime supports it. If not, keep work single-threaded and use `workflow` plus fresh verification.
 
 Prompt templates are at `skills/development-workflow/prompts/`:
 - `implementer-prompt.md`

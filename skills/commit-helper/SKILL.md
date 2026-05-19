@@ -1,33 +1,21 @@
 ---
 name: commit-helper
-description: Commit message generation — use the commit_message tool for git diffs
+description: Use when preparing a git commit and you need the current conventional commit flow.
 ---
 
 # Commit Helper
 
-This session has commit message generation available. The `commit_message` tool can analyze git diffs and propose conventional commit messages.
-
-## How to Use
-
-1. Check that the repository has staged changes (`git diff --cached --stat`)
-2. Call `commit_message` to get the diff analysis
-3. Review the changes and propose a conventional commit message
-
-## Commit Message Format
-
-Conventional commits: `type(scope): description`
-
-- `feat(auth): add OAuth2 login support`
-- `fix(parser): handle empty input gracefully`
-- `docs(readme): update installation instructions`
-
-### Valid Types
-
-`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`
+Use `/commit` for the interactive grouped flow. Use `commit_message` when the active staged group is ready to commit.
 
 ## Rules
 
-1. Always review the full diff before proposing a commit message
-2. Use `include_unstaged: true` if unstaged changes are relevant
-3. Keep descriptions under 72 characters for the subject line
-4. Use imperative mood ("add" not "added" or "adds")
+1. Inspect the diff before calling `commit_message`.
+2. `commit_message` validates conventional format and performs the commit.
+3. Use `include_unstaged: true` only when unstaged changes matter.
+4. Keep the subject imperative and under 72 chars.
+
+## Format
+
+`type(scope): description`
+
+Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`

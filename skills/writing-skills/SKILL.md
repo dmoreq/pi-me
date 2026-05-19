@@ -7,6 +7,10 @@ description: Use when creating new skills, editing existing skills, or verifying
 
 # Writing Skills
 
+> **Canonical:** this is the main skill-authoring guide. `authoring-skills` now redirects here.
+
+See also `extending-pi/skill-creator` for Pi-specific packaging.
+
 ## Overview
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
@@ -582,7 +586,7 @@ Deploying untested skills = deploying untested code. It's a violation of quality
 
 ## Skill Creation Checklist
 
-**IMPORTANT: Use the `plan_tracker` tool to create tasks for EACH checklist item below.**
+**IMPORTANT: Use the `workflow` tool to track checklist items for complex work.**
 
 **RED Phase - Write Failing Test:**
 - [ ] Create pressure scenarios (3+ combined pressures for discipline skills)
