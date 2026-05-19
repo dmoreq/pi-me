@@ -26,6 +26,7 @@ export type LessonInjectionMode = "all" | "selective";
 
 export interface InjectorConfig {
   lessonInjection?: LessonInjectionMode;
+  skipDirs?: string[];  // path segments to skip when extracting project slug
 }
 
 /**
@@ -36,7 +37,7 @@ export function buildContextBlock(store: MemoryStore, cwd?: string, prompt?: str
   if (prompt?.trim()) {
     return buildSelectiveBlock(store, prompt, cwd, config);
   }
-  return buildFallbackBlock(store, cwd);
+  return buildFallbackBlock(store, cwd, config);
 }
 
 // ─── Selective injection ─────────────────────────────────────────────
@@ -51,7 +52,7 @@ function buildSelectiveBlock(store: MemoryStore, prompt: string, cwd?: string, c
   const results = store.searchSemantic(prompt, SEARCH_LIMIT);
 
   // Also search with project slug if we have a cwd, to pull in project context
-  const slug = cwd ? projectSlug(cwd) : "";
+  const slug = cwd ? projectSlug(cwd, config?.skipDirs) : "";
   if (slug) {
     const projectResults = store.searchSemantic(slug, 5);
     // Merge, dedup by key
@@ -150,7 +151,7 @@ function getRelevantLessons(store: MemoryStore, prompt: string, cwd?: string): L
 
 // ─── Fallback (no prompt) ────────────────────────────────────────────
 
-function buildFallbackBlock(store: MemoryStore, cwd?: string): ContextBlock {
+function buildFallbackBlock(store: MemoryStore, cwd?: string, config?: InjectorConfig): ContextBlock {
   const sections: string[] = [];
   let semanticCount = 0;
   let lessonCount = 0;
@@ -163,7 +164,7 @@ function buildFallbackBlock(store: MemoryStore, cwd?: string): ContextBlock {
 
   const projects = store.listSemantic("project.", 50);
   const relevant = cwd
-    ? projects.filter(p => p.key.includes(projectSlug(cwd)) || p.confidence >= 0.9)
+    ? projects.filter(p => p.key.includes(projectSlug(cwd, config?.skipDirs)) || p.confidence >= 0.9)
     : projects;
   if (relevant.length > 0) {
     sections.push(formatSection("Project Context", relevant.map(formatSemantic)));
@@ -206,13 +207,22 @@ function buildFallbackBlock(store: MemoryStore, cwd?: string): ContextBlock {
     return { text: "", stats: { semantic: 0, lessons: 0 } };
   }
 
-  let text = `<memory>\n${sections.join("\n")}\n\n${MEMORY_DRIFT_CAVEAT}\n</memory>`;
+  return buildMemoryText(sections, semanticCount, lessonCount);
+}
 
-  if (text.length > MAX_CONTEXT_CHARS) {
-    text = text.slice(0, MAX_CONTEXT_CHARS - 20) + "\n... (truncated)\n</memory>";
+function buildMemoryText(sections: string[], semanticCount: number, lessonCount: number): ContextBlock {
+  // Truncate at section boundaries, not character positions
+  while (sections.length > 0) {
+    let text = `<memory>\n${sections.join("\n")}\n\n${MEMORY_DRIFT_CAVEAT}\n</memory>`;
+    if (text.length <= MAX_CONTEXT_CHARS) {
+      return { text, stats: { semantic: semanticCount, lessons: lessonCount } };
+    }
+    // Section too large, remove the last one
+    sections.pop();
   }
 
-  return { text, stats: { semantic: semanticCount, lessons: lessonCount } };
+  // No sections fit, return empty
+  return { text: "", stats: { semantic: 0, lessons: 0 } };
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -263,9 +273,12 @@ const MEMORY_DRIFT_CAVEAT = `## Before acting on memory
 - If a recalled memory conflicts with what you observe in the current code or project state, trust what you observe now.
 - Memories about project state (deadlines, decisions, architecture) decay fastest — check if still relevant.`;
 
-function projectSlug(cwd: string): string {
+function projectSlug(cwd: string, skipDirs?: string[]): string {
   const parts = cwd.split("/").filter(Boolean);
-  const skip = new Set(["workplace", "local", "home", "src", "scratch"]);
+  const defaultSkip = new Set(["workplace", "local", "home", "src", "scratch"]);
+  const extraSkip = new Set((skipDirs ?? []).map(s => s.toLowerCase()));
+  const skip = new Set([...defaultSkip, ...extraSkip]);
+
   for (const p of parts.reverse()) {
     if (!skip.has(p.toLowerCase()) && p.length > 1) return p.toLowerCase();
   }
