@@ -6,6 +6,7 @@
  */
 
 import { execFile } from "node:child_process";
+import { join } from "node:path";
 import type { DirtyFile } from "./types.ts";
 
 const GIT_TIMEOUT = 30_000;
@@ -14,7 +15,7 @@ const DIFF_CHAR_LIMIT = 8_000;
 
 // ─── Core executor ───────────────────────────────────────────────────────────
 
-export function execGit(args: string[], cwd: string): Promise<string> {
+function execGitRaw(args: string[], cwd: string): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(
       "git",
@@ -22,15 +23,24 @@ export function execGit(args: string[], cwd: string): Promise<string> {
       { cwd, timeout: GIT_TIMEOUT, maxBuffer: GIT_MAX_BUFFER, encoding: "utf8" },
       (err, stdout, stderr) => {
         if (err) reject(new Error(`git ${args[0]} failed: ${stderr?.trim() || err.message}`));
-        else resolve(stdout.trim());
+        else resolve(stdout);
       },
     );
   });
 }
 
+export async function execGit(args: string[], cwd: string): Promise<string> {
+  return (await execGitRaw(args, cwd)).trim();
+}
+
 /** Like execGit but returns empty string instead of throwing on failure. */
 export async function execGitSafe(args: string[], cwd: string): Promise<string> {
   try { return await execGit(args, cwd); }
+  catch { return ""; }
+}
+
+async function execGitRawSafe(args: string[], cwd: string): Promise<string> {
+  try { return await execGitRaw(args, cwd); }
   catch { return ""; }
 }
 
@@ -47,43 +57,50 @@ export async function getHeadSha(cwd: string): Promise<string> {
 
 // ─── Status ───────────────────────────────────────────────────────────────────
 
+function dirtyStatusFromXY(xy: string): DirtyFile["status"] {
+  const [x = " ", y = " "] = xy;
+  if (x === "U" || y === "U" || (x === "A" && y === "A") || (x === "D" && y === "D")) return "U";
+  const effective = x !== " " && x !== "?" ? x : y;
+  return (["M", "A", "D", "R", "?"].includes(effective) ? effective : "M") as DirtyFile["status"];
+}
+
 /**
- * Parse `git status --porcelain=v1 -u` output into DirtyFile records.
+ * Parse `git status --porcelain=v1 -z -u` output into DirtyFile records.
  * Both staged and unstaged files are returned; staged=true when the index
- * column is not ' ' or '?'.
+ * column is not ' ' or '?'. The NUL format preserves spaces, quotes, unicode,
+ * and rename paths without needing shell-style unquoting.
  */
 export async function listDirtyFiles(cwd: string, repoRoot: string): Promise<DirtyFile[]> {
-  const out = await execGitSafe(["status", "--porcelain=v1", "-u"], cwd);
+  const out = await execGitRawSafe(["status", "--porcelain=v1", "-z", "-u"], cwd);
   if (!out) return [];
 
+  const entries = out.split("\0").filter(Boolean);
   const files: DirtyFile[] = [];
-  for (const raw of out.split("\n")) {
-    const line = raw.trimEnd();
-    if (line.length < 4) continue;
 
-    const xy = line.slice(0, 2);       // "XY" — two-char status code
-    const x = xy[0];                    // index (staged) status
-    const relPath = line.slice(3);      // file path relative to repo root
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (entry.length < 4) continue;
 
-    // Renamed files: "R old -> new" — take the destination
-    const actualRel = relPath.includes(" -> ") ? relPath.split(" -> ")[1] : relPath;
+    const xy = entry.slice(0, 2);
+    const x = xy[0] ?? " ";
+    const relPath = entry.slice(3);
 
-    const status = (["M", "A", "D", "R", "?", "U"].includes(x) ? x : "M") as DirtyFile["status"];
+    // In porcelain v1 -z, rename/copy records are followed by the source path.
+    // The first path is the destination, which is the path we should stage/commit.
+    if (x === "R" || x === "C") i++;
+
+    const status = dirtyStatusFromXY(xy);
     const staged = x !== " " && x !== "?";
 
     files.push({
-      absPath: `${repoRoot}/${actualRel}`,
-      relPath: actualRel,
+      absPath: join(repoRoot, relPath),
+      relPath,
       status,
       staged,
     });
   }
 
   return files;
-}
-
-export function hasAnyChanges(files: DirtyFile[]): boolean {
-  return files.length > 0;
 }
 
 // ─── Staging ─────────────────────────────────────────────────────────────────
@@ -111,14 +128,26 @@ export async function getDiffForFiles(
     ? ["diff", "--", ...relPaths]
     : ["diff", "--cached", "--", ...relPaths];
   const out = await execGitSafe(args, cwd);
+  return truncateDiff(out || "(empty diff)");
+}
+
+export async function getCommitStat(sha: string, cwd: string): Promise<string> {
+  if (!sha) return "";
+  return execGitSafe(["show", "--stat", "--oneline", "--name-status", "--format=short", sha], cwd);
+}
+
+function truncateDiff(out: string): string {
   return out.length > DIFF_CHAR_LIMIT
     ? out.slice(0, DIFF_CHAR_LIMIT) + `\n... [truncated ${out.length - DIFF_CHAR_LIMIT} chars]`
-    : out || "(empty diff)";
+    : out;
 }
 
 // ─── Commit ───────────────────────────────────────────────────────────────────
 
-const COMMIT_MSG_RE = /^(feat|fix|docs|style|refactor|test|chore|perf|ci)(\(.+\))?: .{3,}/;
+const COMMIT_TYPES = "feat|fix|docs|style|refactor|test|chore|perf|ci|build";
+const COMMIT_MSG_RE = new RegExp(
+  `^(${COMMIT_TYPES})(\\([A-Za-z0-9._/-]+\\))?!?: (?!.*\\.$).{3,72}$`,
+);
 
 export function isValidConventionalCommit(message: string): boolean {
   return COMMIT_MSG_RE.test(message.trim().split("\n")[0]);
@@ -126,15 +155,25 @@ export function isValidConventionalCommit(message: string): boolean {
 
 /**
  * Run `git commit -m <message>` and return the new HEAD SHA.
- * Throws if there is nothing staged or the message is invalid.
+ * When relPaths is provided, use a pathspec commit so unrelated staged files
+ * remain staged and are not included in this group's commit.
  */
-export async function commitWithMessage(message: string, cwd: string): Promise<string> {
+export async function commitWithMessage(
+  message: string,
+  cwd: string,
+  relPaths: string[] = [],
+): Promise<string> {
   const trimmed = message.trim();
   if (!isValidConventionalCommit(trimmed)) {
     throw new Error(
       `Commit message does not follow conventional commit format: "${trimmed.slice(0, 80)}"`,
     );
   }
-  await execGit(["commit", "-m", trimmed], cwd);
+
+  const args = relPaths.length > 0
+    ? ["commit", "-m", trimmed, "--only", "--", ...relPaths]
+    : ["commit", "-m", trimmed];
+
+  await execGit(args, cwd);
   return getHeadSha(cwd);
 }

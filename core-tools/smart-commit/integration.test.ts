@@ -4,7 +4,7 @@
  * Tests the full pipeline: grouping → quality → staging → diffing
  */
 
-import { describe, it, beforeEach } from "bun:test";
+import { describe, it, beforeEach } from "node:test";
 import * as assert from "node:assert/strict";
 import { groupDirtyFiles } from "./grouper.ts";
 import { buildCommitPrompt } from "./prompt.ts";
@@ -27,7 +27,7 @@ describe("smart-commit integration", () => {
         file("README.md", "M"),
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 3);
 
       // Verify sorting: largest group first
@@ -50,7 +50,7 @@ describe("smart-commit integration", () => {
         file("root-file.ts", "M"),
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
 
       for (const group of groups) {
         const quality: QualityResult[] = group.files.map(f => ({
@@ -86,7 +86,7 @@ describe("smart-commit integration", () => {
         file("core-tools/memory/deleted.ts", "D"),
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 1);
       assert.equal(groups[0].files.length, 3);
 
@@ -142,7 +142,7 @@ describe("smart-commit integration", () => {
         file("authoring/commit-helper/index.ts", "A"),
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 2);
 
       // Both memory files should group under core-tools/memory
@@ -158,7 +158,7 @@ describe("smart-commit integration", () => {
         file("LICENSE", "A"),
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 1);
       assert.equal(groups[0].label, "root");
       assert.equal(groups[0].scope, "");
@@ -175,7 +175,7 @@ describe("smart-commit integration", () => {
 
       for (const [label, expectedScope] of cases) {
         const files = [file(`${label}/index.ts`, "M")];
-        const groups = groupDirtyFiles(files, "/repo");
+        const groups = groupDirtyFiles(files);
         assert.equal(groups[0].scope, expectedScope, `${label} should derive scope ${expectedScope}`);
       }
     });
@@ -191,8 +191,8 @@ describe("smart-commit integration", () => {
 
       // Run 3 times with different orderings
       const results = [
-        groupDirtyFiles([...baseFiles], "/repo"),
-        groupDirtyFiles([...baseFiles].reverse(), "/repo"),
+        groupDirtyFiles([...baseFiles]),
+        groupDirtyFiles([...baseFiles].reverse()),
         groupDirtyFiles(
           [baseFiles[2], baseFiles[0], baseFiles[1]],
           "/repo"
@@ -222,7 +222,7 @@ describe("smart-commit integration", () => {
         file("m/n/two.ts", "M"),
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       const labels = groups.map(g => g.label);
 
       // Should be sorted by count: x/y (3), m/n (2), a/b (1)

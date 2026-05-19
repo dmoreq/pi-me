@@ -8,7 +8,7 @@
 
 import type { CommitGroup, QualityResult } from "./types.ts";
 
-const COMMIT_TYPES = "feat, fix, docs, style, refactor, test, chore, perf, ci";
+const COMMIT_TYPES = "feat, fix, docs, style, refactor, test, chore, perf, ci, build";
 
 function statusLabel(s: string): string {
   switch (s) {

@@ -13,12 +13,7 @@
  *   5. Sort groups: more files first, then alphabetically
  */
 
-import { basename, dirname, relative } from "node:path";
 import type { CommitGroup, DirtyFile } from "./types.ts";
-
-// Prefixes that are "container" segments and not meaningful as a scope on their own.
-// When one of these is the outermost segment, we use the next one.
-const CONTAINER_PREFIXES = new Set(["src", "lib", "packages", "apps", "modules"]);
 
 /**
  * Derive the "scope path" — the 1- or 2-segment prefix used as the grouping key.
@@ -61,7 +56,7 @@ function deriveScope(sp: string): string {
 /**
  * Group a flat list of dirty files into logical CommitGroups.
  */
-export function groupDirtyFiles(files: DirtyFile[], repoRoot: string): CommitGroup[] {
+export function groupDirtyFiles(files: DirtyFile[]): CommitGroup[] {
   const groupMap = new Map<string, DirtyFile[]>();
 
   for (const file of files) {

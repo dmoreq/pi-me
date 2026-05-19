@@ -4,7 +4,7 @@
  * Tests input validation, error conditions, and edge cases that might crash
  */
 
-import { describe, it } from "bun:test";
+import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
 import { isValidConventionalCommit } from "./git.ts";
 import { groupDirtyFiles } from "./grouper.ts";
@@ -75,7 +75,7 @@ describe("input validation", () => {
         { absPath: "/repo/core-tools/memory/file_with_underscores.ts", relPath: "core-tools/memory/file_with_underscores.ts", status: "M", staged: false },
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 1);
       assert.equal(groups[0].label, "core-tools/memory");
       assert.equal(groups[0].files.length, 3);
@@ -86,7 +86,7 @@ describe("input validation", () => {
         { absPath: "/repo/a/b/c/d/e/f/g/h/deeply/nested/file.ts", relPath: "a/b/c/d/e/f/g/h/deeply/nested/file.ts", status: "M", staged: false },
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 1);
       assert.equal(groups[0].label, "a/b", "should use first two segments");
     });
@@ -96,7 +96,7 @@ describe("input validation", () => {
         { absPath: "/repo/v1.0.0/src/index.ts", relPath: "v1.0.0/src/index.ts", status: "M", staged: false },
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 1, "should group v1.0.0/src as one group");
       assert.equal(groups[0].label, "v1.0.0/src", "label should be v1.0.0/src");
     });
@@ -159,7 +159,7 @@ describe("input validation", () => {
 
   describe("boundary conditions", () => {
     it("handles empty file list", () => {
-      const groups = groupDirtyFiles([], "/repo");
+      const groups = groupDirtyFiles([]);
       assert.deepEqual(groups, [], "empty input should give empty groups");
     });
 
@@ -168,7 +168,7 @@ describe("input validation", () => {
         { absPath: "/repo/file.ts", relPath: "file.ts", status: "M", staged: false },
       ];
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 1, "should create one group");
       assert.equal(groups[0].label, "root", "root-level file should be in 'root' group");
     });
@@ -181,7 +181,7 @@ describe("input validation", () => {
         staged: false,
       }));
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 1, "should put all in one group");
       assert.equal(groups[0].files.length, 1000, "should include all 1000 files");
     });
@@ -194,7 +194,7 @@ describe("input validation", () => {
         staged: false,
       }));
 
-      const groups = groupDirtyFiles(files, "/repo");
+      const groups = groupDirtyFiles(files);
       assert.equal(groups.length, 100);
     });
   });
