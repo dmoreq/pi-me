@@ -123,15 +123,15 @@ export function createWorkflowTool(deps: WorkflowToolDeps) {
           return text(renderChecklist(workflow), { workflow });
         }
         case "job-list": {
-          const jobs = await store.listJobs();
+          const jobs = await deps.executor.listJobs();
           return text(jobs.map(job => `${job.status} ${job.id} ${job.label}`).join("\n"));
         }
         case "job-status": {
-          const job = await store.getJob(params.id as string);
+          const job = deps.executor.getJob(params.id as string);
           return text(job ? `${job.status} ${job.id} ${job.label}` : `Job ${params.id} not found`);
         }
         case "job-cancel": {
-          const ok = await deps.executor.cancelJob(params.id as string);
+          const ok = deps.executor.cancelJob(params.id as string);
           return text(ok ? `Cancelled ${params.id}` : `Job ${params.id} not found`);
         }
         case "review": {
@@ -271,6 +271,7 @@ async function runBackgroundAsWorkflow(store: WorkflowStore, deps: WorkflowToolD
     critical: params.critical as boolean | undefined,
   };
   await store.addStep(workflow.id, step);
-  await deps.executor.runBackground({ id: workflow.id, label: step.text, cmd: step.command ?? "", args: step.args, cwd: step.cwd, timeout: step.timeout });
+  const job = await deps.executor.runBackground({ id: workflow.id, label: step.text, cmd: step.command ?? "", args: step.args, cwd: step.cwd, timeout: step.timeout });
+  await store.saveJob(job);
   return workflow;
 }
