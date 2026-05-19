@@ -1,3 +1,3 @@
 # pi-me
 
-Cleanup in progress.
+Shared cleanup in progress.
