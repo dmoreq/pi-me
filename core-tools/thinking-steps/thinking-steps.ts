@@ -44,7 +44,7 @@ export default function thinkingSteps(pi: ExtensionAPI): void {
 
   function render(ctx: ExtensionContext): void {
     ctx.ui.setHiddenThinkingLabel(buildLabel(mode, thinkingText));
-    ctx.ui.setStatus("thinking-steps", ctx.ui.theme.fg("dim", `🧠 ${modeLabel(mode)}`));
+    ctx.ui.setStatus("thinking-steps", ctx.ui.theme.fg("dim", `Thinking: ${modeLabel(mode)}`));
   }
 
   function setMode(ctx: ExtensionContext, next: ThinkingMode, persist = true): void {

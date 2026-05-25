@@ -20,18 +20,18 @@ const SESSION_NAME_STATUS_KEY = "session-name";
 const SESSION_INTENT_STATUS_KEY = "session-intent";
 const MAX_NAME_LENGTH = 60;
 
-// ─── Session intent labels & emoji ─────────────────────────────────────────
+// ─── Session intent labels ─────────────────────────────────────────────────
 
-const INTENT_LABELS: Record<SessionIntent, { emoji: string; label: string }> = {
-  debug:   { emoji: "🐛", label: "Debugging" },
-  feature: { emoji: "✨", label: "Building Feature" },
-  refactor:{ emoji: "♻️", label: "Refactoring" },
-  explore: { emoji: "🔍", label: "Exploring Codebase" },
-  review:  { emoji: "👁️", label: "Code Review" },
-  test:    { emoji: "🧪", label: "Testing" },
-  learn:   { emoji: "📚", label: "Learning" },
-  ops:     { emoji: "🚀", label: "Operations" },
-  general: { emoji: "💬", label: "General" },
+const INTENT_LABELS: Record<SessionIntent, { label: string }> = {
+  debug:   { label: "Debugging" },
+  feature: { label: "Building Feature" },
+  refactor:{ label: "Refactoring" },
+  explore: { label: "Exploring Codebase" },
+  review:  { label: "Code Review" },
+  test:    { label: "Testing" },
+  learn:   { label: "Learning" },
+  ops:     { label: "Operations" },
+  general: { label: "General" },
 };
 
 // ============================================================================
@@ -70,7 +70,7 @@ export class WelcomeModule {
       const existingName = pi.getSessionName();
       if (existingName) {
         this.firstMessageSeen = true;
-        ctx.ui.setStatus(SESSION_NAME_STATUS_KEY, ctx.ui.theme.fg("dim", `💬  Session: ${existingName}`));
+        ctx.ui.setStatus(SESSION_NAME_STATUS_KEY, ctx.ui.theme.fg("dim", `Session: ${existingName}`));
       }
 
       // Set welcome header
@@ -78,7 +78,7 @@ export class WelcomeModule {
         this.setWelcomeHeader(ctx);
       }
 
-      ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", this.welcomeEnabled ? "🖖  Welcome: on" : "🖖  Welcome: off"));
+      ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("dim", this.welcomeEnabled ? "Welcome: on" : "Welcome: off"));
     });
 
     pi.on("input", async (event, ctx) => {
@@ -98,10 +98,10 @@ export class WelcomeModule {
 
       if (ctx.hasUI) {
         const meta = INTENT_LABELS[sessionIntent];
-        ctx.ui.setStatus(SESSION_NAME_STATUS_KEY, ctx.ui.theme.fg("dim", `💬  Session: ${name}`));
+        ctx.ui.setStatus(SESSION_NAME_STATUS_KEY, ctx.ui.theme.fg("dim", `Session: ${name}`));
         ctx.ui.setStatus(
           SESSION_INTENT_STATUS_KEY,
-          ctx.ui.theme.fg("dim", `${meta.emoji}  ${meta.label}`),
+          ctx.ui.theme.fg("dim", meta.label),
         );
       }
 
@@ -132,7 +132,7 @@ export class WelcomeModule {
         if (ctx.hasUI) {
           ctx.ui.setStatus(
             STATUS_KEY,
-            ctx.ui.theme.fg("dim", this.welcomeEnabled ? "🖖  Welcome: on" : "🖖  Welcome: off"),
+            ctx.ui.theme.fg("dim", this.welcomeEnabled ? "Welcome: on" : "Welcome: off"),
           );
         }
       },

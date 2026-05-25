@@ -59,7 +59,7 @@ export function registerSmartCommit(pi: ExtensionAPI): void {
     handler: async (_args, ctx) => {
       const cwd = await fs.realpath(ctx.cwd);
 
-      ctx.ui.setStatus("smart-commit", "🔍 Scanning changes...");
+      ctx.ui.setStatus("smart-commit", "Scanning changes...");
 
       let repoRoot: string;
       try {
@@ -79,13 +79,13 @@ export function registerSmartCommit(pi: ExtensionAPI): void {
 
         const groups = groupDirtyFiles(dirty);
         const total = groups.length;
-        ctx.ui.setStatus("smart-commit", `📦 ${total} group(s) to commit`);
+        ctx.ui.setStatus("smart-commit", `Commit: ${total} group(s)`);
 
         const group = groups[0];
         const progress = `[1/${total}] ${group.label}`;
 
         // ── Quality pass ───────────────────────────────────────────────────
-        ctx.ui.setStatus("smart-commit", `⚙️  ${progress} — formatting & fixing...`);
+        ctx.ui.setStatus("smart-commit", `${progress} — formatting & fixing...`);
 
         const nonDeleted = group.files.filter(f => f.status !== "D");
         const quality = await runQualityOnFiles(nonDeleted, repoRoot, pi);
@@ -106,7 +106,7 @@ export function registerSmartCommit(pi: ExtensionAPI): void {
         // ── Ask LLM ───────────────────────────────────────────────────────
         ctx.ui.setStatus(
           "smart-commit",
-          `🤖 ${progress} — quality: ${qualitySummary}`,
+          `${progress} — quality: ${qualitySummary}`,
         );
 
         const prompt = buildCommitPrompt(group, diffStat, diffBody, quality);

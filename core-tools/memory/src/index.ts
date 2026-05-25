@@ -236,7 +236,7 @@ export default function (pi: ExtensionAPI, globalSettings?: GlobalSettings) {
     if (!store) return;
 
     if (pendingUserMessages.length >= MIN_MESSAGES_TO_CONSOLIDATE) {
-      ctx.ui.setStatus("pi-memory", "🧠 Consolidating memory...");
+      ctx.ui.setStatus("pi-memory", "Consolidating memory...");
       try {
         await consolidateSession();
       } catch {
